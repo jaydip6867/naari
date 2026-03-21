@@ -72,7 +72,7 @@
   margin: 0;
   padding: 0;
   height: 100vh;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 * {
@@ -93,7 +93,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-primary);
   background: var(--primary-gradient);
-  overflow-x: hidden;
+  /* overflow: auto; */
 }
 
 .login-left {
@@ -345,10 +345,10 @@ body {
    ======================================== */
 .settings-container {
   display: flex;
-  height: calc(100vh - 40px);
+  height: calc(100vh);
   font-family: var(--font-primary);
-  margin: 20px;
-  padding: 20px;
+  /* margin: 20px; */
+  padding: 40px;
 }
 
 .sidebar {
