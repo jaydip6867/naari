@@ -6,6 +6,45 @@ import Dashboard from './components/Dashboard.js';
 import './styles.css';
 import { storage } from './utils/storage';
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ 
+          padding: '20px', 
+          textAlign: 'center',
+          fontFamily: 'Arial, sans-serif'
+        }}>
+          <h2>Something went wrong.</h2>
+          <p>Please refresh the page and try again.</p>
+          <details style={{ marginTop: '20px', textAlign: 'left' }}>
+            <summary>Error Details</summary>
+            <pre style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
+              {this.state.error && this.state.error.toString()}
+            </pre>
+          </details>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -13,9 +52,15 @@ function App() {
   // Check authentication status on app load and page refresh
   useEffect(() => {
     const checkAuthStatus = () => {
-      const isAuthenticated = storage.isAuthenticated();
-      setIsLoggedIn(isAuthenticated);
-      setLoading(false);
+      try {
+        const isAuthenticated = storage.isAuthenticated();
+        setIsLoggedIn(isAuthenticated);
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        setIsLoggedIn(false);
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkAuthStatus();
@@ -38,47 +83,67 @@ function App() {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        fontFamily: 'var(--font-primary)',
+        fontFamily: 'Inter, Roboto, Arial, sans-serif',
         fontSize: '16px',
-        color: 'var(--primary-color)'
+        color: '#EA9D81',
+        backgroundColor: '#ffffff'
       }}>
-        Loading...
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3', 
+            borderTop: '4px solid #EA9D81', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          Loading...
+        </div>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              isLoggedIn ? 
-                <Navigate to="/dashboard" replace /> : 
-                <Login onLogin={handleLogin} />
-            } 
-          />
-          <Route 
-            path="/dashboard" 
-            element={
-              isLoggedIn ? 
-                <Dashboard onLogout={handleLogout} /> : 
-                <Navigate to="/" replace />
-            } 
-          />
-          <Route 
-            path="/settings" 
-            element={
-              isLoggedIn ? 
-                <Settings onLogout={handleLogout} /> : 
-                <Navigate to="/" replace />
-            } 
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                isLoggedIn ? 
+                  <Navigate to="/dashboard" replace /> : 
+                  <Login onLogin={handleLogin} />
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                isLoggedIn ? 
+                  <Dashboard onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                isLoggedIn ? 
+                  <Settings onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
