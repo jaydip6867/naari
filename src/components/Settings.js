@@ -7,7 +7,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { userRoleAPI, skillsAPI } from '../services/api';
-import { FiEdit, FiRefreshCw, FiTrash, FiTrash2, FiX } from 'react-icons/fi';
+import { FiEdit, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
 const Settings = ({ onLogout }) => {
@@ -22,8 +22,8 @@ const Settings = ({ onLogout }) => {
   const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState(null);
+  // const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  // const [editingRole, setEditingRole] = useState(null);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
 
@@ -48,30 +48,30 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  const openRoleModal = (role = null) => {
-    setEditingRole(role);
-    setIsRoleModalOpen(true);
-  };
+  // const openRoleModal = (role = null) => {
+  //   setEditingRole(role);
+  //   setIsRoleModalOpen(true);
+  // };
 
-  const closeRoleModal = () => {
-    setIsRoleModalOpen(false);
-    setEditingRole(null);
-  };
+  // const closeRoleModal = () => {
+  //   setIsRoleModalOpen(false);
+  //   setEditingRole(null);
+  // };
 
-  const saveRole = async (roleData) => {
-    try {
-      const savedRole = await userRoleAPI.saveRole(roleData);
-      console.log('Role saved:', savedRole);
+  // const saveRole = async (roleData) => {
+  //   try {
+  //     const savedRole = await userRoleAPI.saveRole(roleData);
+  //     console.log('Role saved:', savedRole);
 
-      // Refresh the roles list
-      await fetchUserRoles();
+  //     // Refresh the roles list
+  //     await fetchUserRoles();
 
-      return savedRole;
-    } catch (err) {
-      console.error('Error saving role:', err);
-      throw err;
-    }
-  };
+  //     return savedRole;
+  //   } catch (err) {
+  //     console.error('Error saving role:', err);
+  //     throw err;
+  //   }
+  // };
 
   // Skills management functions
   const fetchSkills = async () => {
@@ -89,55 +89,55 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  const addSkill = async (skillName) => {
-    try {
-      setSkillsLoading(true);
-      setSkillsError('');
+  // const addSkill = async (skillName) => {
+  //   try {
+  //     setSkillsLoading(true);
+  //     setSkillsError('');
       
-      const skillData = {
-        name: skillName,
-        type: 'Add'
-      };
+  //     const skillData = {
+  //       name: skillName,
+  //       type: 'Add'
+  //     };
       
-      const savedSkill = await skillsAPI.saveSkill(skillData);
-      console.log('Skill added:', savedSkill);
+  //     const savedSkill = await skillsAPI.saveSkill(skillData);
+  //     console.log('Skill added:', savedSkill);
       
-      // Refresh the skills list
-      await fetchSkills();
+  //     // Refresh the skills list
+  //     await fetchSkills();
       
-      return savedSkill;
-    } catch (err) {
-      console.error('Error adding skill:', err);
-      setSkillsError(err.message || 'Failed to add skill');
-      throw err;
-    } finally {
-      setSkillsLoading(false);
-    }
-  };
+  //     return savedSkill;
+  //   } catch (err) {
+  //     console.error('Error adding skill:', err);
+  //     setSkillsError(err.message || 'Failed to add skill');
+  //     throw err;
+  //   } finally {
+  //     setSkillsLoading(false);
+  //   }
+  // };
 
-  const deleteSkill = async (skillId, skillName) => {
-    try {
-      setSkillsLoading(true);
-      setSkillsError('');
+  // const deleteSkill = async (skillId, skillName) => {
+  //   try {
+  //     setSkillsLoading(true);
+  //     setSkillsError('');
       
-      const skillData = {
-        name: skillName,
-        type: 'Remove'
-      };
+  //     const skillData = {
+  //       name: skillName,
+  //       type: 'Remove'
+  //     };
       
-      await skillsAPI.saveSkill(skillData);
-      console.log('Skill removed:', skillName);
+  //     await skillsAPI.saveSkill(skillData);
+  //     console.log('Skill removed:', skillName);
       
-      // Refresh the skills list
-      await fetchSkills();
-    } catch (err) {
-      console.error('Error removing skill:', err);
-      setSkillsError(err.message || 'Failed to remove skill');
-      throw err;
-    } finally {
-      setSkillsLoading(false);
-    }
-  };
+  //     // Refresh the skills list
+  //     await fetchSkills();
+  //   } catch (err) {
+  //     console.error('Error removing skill:', err);
+  //     setSkillsError(err.message || 'Failed to remove skill');
+  //     throw err;
+  //   } finally {
+  //     setSkillsLoading(false);
+  //   }
+  // };
 
   // Skill Modal functions
   const openSkillModal = (skill = null) => {

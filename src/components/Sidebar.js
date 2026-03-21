@@ -90,7 +90,7 @@ const Sidebar = ({ onLogout }) => {
             
             {/* Mobile Logout */}
             <div className="mobile-logout">
-              <a className="logout-btn" onClick={handleLogout}>
+              <a className="logout-btn" href='#logout' onClick={handleLogout}>
                 <span className="nav-icon"><FiLogOut /></span>
                 <span>Log Out</span>
               </a>
@@ -123,7 +123,7 @@ const Sidebar = ({ onLogout }) => {
         </nav>
 
         <div className="logout">
-          <a className="logout-btn" onClick={handleLogout}>
+          <a className="logout-btn" href='#logout' onClick={handleLogout}>
             <span className="nav-icon"><FiLogOut /></span>
             <span>Log Out</span>
           </a>
