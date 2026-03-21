@@ -57,6 +57,55 @@ export const authAPI = {
   },
 };
 
+// User Role API calls
+export const userRoleAPI = {
+  listRoles: async (search = '') => {
+    const response = await api.post('/user/role', {
+      search
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch roles');
+    }
+  },
+
+  saveRole: async (roleData) => {
+    const response = await api.post('/user/role/save', roleData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save role');
+    }
+  },
+};
+
+// Skills API calls
+export const skillsAPI = {
+  getSkills: async () => {
+    const response = await api.get('/user/skills');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data.skills;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch skills');
+    }
+  },
+
+  saveSkill: async (skillData) => {
+    const response = await api.post('/user/skills/save', skillData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      console.log(response.data);
+      throw new Error(response.data.Message || 'Failed to save skill');
+    }
+  },
+};
+
 // Generic API calls
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({

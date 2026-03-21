@@ -116,9 +116,9 @@ const Login = ({ onLogin }) => {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
 
-          <div className="signup-prompt">
+          {/* <div className="signup-prompt">
             Don't have an account? <a href="#signup" className="signup-link">Sign up</a>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>

@@ -1,53 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles.css';
 
 const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
-  const [rollName, setRollName] = useState(editingRoll?.name || '');
-  const [permissions, setPermissions] = useState(
-    editingRoll?.permissions || {
-      dashboard: { canView: true, canAddEdit: false },
-      orders: { canView: true, canAddEdit: false },
-      workers: { canView: true, canAddEdit: false },
-      tasks: { canView: true, canAddEdit: false },
-      settings: { canView: false, canAddEdit: false }
-    }
-  );
+  const [rollName, setRollName] = useState('');
+  const [permissions, setPermissions] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const sections = [
-    { key: 'dashboard', name: 'Dashboard' },
-    { key: 'orders', name: 'Orders' },
-    { key: 'workers', name: 'Workers' },
-    { key: 'tasks', name: 'Tasks' },
-    { key: 'settings', name: 'Settings' }
+  // Default permissions structure matching API
+  const defaultPermissions = [
+    { displayname: 'Users', collectionName: 'users', insertUpdate: false, delete: false, view: false },
+    { displayname: 'Role & Permissions', collectionName: 'roles', insertUpdate: false, delete: false, view: false },
+    { displayname: 'Measurements', collectionName: 'measurements', insertUpdate: false, delete: false, view: false },
+    { displayname: 'Skills', collectionName: 'skills', insertUpdate: false, delete: false, view: false },
+    { displayname: 'Orders', collectionName: 'orders', insertUpdate: false, delete: false, view: false },
+    { displayname: 'Tasks', collectionName: 'tasks', insertUpdate: false, delete: false, view: false }
   ];
+
+  // Map old permission structure to new API structure
+  const mapOldPermissionsToNew = (oldPermissions) => {
+    return defaultPermissions.map(perm => {
+      const collectionName = perm.collectionName;
+      let newPerm = { ...perm };
+      
+      // Map old structure to new structure
+      switch (collectionName) {
+        case 'users':
+          newPerm.view = oldPermissions.workers?.canView || false;
+          newPerm.insertUpdate = oldPermissions.workers?.canAddEdit || false;
+          newPerm.delete = oldPermissions.workers?.canAddEdit || false;
+          break;
+        case 'orders':
+          newPerm.view = oldPermissions.orders?.canView || false;
+          newPerm.insertUpdate = oldPermissions.orders?.canAddEdit || false;
+          newPerm.delete = oldPermissions.orders?.canAddEdit || false;
+          break;
+        case 'tasks':
+          newPerm.view = oldPermissions.tasks?.canView || false;
+          newPerm.insertUpdate = oldPermissions.tasks?.canAddEdit || false;
+          newPerm.delete = oldPermissions.tasks?.canAddEdit || false;
+          break;
+        case 'roles':
+          newPerm.view = oldPermissions.settings?.canView || false;
+          newPerm.insertUpdate = oldPermissions.settings?.canAddEdit || false;
+          newPerm.delete = oldPermissions.settings?.canAddEdit || false;
+          break;
+        default:
+          break;
+      }
+      
+      return newPerm;
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingRoll) {
+        // Edit mode - populate with existing data
+        setRollName(editingRoll.name || '');
+        if (editingRoll.permissions && Array.isArray(editingRoll.permissions)) {
+          // Already in new format
+          setPermissions(editingRoll.permissions);
+        } else {
+          // Convert from old format to new format
+          setPermissions(mapOldPermissionsToNew(editingRoll.permissions || {}));
+        }
+      } else {
+        // Add mode - reset form
+        setRollName('');
+        setPermissions(defaultPermissions);
+      }
+      setError('');
+    }
+  }, [isOpen, editingRoll]);
+
+  const handlePermissionChange = (index, field, value) => {
+    const updatedPermissions = [...permissions];
+    updatedPermissions[index] = {
+      ...updatedPermissions[index],
+      [field]: value
+    };
+    setPermissions(updatedPermissions);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!rollName.trim()) {
+      setError('Roll name is required');
       return;
     }
 
     setIsSubmitting(true);
-    
+    setError('');
+
     try {
-      await onSave({
-        id: editingRoll?.id || Date.now(),
+      const rollData = {
+        roleid: editingRoll?._id || editingRoll?.id || '',
         name: rollName.trim(),
-        permissions
-      });
+        permissions: permissions
+      };
+
+      await onSave(rollData);
+      
+      // Reset form
       setRollName('');
-      setPermissions({
-        dashboard: { canView: true, canAddEdit: false },
-        orders: { canView: true, canAddEdit: false },
-        workers: { canView: true, canAddEdit: false },
-        tasks: { canView: true, canAddEdit: false },
-        settings: { canView: false, canAddEdit: false }
-      });
+      setPermissions(defaultPermissions);
       onClose();
     } catch (error) {
       console.error('Error saving roll:', error);
+      setError(error.message || 'Failed to save roll');
     } finally {
       setIsSubmitting(false);
     }
@@ -56,13 +118,8 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
   const handleClose = () => {
     if (!isSubmitting) {
       setRollName('');
-      setPermissions({
-        dashboard: { canView: true, canAddEdit: false },
-        orders: { canView: true, canAddEdit: false },
-        workers: { canView: true, canAddEdit: false },
-        tasks: { canView: true, canAddEdit: false },
-        settings: { canView: false, canAddEdit: false }
-      });
+      setPermissions(defaultPermissions);
+      setError('');
       onClose();
     }
   };
@@ -71,16 +128,6 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }
-  };
-
-  const togglePermission = (section, permission) => {
-    setPermissions(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [permission]: !prev[section][permission]
-      }
-    }));
   };
 
   if (!isOpen) {
@@ -98,6 +145,20 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
         
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            {error && (
+              <div style={{ 
+                color: 'var(--alert-color)', 
+                background: 'rgba(255, 0, 0, 0.1)', 
+                padding: '12px', 
+                borderRadius: 'var(--radius-md)', 
+                marginBottom: '16px',
+                border: '1px solid rgba(255, 0, 0, 0.2)',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label" htmlFor="roll-name">
                 Roll / Designation
@@ -111,6 +172,7 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
                 onChange={(e) => setRollName(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
+                required
               />
             </div>
 
@@ -119,20 +181,21 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
               <table className="permissions-table">
                 <thead>
                   <tr>
-                    <th>Section</th>
-                    <th>Can View</th>
-                    <th>Can Add/Edit</th>
+                    <th>Module</th>
+                    <th>View</th>
+                    <th>Add/Edit</th>
+                    <th>Delete</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sections.map(section => (
-                    <tr key={section.key}>
-                      <td className="section-name">{section.name}</td>
+                  {permissions.map((permission, index) => (
+                    <tr key={index}>
+                      <td className="section-name">{permission.displayname}</td>
                       <td>
                         <div className="permission-toggles">
                           <div
-                            className={`toggle-switch ${permissions[section.key].canView ? 'active' : ''}`}
-                            onClick={() => togglePermission(section.key, 'canView')}
+                            className={`toggle-switch ${permission.view ? 'active' : ''}`}
+                            onClick={() => handlePermissionChange(index, 'view', !permission.view)}
                           >
                             <div className="toggle-slider"></div>
                           </div>
@@ -141,8 +204,18 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
                       <td>
                         <div className="permission-toggles">
                           <div
-                            className={`toggle-switch ${permissions[section.key].canAddEdit ? 'active' : ''}`}
-                            onClick={() => togglePermission(section.key, 'canAddEdit')}
+                            className={`toggle-switch ${permission.insertUpdate ? 'active' : ''}`}
+                            onClick={() => handlePermissionChange(index, 'insertUpdate', !permission.insertUpdate)}
+                          >
+                            <div className="toggle-slider"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="permission-toggles">
+                          <div
+                            className={`toggle-switch ${permission.delete ? 'active' : ''}`}
+                            onClick={() => handlePermissionChange(index, 'delete', !permission.delete)}
                           >
                             <div className="toggle-slider"></div>
                           </div>
