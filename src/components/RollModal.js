@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import '../styles.css';
 
 const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
@@ -8,17 +8,17 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
   const [error, setError] = useState('');
 
   // Default permissions structure matching API
-  const defaultPermissions = [
+  const defaultPermissions = useMemo(() => [
     { displayname: 'Users', collectionName: 'users', insertUpdate: false, delete: false, view: false },
     { displayname: 'Role & Permissions', collectionName: 'roles', insertUpdate: false, delete: false, view: false },
     { displayname: 'Measurements', collectionName: 'measurements', insertUpdate: false, delete: false, view: false },
     { displayname: 'Skills', collectionName: 'skills', insertUpdate: false, delete: false, view: false },
     { displayname: 'Orders', collectionName: 'orders', insertUpdate: false, delete: false, view: false },
     { displayname: 'Tasks', collectionName: 'tasks', insertUpdate: false, delete: false, view: false }
-  ];
+  ], []);
 
   // Map old permission structure to new API structure
-  const mapOldPermissionsToNew = (oldPermissions) => {
+  const mapOldPermissionsToNew = useCallback((oldPermissions) => {
     return defaultPermissions.map(perm => {
       const collectionName = perm.collectionName;
       let newPerm = { ...perm };
@@ -40,10 +40,20 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
           newPerm.insertUpdate = oldPermissions.tasks?.canAddEdit || false;
           newPerm.delete = oldPermissions.tasks?.canAddEdit || false;
           break;
+        case 'measurements':
+          newPerm.view = oldPermissions.measurements?.canView || false;
+          newPerm.insertUpdate = oldPermissions.measurements?.canAddEdit || false;
+          newPerm.delete = oldPermissions.measurements?.canAddEdit || false;
+          break;
         case 'roles':
-          newPerm.view = oldPermissions.settings?.canView || false;
-          newPerm.insertUpdate = oldPermissions.settings?.canAddEdit || false;
-          newPerm.delete = oldPermissions.settings?.canAddEdit || false;
+          newPerm.view = oldPermissions.roles?.canView || false;
+          newPerm.insertUpdate = oldPermissions.roles?.canAddEdit || false;
+          newPerm.delete = oldPermissions.roles?.canAddEdit || false;
+          break;
+        case 'skills':
+          newPerm.view = oldPermissions.skills?.canView || false;
+          newPerm.insertUpdate = oldPermissions.skills?.canAddEdit || false;
+          newPerm.delete = oldPermissions.skills?.canAddEdit || false;
           break;
         default:
           break;
@@ -51,7 +61,7 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
       
       return newPerm;
     });
-  };
+  }, [defaultPermissions]);
 
   useEffect(() => {
     if (isOpen) {

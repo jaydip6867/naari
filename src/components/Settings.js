@@ -21,7 +21,6 @@ const Settings = ({ onLogout }) => {
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
   const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   // const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   // const [editingRole, setEditingRole] = useState(null);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
@@ -36,13 +35,11 @@ const Settings = ({ onLogout }) => {
   const fetchUserRoles = async () => {
     try {
       setLoading(true);
-      setError('');
       const roles = await userRoleAPI.listRoles('');
       setUserRoles(roles || []);
       // console.log('User roles fetched:', roles);
     } catch (err) {
       console.error('Error fetching user roles:', err);
-      setError(err.message || 'Failed to fetch user roles');
     } finally {
       setLoading(false);
     }
