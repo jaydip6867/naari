@@ -72,7 +72,7 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
       }
       setError('');
     }
-  }, [isOpen, editingRoll]);
+  }, [isOpen, editingRoll, defaultPermissions, mapOldPermissionsToNew]);
 
   const handlePermissionChange = (index, field, value) => {
     const updatedPermissions = [...permissions];
