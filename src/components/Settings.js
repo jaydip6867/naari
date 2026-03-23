@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
 import SkillModal from './SkillModal.js';
+import WorkTypeModal from './WorkTypeModal.js';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { userRoleAPI, skillsAPI } from '../services/api';
+import { userRoleAPI, skillsAPI, workTypeAPI } from '../services/api';
 import { FiEdit, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
@@ -25,11 +26,17 @@ const Settings = ({ onLogout }) => {
   // const [editingRole, setEditingRole] = useState(null);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
+  const [workTypes, setWorkTypes] = useState([]);
+  const [workTypesLoading, setWorkTypesLoading] = useState(false);
+  const [workTypesError, setWorkTypesError] = useState('');
+  const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
+  const [editingWorkType, setEditingWorkType] = useState(null);
 
   // Fetch user roles when component mounts
   useEffect(() => {
     fetchUserRoles();
     fetchSkills();
+    fetchWorkTypes();
   }, []);
 
   const fetchUserRoles = async () => {
@@ -86,56 +93,6 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  // const addSkill = async (skillName) => {
-  //   try {
-  //     setSkillsLoading(true);
-  //     setSkillsError('');
-      
-  //     const skillData = {
-  //       name: skillName,
-  //       type: 'Add'
-  //     };
-      
-  //     const savedSkill = await skillsAPI.saveSkill(skillData);
-  //     console.log('Skill added:', savedSkill);
-      
-  //     // Refresh the skills list
-  //     await fetchSkills();
-      
-  //     return savedSkill;
-  //   } catch (err) {
-  //     console.error('Error adding skill:', err);
-  //     setSkillsError(err.message || 'Failed to add skill');
-  //     throw err;
-  //   } finally {
-  //     setSkillsLoading(false);
-  //   }
-  // };
-
-  // const deleteSkill = async (skillId, skillName) => {
-  //   try {
-  //     setSkillsLoading(true);
-  //     setSkillsError('');
-      
-  //     const skillData = {
-  //       name: skillName,
-  //       type: 'Remove'
-  //     };
-      
-  //     await skillsAPI.saveSkill(skillData);
-  //     console.log('Skill removed:', skillName);
-      
-  //     // Refresh the skills list
-  //     await fetchSkills();
-  //   } catch (err) {
-  //     console.error('Error removing skill:', err);
-  //     setSkillsError(err.message || 'Failed to remove skill');
-  //     throw err;
-  //   } finally {
-  //     setSkillsLoading(false);
-  //   }
-  // };
-
   // Skill Modal functions
   const openSkillModal = (skill = null) => {
     setEditingSkill(skill);
@@ -158,6 +115,46 @@ const Settings = ({ onLogout }) => {
       return savedSkill;
     } catch (err) {
       console.error('Error saving skill:', err);
+      throw err;
+    }
+  };
+
+  // WorkType Modal functions
+  const fetchWorkTypes = async () => {
+    try {
+      setWorkTypesLoading(true);
+      setWorkTypesError('');
+      const workTypesData = await workTypeAPI.getWorkTypes();
+      setWorkTypes(workTypesData || []);
+    } catch (err) {
+      console.error('Error fetching work types:', err);
+      setWorkTypesError(err.message || 'Failed to fetch work types');
+    } finally {
+      setWorkTypesLoading(false);
+    }
+  };
+
+  const openWorkTypeModal = (workType = null) => {
+    setEditingWorkType(workType);
+    setIsWorkTypeModalOpen(true);
+  };
+
+  const closeWorkTypeModal = () => {
+    setIsWorkTypeModalOpen(false);
+    setEditingWorkType(null);
+  };
+
+  const saveWorkType = async (workTypeData) => {
+    try {
+      const savedWorkType = await workTypeAPI.saveWorkType(workTypeData);
+      console.log('Work type saved:', savedWorkType);
+      
+      // Refresh the work types list
+      await fetchWorkTypes();
+      
+      return savedWorkType;
+    } catch (err) {
+      console.error('Error saving work type:', err);
       throw err;
     }
   };
@@ -831,6 +828,65 @@ const Settings = ({ onLogout }) => {
           </div>
         )}
 
+        {/* WorkType Tab */}
+        {activeTab === 'worktype' && (
+          <div className="content-section">
+            <div className="section-header">
+              <h2 className="section-title">Work Types <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0'+ workTypes.length : workTypes.length} Work Types</span></h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="add-btn" onClick={fetchWorkTypes}><FiRefreshCw /> Refresh</button>
+                <button className="add-btn" onClick={() => openWorkTypeModal()}>Add New Work Type</button>
+              </div>
+            </div>
+            
+            {workTypesError && (
+              <div style={{ 
+                color: 'var(--alert-color)', 
+                background: 'rgba(255, 0, 0, 0.1)', 
+                padding: '12px', 
+                borderRadius: 'var(--radius-md)', 
+                marginBottom: '16px',
+                border: '1px solid rgba(255, 0, 0, 0.2)'
+              }}>
+                {workTypesError}
+              </div>
+            )}
+            
+            {workTypesLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                Loading work types...
+              </div>
+            ) : workTypes.length > 0 ? (
+              <div className="skills-list">
+                {workTypes.map((workType, index) => (
+                  <div key={workType._id || index} className="roll-item">
+                    <div className="roll-info">
+                        <div className="roll-name">{workType}</div>
+                    </div>
+                    <div className="roll-actions">
+                      <button 
+                        className="delete-btn skills-delete"
+                        onClick={() => saveWorkType({ name: workType, type: 'Remove' })}
+                      >
+                        <FiX />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
+                No work types found
+                <div style={{ marginTop: '16px' }}>
+                  <button className="add-btn" onClick={() => openWorkTypeModal()}>
+                    + Add Your First Work Type
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Subcategory Modal */}
         <CreateSubcategoryModal
           isOpen={isSubcategoryModalOpen}
@@ -852,6 +908,14 @@ const Settings = ({ onLogout }) => {
           onClose={closeSkillModal}
           onSave={saveSkill}
           editingSkill={editingSkill}
+        />
+
+        {/* WorkType Modal */}
+        <WorkTypeModal
+          isOpen={isWorkTypeModalOpen}
+          onClose={closeWorkTypeModal}
+          onSave={saveWorkType}
+          editingWorkType={editingWorkType}
         />
       </div>
     </div>

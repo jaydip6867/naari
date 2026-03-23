@@ -106,6 +106,29 @@ export const skillsAPI = {
   },
 };
 
+// WorkType API calls
+export const workTypeAPI = {
+  getWorkTypes: async () => {
+    const response = await api.get('/user/worktype');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data.worktypes || response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch work types');
+    }
+  },
+
+  saveWorkType: async (workTypeData) => {
+    const response = await api.post('/user/worktype/save', workTypeData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save work type');
+    }
+  },
+};
+
 // Generic API calls
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
