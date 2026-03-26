@@ -129,6 +129,49 @@ export const workTypeAPI = {
   },
 };
 
+// Measurements API calls
+export const measurementsAPI = {
+  getOutfitTypes: async (search = '') => {
+    const response = await api.post('/user/outfittype', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch outfit types');
+    }
+  },
+
+  saveOutfitType: async (outfitTypeData) => {
+    const response = await api.post('/user/outfittype/save', outfitTypeData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save outfit type');
+    }
+  },
+
+  saveOutfitTypeField: async (fieldData) => {
+    const response = await api.post('/user/outfittype/saveField', fieldData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save outfit type field');
+    }
+  },
+
+  deleteOutfitType: async (outfitTypeId) => {
+    const response = await api.post('/user/outfittype/delete', { outfitTypeId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete outfit type');
+    }
+  },
+};
+
 // Generic API calls
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({

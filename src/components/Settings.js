@@ -7,14 +7,15 @@ import WorkTypeModal from './WorkTypeModal.js';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { userRoleAPI, skillsAPI, workTypeAPI } from '../services/api';
+import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI } from '../services/api';
 import { FiEdit, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
 const Settings = ({ onLogout }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('measurements');
-  const [selectedOutfit, setSelectedOutfit] = useState('Salwar Kameez');
+  const [selectedOutfit, setSelectedOutfit] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [newOutfitType, setNewOutfitType] = useState('');
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldUnit, setNewFieldUnit] = useState('inch');
@@ -31,12 +32,15 @@ const Settings = ({ onLogout }) => {
   const [workTypesError, setWorkTypesError] = useState('');
   const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
   const [editingWorkType, setEditingWorkType] = useState(null);
+  const [outfitTypesLoading, setOutfitTypesLoading] = useState(false);
+  const [outfitTypesError, setOutfitTypesError] = useState('');
 
   // Fetch user roles when component mounts
   useEffect(() => {
     fetchUserRoles();
     fetchSkills();
     fetchWorkTypes();
+    fetchOutfitTypes();
   }, []);
 
   const fetchUserRoles = async () => {
@@ -108,10 +112,10 @@ const Settings = ({ onLogout }) => {
     try {
       const savedSkill = await skillsAPI.saveSkill(skillData);
       console.log('Skill saved:', savedSkill);
-      
+
       // Refresh the skills list
       await fetchSkills();
-      
+
       return savedSkill;
     } catch (err) {
       console.error('Error saving skill:', err);
@@ -148,10 +152,10 @@ const Settings = ({ onLogout }) => {
     try {
       const savedWorkType = await workTypeAPI.saveWorkType(workTypeData);
       console.log('Work type saved:', savedWorkType);
-      
+
       // Refresh the work types list
       await fetchWorkTypes();
-      
+
       return savedWorkType;
     } catch (err) {
       console.error('Error saving work type:', err);
@@ -159,124 +163,154 @@ const Settings = ({ onLogout }) => {
     }
   };
 
+  // Measurements API functions
+  const fetchOutfitTypes = async () => {
+    try {
+      setOutfitTypesLoading(true);
+      setOutfitTypesError('');
+      const outfitTypesData = await measurementsAPI.getOutfitTypes();
+      setOutfitTypes(outfitTypesData || []);
+
+      // Process categoryFields from API response
+      const processedCategoryFields = {};
+      outfitTypesData?.forEach(outfitType => {
+        if (outfitType.hasSubCategories && outfitType.subCategories) {
+          // For outfits with subcategories, combine all fields from all subcategories
+          const allFields = [];
+          outfitType.subCategories.forEach(subCategory => {
+            if (subCategory.fields) {
+              subCategory.fields.forEach((field, index) => {
+                allFields.push({
+                  id: index + 1,
+                  name: field.label,
+                  unit: field.unit,
+                  required: field.isRequired
+                });
+              });
+            }
+          });
+          processedCategoryFields[outfitType.name] = allFields;
+        } else if (outfitType.fields) {
+          // For outfits without subcategories, use direct fields
+          const directFields = outfitType.fields.map((field, index) => ({
+            id: index + 1,
+            name: field.label,
+            unit: field.unit,
+            required: field.isRequired
+          }));
+          processedCategoryFields[outfitType.name] = directFields;
+        }
+      });
+
+      setCategoryFields(processedCategoryFields);
+
+      // Set selected outfit to first available outfit if none selected
+      if (outfitTypesData && outfitTypesData.length > 0 && !selectedOutfit) {
+        const firstOutfit = outfitTypesData[0];
+        setSelectedOutfit(firstOutfit.name);
+
+        // Auto-select first subcategory if available
+        if (firstOutfit.hasSubCategories && firstOutfit.subCategories && firstOutfit.subCategories.length > 0) {
+          setSelectedSubcategory(firstOutfit.subCategories[0].name);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching outfit types:', err);
+      setOutfitTypesError(err.message || 'Failed to fetch outfit types');
+    } finally {
+      setOutfitTypesLoading(false);
+    }
+  };
+
+  const addOutfitTypeAPI = async () => {
+    if (!newOutfitType.trim()) return;
+
+    try {
+      await measurementsAPI.saveOutfitType({ name: newOutfitType.trim() });
+      setNewOutfitType('');
+      await fetchOutfitTypes();
+    } catch (err) {
+      console.error('Error adding outfit type:', err);
+      setOutfitTypesError(err.message || 'Failed to add outfit type');
+    }
+  };
+
+  const deleteOutfitTypeAPI = async (outfitTypeId) => {
+    try {
+      await measurementsAPI.deleteOutfitType(outfitTypeId);
+      await fetchOutfitTypes();
+    } catch (err) {
+      console.error('Error deleting outfit type:', err);
+      setOutfitTypesError(err.message || 'Failed to delete outfit type');
+    }
+  };
+
+  // Helper functions to get current outfit and subcategory data
+  const getCurrentOutfit = () => {
+    return outfitTypes.find(outfit => outfit.name === selectedOutfit);
+  };
+
+  const getCurrentSubcategory = () => {
+    const currentOutfit = getCurrentOutfit();
+    if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+      return currentOutfit.subCategories.find(sub => sub.name === selectedSubcategory);
+    }
+    return null;
+  };
+
+  const getCurrentFields = () => {
+    const currentSubcategory = getCurrentSubcategory();
+    if (currentSubcategory && currentSubcategory.fields) {
+      return currentSubcategory.fields.map((field, index) => ({
+        id: index + 1,
+        name: field.label,
+        unit: field.unit,
+        required: field.isRequired
+      }));
+    }
+
+    // If no subcategory selected, check for direct fields
+    const currentOutfit = getCurrentOutfit();
+    if (currentOutfit && currentOutfit.fields && !currentOutfit.hasSubCategories) {
+      return currentOutfit.fields.map((field, index) => ({
+        id: index + 1,
+        name: field.label,
+        unit: field.unit,
+        required: field.isRequired
+      }));
+    }
+
+    return [];
+  };
+
+  const handleOutfitSelect = (outfitName) => {
+    setSelectedOutfit(outfitName);
+    const outfit = outfitTypes.find(o => o.name === outfitName);
+
+    // Reset subcategory selection and auto-select first if available
+    if (outfit && outfit.hasSubCategories && outfit.subCategories && outfit.subCategories.length > 0) {
+      setSelectedSubcategory(outfit.subCategories[0].name);
+    } else {
+      setSelectedSubcategory('');
+    }
+  };
+
+  const handleSubcategorySelect = (subcategoryName) => {
+    setSelectedSubcategory(subcategoryName);
+  };
+
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
   const [draggedItemType, setDraggedItemType] = useState(null);
+  const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
+  const [draggedRollIndex, setDraggedRollIndex] = useState(null);
   const [isRollModalOpen, setIsRollModalOpen] = useState(false);
   const [editingRoll, setEditingRoll] = useState(null);
-  const [draggedRollIndex, setDraggedRollIndex] = useState(null);
   const [skills, setSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
   const [skillsError, setSkillsError] = useState('');
-
-  const [outfitTypes, setOutfitTypes] = useState([
-    {
-      id: 1,
-      name: 'Salwar Kameez',
-      subcategories: ['Classic', 'Anarkali', 'Patiala']
-    },
-    {
-      id: 2,
-      name: 'Lehenga',
-      subcategories: ['Bridal', 'Party Wear', 'Traditional']
-    },
-    {
-      id: 3,
-      name: 'Saree Blouse',
-      subcategories: ['Designer', 'Simple', 'Party']
-    },
-    {
-      id: 4,
-      name: 'Kurta',
-      subcategories: []
-    },
-    {
-      id: 5,
-      name: 'Sherwani',
-      subcategories: []
-    },
-    {
-      id: 6,
-      name: 'Chaniya Choli',
-      subcategories: []
-    },
-    {
-      id: 7,
-      name: 'Blowse',
-      subcategories: []
-    },
-    {
-      id: 8,
-      name: 'Chaniya',
-      subcategories: []
-    },
-    {
-      id: 9,
-      name: 'Gown',
-      subcategories: []
-    }
-  ]);
-
-  const [categoryFields, setCategoryFields] = useState({
-    'Salwar Kameez': [
-      { id: 1, name: 'Chest', unit: 'inch', required: false },
-      { id: 2, name: 'Waist', unit: 'inch', required: true },
-      { id: 3, name: 'Hip', unit: 'inch', required: false },
-      { id: 4, name: 'Shoulder', unit: 'inch', required: false },
-      { id: 5, name: 'Arm Length', unit: 'inch', required: false }
-    ],
-    'Lehenga': [
-      { id: 1, name: 'Waist', unit: 'inch', required: true },
-      { id: 2, name: 'Hip', unit: 'inch', required: true },
-      { id: 3, name: 'Length', unit: 'inch', required: true },
-      { id: 4, name: 'Choli Chest', unit: 'inch', required: false }
-    ],
-    'Saree Blouse': [
-      { id: 1, name: 'Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Waist', unit: 'inch', required: false },
-      { id: 3, name: 'Shoulder', unit: 'inch', required: false },
-      { id: 4, name: 'Arm Length', unit: 'inch', required: false },
-      { id: 5, name: 'Blouse Length', unit: 'inch', required: false }
-    ],
-    'Kurta': [
-      { id: 1, name: 'Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Shoulder', unit: 'inch', required: false },
-      { id: 3, name: 'Length', unit: 'inch', required: true },
-      { id: 4, name: 'Sleeve Length', unit: 'inch', required: false }
-    ],
-    'Sherwani': [
-      { id: 1, name: 'Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Waist', unit: 'inch', required: true },
-      { id: 3, name: 'Shoulder', unit: 'inch', required: false },
-      { id: 4, name: 'Length', unit: 'inch', required: true },
-      { id: 5, name: 'Arm Length', unit: 'inch', required: false }
-    ],
-    'Chaniya Choli': [
-      { id: 1, name: 'Choli Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Waist', unit: 'inch', required: true },
-      { id: 3, name: 'Hip', unit: 'inch', required: true },
-      { id: 4, name: 'Chaniya Length', unit: 'inch', required: true }
-    ],
-    'Blowse': [
-      { id: 1, name: 'Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Waist', unit: 'inch', required: false },
-      { id: 3, name: 'Shoulder', unit: 'inch', required: false },
-      { id: 4, name: 'Length', unit: 'inch', required: true },
-      { id: 5, name: 'Sleeve Length', unit: 'inch', required: false }
-    ],
-    'Chaniya': [
-      { id: 1, name: 'Waist', unit: 'inch', required: true },
-      { id: 2, name: 'Hip', unit: 'inch', required: true },
-      { id: 3, name: 'Length', unit: 'inch', required: true }
-    ],
-    'Gown': [
-      { id: 1, name: 'Chest', unit: 'inch', required: true },
-      { id: 2, name: 'Waist', unit: 'inch', required: true },
-      { id: 3, name: 'Hip', unit: 'inch', required: false },
-      { id: 4, name: 'Length', unit: 'inch', required: true },
-      { id: 5, name: 'Shoulder', unit: 'inch', required: false }
-    ]
-  });
+  const [outfitTypes, setOutfitTypes] = useState([]);
+  const [categoryFields, setCategoryFields] = useState({});
 
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
@@ -329,60 +363,203 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  const addMeasurementField = () => {
-    if (newFieldName.trim()) {
-      const currentFields = categoryFields[selectedOutfit] || [];
-      const newField = {
-        id: Math.max(...currentFields.map(f => f.id), 0) + 1,
-        name: newFieldName,
-        unit: newFieldUnit,
-        required: newFieldRequired
-      };
+  const addMeasurementField = async () => {
+    if (!newFieldName.trim()) {
+      return;
+    }
 
-      setCategoryFields(prev => ({
-        ...prev,
-        [selectedOutfit]: [...currentFields, newField]
-      }));
+    try {
+      // For outfits with subcategories, add field to selected subcategory
+      if (selectedSubcategory) {
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+          const newField = {
+            label: newFieldName.trim(),
+            unit: newFieldUnit,
+            isRequired: newFieldRequired
+          };
 
-      // Update the outfit's field count
-      setOutfitTypes(prev => prev.map(outfit =>
-        outfit.name === selectedOutfit
-          ? { ...outfit, fields: currentFields.length + 1 }
-          : outfit
-      ));
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: true,
+            subCategories: currentOutfit.subCategories.map(sub => {
+              if (sub.name === selectedSubcategory) {
+                return {
+                  name: sub.name,
+                  fields: [...(sub.fields || []), newField]
+                };
+              }
+              return sub;
+            })
+          };
 
+          // Call API to save field
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      } else {
+        // For outfits without subcategories, add field directly
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && !currentOutfit.hasSubCategories) {
+          const newField = {
+            label: newFieldName.trim(),
+            unit: newFieldUnit,
+            isRequired: newFieldRequired
+          };
+
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: false,
+            fields: [...(currentOutfit.fields || []), newField]
+          };
+
+          // Call API to save field
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      }
+
+      // Reset form
       setNewFieldName('');
       setNewFieldRequired(false);
+    } catch (err) {
+      console.error('Error adding measurement field:', err);
+      setOutfitTypesError(err.message || 'Failed to add field');
     }
   };
 
-  const deleteMeasurementField = (id) => {
-    const currentFields = categoryFields[selectedOutfit] || [];
-    const updatedFields = currentFields.filter(field => field.id !== id);
+  const deleteMeasurementField = async (id) => {
+    try {
+      // For outfits with subcategories, delete field from selected subcategory
+      if (selectedSubcategory) {
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+          const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+            if (sub.name === selectedSubcategory) {
+              const updatedFields = sub.fields.filter((field, index) => index + 1 !== id);
+              return {
+                ...sub,
+                fields: updatedFields
+              };
+            }
+            return sub;
+          });
 
-    setCategoryFields(prev => ({
-      ...prev,
-      [selectedOutfit]: updatedFields
-    }));
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: true,
+            subCategories: updatedSubcategories
+          };
 
-    // Update the outfit's field count
-    setOutfitTypes(prev => prev.map(outfit =>
-      outfit.name === selectedOutfit
-        ? { ...outfit, fields: updatedFields.length }
-        : outfit
-    ));
+          // Call API to save updated field structure
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      } else {
+        // For outfits without subcategories, delete field directly
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && !currentOutfit.hasSubCategories) {
+          const updatedFields = currentOutfit.fields.filter((field, index) => index + 1 !== id);
+
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: false,
+            fields: updatedFields
+          };
+
+          // Call API to save updated field structure
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting measurement field:', err);
+      setOutfitTypesError(err.message || 'Failed to delete field');
+    }
   };
 
-  const toggleFieldRequired = (id) => {
-    const currentFields = categoryFields[selectedOutfit] || [];
-    const updatedFields = currentFields.map(field =>
-      field.id === id ? { ...field, required: !field.required } : field
-    );
+  const toggleFieldRequired = async (id) => {
+    try {
+      // For outfits with subcategories, toggle field in selected subcategory
+      if (selectedSubcategory) {
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+          const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+            if (sub.name === selectedSubcategory) {
+              const updatedFields = sub.fields.map((field, index) => {
+                if (index + 1 === id) {
+                  return {
+                    ...field,
+                    isRequired: !field.isRequired
+                  };
+                }
+                return field;
+              });
+              return {
+                ...sub,
+                fields: updatedFields
+              };
+            }
+            return sub;
+          });
 
-    setCategoryFields(prev => ({
-      ...prev,
-      [selectedOutfit]: updatedFields
-    }));
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: true,
+            subCategories: updatedSubcategories
+          };
+
+          // Call API to save updated field structure
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      } else {
+        // For outfits without subcategories, toggle field directly
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && !currentOutfit.hasSubCategories) {
+          const updatedFields = currentOutfit.fields.map((field, index) => {
+            if (index + 1 === id) {
+              return {
+                ...field,
+                isRequired: !field.isRequired
+              };
+            }
+            return field;
+          });
+
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: false,
+            fields: updatedFields
+          };
+
+          // Call API to save updated field structure
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling field required:', err);
+      setOutfitTypesError(err.message || 'Failed to update field');
+    }
   };
 
   const handleLogout = () => {
@@ -452,16 +629,124 @@ const Settings = ({ onLogout }) => {
     }
   };
 
+  // Field-specific drag handlers
+  const handleFieldDragStart = (e, field, index) => {
+    setDraggedItem(field);
+    setDraggedItemType('measurementField');
+    setDraggedFieldIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Add visual feedback class instead of manipulating opacity
+    if (e.currentTarget) {
+      e.currentTarget.classList.add('dragging');
+    }
+  };
+
+  const handleFieldDragEnd = (e) => {
+    // Remove visual feedback class
+    if (e.currentTarget) {
+      e.currentTarget.classList.remove('dragging');
+    }
+    setDraggedItem(null);
+    setDraggedItemType(null);
+    setDraggedFieldIndex(null);
+  };
+
+  const handleFieldDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
   // Drag and drop handlers
   const handleDragStart = (e, item, type) => {
     setDraggedItem(item);
     setDraggedItemType(type);
     e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
+    
+    // Only add dragging class to the specific dragged element
+    // Check if we're dragging a field item and add class only to that element
+    if (type === 'measurementField' && e.currentTarget) {
+      e.currentTarget.classList.add('dragging');
+    }
+  };
+
+  const handleFieldUnitChange = async (fieldId, newUnit) => {
+    try {
+      // Update the field unit in the correct subcategory
+      if (selectedSubcategory) {
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+          const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+            if (sub.name === selectedSubcategory) {
+              const updatedFields = sub.fields.map((field, index) => {
+                if (index + 1 === fieldId) {
+                  return {
+                    ...field,
+                    unit: newUnit
+                  };
+                }
+                return field;
+              });
+              return {
+                ...sub,
+                fields: updatedFields
+              };
+            }
+            return sub;
+          });
+
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: true,
+            subCategories: updatedSubcategories
+          };
+
+          // Call API to save updated field unit
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+          
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      } else {
+        // For outfits without subcategories, update directly
+        const currentOutfit = getCurrentOutfit();
+        if (currentOutfit && !currentOutfit.hasSubCategories) {
+          const updatedFields = currentOutfit.fields.map((field, index) => {
+            if (index + 1 === fieldId) {
+              return {
+                ...field,
+                unit: newUnit
+              };
+            }
+            return field;
+          });
+
+          // Prepare API payload
+          const fieldData = {
+            outfitTypeId: currentOutfit._id,
+            hasSubCategories: false,
+            fields: updatedFields
+          };
+
+          // Call API to save updated field unit
+          await measurementsAPI.saveOutfitTypeField(fieldData);
+          
+          // Refresh data from API
+          await fetchOutfitTypes();
+        }
+      }
+    } catch (err) {
+      console.error('Error updating field unit:', err);
+      setOutfitTypesError(err.message || 'Failed to update field unit');
+    }
   };
 
   const handleDragEnd = (e) => {
-    e.target.style.opacity = '';
+    // Only remove dragging class from field items
+    if (draggedItemType === 'measurementField' && e.currentTarget) {
+      e.currentTarget.classList.remove('dragging');
+    }
     setDraggedItem(null);
     setDraggedItemType(null);
   };
@@ -475,14 +760,49 @@ const Settings = ({ onLogout }) => {
     e.preventDefault();
 
     if (draggedItem && draggedItemType === 'measurementField' && targetType === 'measurementField') {
-      const currentFields = categoryFields[selectedOutfit] || [];
+      const currentFields = getCurrentFields();
       const draggedIndex = currentFields.findIndex(field => field.id === draggedItem.id);
-      const targetIndex = currentFields.findIndex(field => field.id === targetItem.id);
+      const targetIdx = targetIndex !== null ? targetIndex : currentFields.findIndex(field => field.id === targetItem.id);
 
-      if (draggedIndex !== -1 && targetIndex !== -1) {
+      if (draggedIndex !== -1 && targetIdx !== -1) {
         const newFields = [...currentFields];
         const [removed] = newFields.splice(draggedIndex, 1);
-        newFields.splice(targetIndex, 0, removed);
+        newFields.splice(targetIdx, 0, removed);
+
+        // Update the field in the correct subcategory
+        if (selectedSubcategory) {
+          const currentOutfit = getCurrentOutfit();
+          if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+            const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+              if (sub.name === selectedSubcategory) {
+                return {
+                  ...sub,
+                  fields: newFields
+                };
+              }
+              return sub;
+            });
+
+            // Update outfit types with new field order
+            setOutfitTypes(prev => prev.map(outfit =>
+              outfit.name === selectedOutfit
+                ? { ...outfit, subCategories: updatedSubcategories }
+                : outfit
+            ));
+          }
+        } else {
+          // For outfits without subcategories, update directly
+          const currentOutfit = getCurrentOutfit();
+          if (currentOutfit && !currentOutfit.hasSubCategories) {
+            setOutfitTypes(prev => prev.map(outfit =>
+              outfit.name === selectedOutfit
+                ? { ...outfit, fields: newFields }
+                : outfit
+            ));
+          }
+        }
+
+        // Update category fields to reflect the change
         setCategoryFields(prev => ({
           ...prev,
           [selectedOutfit]: newFields
@@ -557,66 +877,101 @@ const Settings = ({ onLogout }) => {
             {/* Outfit Types Section */}
             <div className="content-section outfit-types-section">
               <div className="section-header">
-                <h2 className="section-title">Outfit Types</h2>
+                <h2 className="section-title">Outfit Types <span className='fields-tag'>{outfitTypes.length > 0 && outfitTypes.length <= 10 ? '0' + outfitTypes.length : outfitTypes.length} Types</span></h2>
+                <button className="add-btn" onClick={fetchOutfitTypes}><FiRefreshCw /> Refresh</button>
               </div>
 
-              <div className="add-field-container">
-                <input
-                  type="text"
-                  className="input-field measurements_input"
-                  placeholder="Enter to add Field"
-                  value={newOutfitType}
-                  onChange={(e) => setNewOutfitType(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addOutfitType()}
-                />
-                <button className="add-btn measurements_add_btn" onClick={addOutfitType}>
-                  Add
-                </button>
-              </div>
+              {outfitTypesError && (
+                <div style={{
+                  color: 'var(--alert-color)',
+                  background: 'rgba(255, 0, 0, 0.1)',
+                  padding: '12px',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(255, 0, 0, 0.2)'
+                }}>
+                  {outfitTypesError}
+                </div>
+              )}
 
-              <div className="outfit-list">
-                {outfitTypes.map(outfit => (
-                  <React.Fragment key={outfit.id}>
-                    <div
-                      className={`outfit-item ${selectedOutfit === outfit.name ? 'selected' : ''}`}
-                      onClick={() => setSelectedOutfit(outfit.name)}
-                    >
-                      <span className="outfit-name">{outfit.name}</span>
-                      <div className="outfit-content">
-                        <span className="outfit-fields-tag">{(categoryFields[outfit.name]?.length || 0).toString().padStart(2, '0')} Fields</span>
-                        <FiTrash2 className='delete-icon' onClick={(e) => {
-                          e.stopPropagation();
-                          deleteOutfitType(outfit.id);
-                        }} />
-                      </div>
-                    </div>
+              {outfitTypesLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                  Loading outfit types...
+                </div>
+              ) : (
+                <>
+                  <div className="add-field-container">
+                    <input
+                      type="text"
+                      className="input-field measurements_input"
+                      placeholder="Enter to add outfit type"
+                      value={newOutfitType}
+                      onChange={(e) => setNewOutfitType(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addOutfitTypeAPI()}
+                    />
+                    <button className="add-btn measurements_add_btn" onClick={addOutfitTypeAPI}>
+                      Add
+                    </button>
+                  </div>
 
-                    {/* Display subcategories below each outfit */}
-                    {outfit.subcategories && outfit.subcategories.length > 0 && (
-                      <div className="subcategories-list">
-                        {outfit.subcategories.map((subcategory, index) => (
-                          <div key={index} className="subcategory-item">
-                            <span className="subcategory-name">{subcategory}</span>
-                            <div className="subcategory-content">
-                              <span className="subcategory-fields-tag">05 Fields</span>
-                              <FiTrash2 className='delete-icon' onClick={(e) => {
-                                e.stopPropagation();
-                                deleteSubcategory(outfit.name, index);
-                              }} />
-                            </div>
+                  <div className="outfit-list">
+                    {outfitTypes.map(outfit => (
+                      <React.Fragment key={outfit._id || outfit.id}>
+                        <div
+                          className={`outfit-item ${selectedOutfit === outfit.name ? 'selected' : ''}`}
+                          onClick={() => handleOutfitSelect(outfit.name)}
+                        >
+                          <span className="outfit-name">{outfit.name}</span>
+                          <div className="outfit-content">
+                            <span className="outfit-fields-tag">
+                              {outfit.hasSubCategories && outfit.subCategories
+                                ? `${outfit.subCategories.length} Subcategories`
+                                : `${(outfit.fields?.length || 0)} Fields`
+                              }
+                            </span>
+                            <FiTrash2 className='delete-icon' onClick={(e) => {
+                              e.stopPropagation();
+                              deleteOutfitTypeAPI(outfit._id || outfit.id);
+                            }} />
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
+                        </div>
+
+                        {/* Display subcategories below each outfit */}
+                        {outfit.hasSubCategories && outfit.subCategories && outfit.subCategories.length > 0 && (
+                          <div className="subcategories-list">
+                            {outfit.subCategories.map((subcategory, index) => (
+                              <div
+                                key={index}
+                                className={`subcategory-item ${selectedOutfit === outfit.name && selectedSubcategory === subcategory.name ? 'selected' : ''}`}
+                                onClick={() => handleSubcategorySelect(subcategory.name)}
+                              >
+                                <span className="subcategory-name">{subcategory.name}</span>
+                                <div className="subcategory-content">
+                                  <span className="subcategory-fields-tag">{(subcategory.fields?.length || 0).toString().padStart(2, '0')} Fields</span>
+                                  <FiTrash2 className='delete-icon' onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteSubcategory(outfit.name, index);
+                                  }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Measurement Fields Section */}
             <div className="content-section">
               <div className="section-header">
-                <h2 className="section-title">{selectedOutfit} <span className='fields-tag'>{(categoryFields[selectedOutfit]?.length || 0).toString().padStart(2, '0')} Fields</span></h2>
+                <h2 className="section-title">
+                  {selectedOutfit}
+                  {selectedSubcategory && ` - ${selectedSubcategory}`}
+                  <span className='fields-tag'>{getCurrentFields().length.toString().padStart(2, '0')} Fields</span>
+                </h2>
                 <button className="add-btn" onClick={openSubcategoryModal}>+ Sub Category Add</button>
               </div>
 
@@ -654,19 +1009,19 @@ const Settings = ({ onLogout }) => {
                 </div>
 
                 <div className="field-list">
-                  {(categoryFields[selectedOutfit] || []).map(field => (
+                  {getCurrentFields().map((field, index) => (
                     <div
                       key={field.id}
                       className="field-item draggable-item"
                       draggable
-                      onDragStart={(e) => handleDragStart(e, field, 'measurementField')}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, field, 'measurementField')}
+                      onDragStart={(e) => handleFieldDragStart(e, field, index)}
+                      onDragEnd={handleFieldDragEnd}
+                      onDragOver={handleFieldDragOver}
+                      onDrop={(e) => handleDrop(e, field, 'measurementField', index)}
                     >
                       <RxDragHandleDots2 />
                       <div className="field-name">{field.name}</div>
-                      <select className="dropdown" value={field.unit}>
+                      <select className="dropdown" value={field.unit} onChange={(e) => handleFieldUnitChange(field.id, e.target.value)}>
                         <option value="inch">In</option>
                         <option value="cm">Cm</option>
                         <option value="feet">Feet</option>
@@ -691,6 +1046,7 @@ const Settings = ({ onLogout }) => {
                       </svg>
                     </div>
                   ))}
+
                 </div>
               </div>
             </div>
@@ -773,26 +1129,26 @@ const Settings = ({ onLogout }) => {
         {activeTab === 'skills' && (
           <div className="content-section">
             <div className="section-header">
-              <h2 className="section-title">Skills <span className='fields-tag'>{skills.length > 0 && skills.length <= 10 ? '0'+ skills.length : skills.length} Skills</span></h2>
+              <h2 className="section-title">Skills <span className='fields-tag'>{skills.length > 0 && skills.length <= 10 ? '0' + skills.length : skills.length} Skills</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="add-btn" onClick={fetchSkills}><FiRefreshCw /> Refresh</button>
                 <button className="add-btn" onClick={() => openSkillModal()}>Add New Skill</button>
               </div>
             </div>
-            
+
             {skillsError && (
-              <div style={{ 
-                color: 'var(--alert-color)', 
-                background: 'rgba(255, 0, 0, 0.1)', 
-                padding: '12px', 
-                borderRadius: 'var(--radius-md)', 
+              <div style={{
+                color: 'var(--alert-color)',
+                background: 'rgba(255, 0, 0, 0.1)',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
                 marginBottom: '16px',
                 border: '1px solid rgba(255, 0, 0, 0.2)'
               }}>
                 {skillsError}
               </div>
             )}
-            
+
             {skillsLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
                 Loading skills...
@@ -802,10 +1158,10 @@ const Settings = ({ onLogout }) => {
                 {skills.map((skill, index) => (
                   <div key={skill._id || index} className="roll-item">
                     <div className="roll-info">
-                        <div className="roll-name">{skill}</div>
+                      <div className="roll-name">{skill}</div>
                     </div>
                     <div className="roll-actions">
-                      <button 
+                      <button
                         className="delete-btn skills-delete"
                         onClick={() => saveSkill({ name: skill, type: 'Remove' })}
                       >
@@ -832,26 +1188,26 @@ const Settings = ({ onLogout }) => {
         {activeTab === 'worktype' && (
           <div className="content-section">
             <div className="section-header">
-              <h2 className="section-title">Work Types <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0'+ workTypes.length : workTypes.length} Work Types</span></h2>
+              <h2 className="section-title">Work Types <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0' + workTypes.length : workTypes.length} Work Types</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="add-btn" onClick={fetchWorkTypes}><FiRefreshCw /> Refresh</button>
                 <button className="add-btn" onClick={() => openWorkTypeModal()}>Add New Work Type</button>
               </div>
             </div>
-            
+
             {workTypesError && (
-              <div style={{ 
-                color: 'var(--alert-color)', 
-                background: 'rgba(255, 0, 0, 0.1)', 
-                padding: '12px', 
-                borderRadius: 'var(--radius-md)', 
+              <div style={{
+                color: 'var(--alert-color)',
+                background: 'rgba(255, 0, 0, 0.1)',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
                 marginBottom: '16px',
                 border: '1px solid rgba(255, 0, 0, 0.2)'
               }}>
                 {workTypesError}
               </div>
             )}
-            
+
             {workTypesLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
                 Loading work types...
@@ -861,10 +1217,10 @@ const Settings = ({ onLogout }) => {
                 {workTypes.map((workType, index) => (
                   <div key={workType._id || index} className="roll-item">
                     <div className="roll-info">
-                        <div className="roll-name">{workType}</div>
+                      <div className="roll-name">{workType}</div>
                     </div>
                     <div className="roll-actions">
-                      <button 
+                      <button
                         className="delete-btn skills-delete"
                         onClick={() => saveWorkType({ name: workType, type: 'Remove' })}
                       >
