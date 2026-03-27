@@ -294,7 +294,7 @@ const Settings = ({ onLogout }) => {
         }
       });
 
-      setCategoryFields(processedCategoryFields);
+      // setCategoryFields(processedCategoryFields);
 
       // Set selected outfit to first available outfit if none selected
       if (outfitTypesData && outfitTypesData.length > 0 && !selectedOutfit) {
@@ -394,8 +394,8 @@ const Settings = ({ onLogout }) => {
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
   const [draggedItemType, setDraggedItemType] = useState(null);
-  const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
   const [draggedRollIndex, setDraggedRollIndex] = useState(null);
+  // const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
   const [isRollModalOpen, setIsRollModalOpen] = useState(false);
   const [editingRoll, setEditingRoll] = useState(null);
   const [skills, setSkills] = useState([]);
@@ -404,7 +404,7 @@ const Settings = ({ onLogout }) => {
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
   const [outfitTypes, setOutfitTypes] = useState([]);
-  const [categoryFields, setCategoryFields] = useState({});
+  // const [categoryFields, setCategoryFields] = useState({});
 
   // Staff state
   const [staff, setStaff] = useState([]);
@@ -421,48 +421,6 @@ const Settings = ({ onLogout }) => {
     { id: 'staff', label: 'Staff Account' }
   ];
 
-
-
-  const addOutfitType = () => {
-    if (newOutfitType.trim()) {
-      const newOutfit = {
-        id: outfitTypes.length + 1,
-        name: newOutfitType,
-        subcategories: []
-      };
-      setOutfitTypes([...outfitTypes, newOutfit]);
-
-      // Initialize empty fields array for the new outfit type
-      setCategoryFields(prev => ({
-        ...prev,
-        [newOutfitType]: []
-      }));
-
-      setNewOutfitType('');
-    }
-  };
-
-  const deleteOutfitType = (id) => {
-    const outfitToDelete = outfitTypes.find(outfit => outfit.id === id);
-    if (outfitToDelete) {
-      setOutfitTypes(outfitTypes.filter(outfit => outfit.id !== id));
-
-      // Remove fields for the deleted outfit type
-      setCategoryFields(prev => {
-        const newFields = { ...prev };
-        delete newFields[outfitToDelete.name];
-        return newFields;
-      });
-
-      // If the deleted outfit was selected, select the first available outfit
-      if (selectedOutfit === outfitToDelete.name) {
-        const remainingOutfits = outfitTypes.filter(outfit => outfit.id !== id);
-        if (remainingOutfits.length > 0) {
-          setSelectedOutfit(remainingOutfits[0].name);
-        }
-      }
-    }
-  };
 
   const addMeasurementField = async () => {
     if (!newFieldName.trim()) {
@@ -740,47 +698,6 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  // Field-specific drag handlers
-  const handleFieldDragStart = (e, field, index) => {
-    setDraggedItem(field);
-    setDraggedItemType('measurementField');
-    setDraggedFieldIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Add visual feedback class instead of manipulating opacity
-    if (e.currentTarget) {
-      e.currentTarget.classList.add('dragging');
-    }
-  };
-
-  const handleFieldDragEnd = (e) => {
-    // Remove visual feedback class
-    if (e.currentTarget) {
-      e.currentTarget.classList.remove('dragging');
-    }
-    setDraggedItem(null);
-    setDraggedItemType(null);
-    setDraggedFieldIndex(null);
-  };
-
-  const handleFieldDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  // Drag and drop handlers
-  const handleDragStart = (e, item, type) => {
-    setDraggedItem(item);
-    setDraggedItemType(type);
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Only add dragging class to the specific dragged element
-    // Check if we're dragging a field item and add class only to that element
-    if (type === 'measurementField' && e.currentTarget) {
-      e.currentTarget.classList.add('dragging');
-    }
-  };
-
   const handleFieldUnitChange = async (fieldId, newUnit) => {
     try {
       // Update the field unit in the correct subcategory
@@ -853,19 +770,19 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  const handleDragEnd = (e) => {
-    // Only remove dragging class from field items
-    if (draggedItemType === 'measurementField' && e.currentTarget) {
-      e.currentTarget.classList.remove('dragging');
-    }
-    setDraggedItem(null);
-    setDraggedItemType(null);
-  };
+  // const handleDragEnd = (e) => {
+  //   // Only remove dragging class from field items
+  //   if (draggedItemType === 'measurementField' && e.currentTarget) {
+  //     e.currentTarget.classList.remove('dragging');
+  //   }
+  //   setDraggedItem(null);
+  //   setDraggedItemType(null);
+  // };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
+  // const handleDragOver = (e) => {
+  //   e.preventDefault();
+  //   e.dataTransfer.dropEffect = 'move';
+  // };
 
   const handleDrop = (e, targetItem, targetType, targetIndex = null) => {
     e.preventDefault();
@@ -912,12 +829,6 @@ const Settings = ({ onLogout }) => {
             ));
           }
         }
-
-        // Update category fields to reflect the change
-        setCategoryFields(prev => ({
-          ...prev,
-          [selectedOutfit]: newFields
-        }));
       }
     } else if (draggedItemType === 'roll' && targetType === 'roll' && targetIndex !== null) {
       // Handle roll reordering
@@ -935,6 +846,27 @@ const Settings = ({ onLogout }) => {
     setDraggedItem(null);
     setDraggedItemType(null);
     setDraggedRollIndex(null);
+  };
+
+  // Field-specific drag handlers
+  const handleFieldDragStart = (e, field, index) => {
+    setDraggedItem(field);
+    setDraggedItemType('measurementField');
+    // setDraggedFieldIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleFieldDragEnd = (e) => {
+    e.target.style.opacity = '';
+    setDraggedItem(null);
+    setDraggedItemType(null);
+    // setDraggedFieldIndex(null);
+  };
+
+  const handleFieldDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   // Roll-specific drag handlers
@@ -1273,9 +1205,9 @@ const Settings = ({ onLogout }) => {
                       >
                         <FiEdit />
                       </button>
-                      {/* <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)}>
+                      <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)} title="Delete Staff">
                         <FiX />
-                      </button> */}
+                      </button>
                     </div>
                   </div>
                 ))}
