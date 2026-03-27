@@ -224,6 +224,23 @@ const Settings = ({ onLogout }) => {
     }
   };
 
+  const deleteStaff = async (staffId) => {
+    try {
+      console.log('Settings - Deleting staff with ID:', staffId);
+      
+      const deletedStaff = await staffAPI.deleteStaff(staffId);
+      console.log('Staff deleted:', deletedStaff);
+      
+      // Refresh the staff list
+      await fetchStaff();
+      
+      return deletedStaff;
+    } catch (err) {
+      console.error('Error deleting staff:', err);
+      throw err;
+    }
+  };
+
   // Staff modal functions
   const openStaffModal = () => {
     setIsStaffModalOpen(true);
@@ -1256,9 +1273,9 @@ const Settings = ({ onLogout }) => {
                       >
                         <FiEdit />
                       </button>
-                      <button className="delete-btn skills-delete" onClick={() => saveStaff({ staffId: staffMember._id, type: 'Remove' })}>
+                      {/* <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)}>
                         <FiX />
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 ))}
