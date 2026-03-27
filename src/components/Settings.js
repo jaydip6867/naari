@@ -40,7 +40,7 @@ const Settings = ({ onLogout }) => {
     fetchOutfitTypes();
     fetchStaff();
     fetchRoles();
-  }, [fetchOutfitTypes]); // Added missing dependency
+  }, []); // Removed circular dependency
 
   const fetchUserRoles = async () => {
     try {
