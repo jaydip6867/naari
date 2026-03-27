@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiSave } from 'react-icons/fi';
+import '../styles.css';
 
 const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
   const [staffData, setStaffData] = useState({

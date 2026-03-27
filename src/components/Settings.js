@@ -19,20 +19,16 @@ const Settings = ({ onLogout }) => {
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [newOutfitType, setNewOutfitType] = useState('');
   const [newFieldName, setNewFieldName] = useState('');
-  const [newFieldUnit, setNewFieldUnit] = useState('inch');
-  const [newFieldRequired, setNewFieldRequired] = useState(false);
-  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
-  const [userRoles, setUserRoles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  // const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  // const [editingRole, setEditingRole] = useState(null);
-  const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
-  const [editingSkill, setEditingSkill] = useState(null);
-  const [workTypes, setWorkTypes] = useState([]);
-  const [workTypesLoading, setWorkTypesLoading] = useState(false);
-  const [workTypesError, setWorkTypesError] = useState('');
-  const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
-  const [editingWorkType, setEditingWorkType] = useState(null);
+  const [newFieldUnit, setNewFieldUnit] = useState('cm');
+  const [newFieldRequired, setNewFieldRequired] = useState(true);
+  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(true);
+  const [userRoles, setUserRoles] = useState(['admin', 'user']);
+  const [loading, setLoading] = useState(true);
+  const [workTypes, setWorkTypes] = useState(['type1', 'type2']);
+  const [workTypesLoading, setWorkTypesLoading] = useState(true);
+  const [workTypesError, setWorkTypesError] = useState('Error message');
+  const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(true);
+  const [editingWorkType, setEditingWorkType] = useState('type1');
   const [outfitTypesLoading, setOutfitTypesLoading] = useState(false);
   const [outfitTypesError, setOutfitTypesError] = useState('');
 
@@ -44,7 +40,7 @@ const Settings = ({ onLogout }) => {
     fetchOutfitTypes();
     fetchStaff();
     fetchRoles();
-  }, []);
+  }, [fetchOutfitTypes]); // Added missing dependency
 
   const fetchUserRoles = async () => {
     try {
@@ -388,6 +384,8 @@ const Settings = ({ onLogout }) => {
   const [skills, setSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
   const [skillsError, setSkillsError] = useState('');
+  const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
+  const [editingSkill, setEditingSkill] = useState(null);
   const [outfitTypes, setOutfitTypes] = useState([]);
   const [categoryFields, setCategoryFields] = useState({});
 
