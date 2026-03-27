@@ -21,14 +21,14 @@ const Settings = ({ onLogout }) => {
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldUnit, setNewFieldUnit] = useState('cm');
   const [newFieldRequired, setNewFieldRequired] = useState(true);
-  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(true);
-  const [userRoles, setUserRoles] = useState(['admin', 'user']);
-  const [loading, setLoading] = useState(true);
-  const [workTypes, setWorkTypes] = useState(['type1', 'type2']);
-  const [workTypesLoading, setWorkTypesLoading] = useState(true);
-  const [workTypesError, setWorkTypesError] = useState('Error message');
-  const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(true);
-  const [editingWorkType, setEditingWorkType] = useState('type1');
+  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
+  const [userRoles, setUserRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [workTypes, setWorkTypes] = useState([]);
+  const [workTypesLoading, setWorkTypesLoading] = useState(false);
+  const [workTypesError, setWorkTypesError] = useState('');
+  const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
+  const [editingWorkType, setEditingWorkType] = useState(null);
   const [outfitTypesLoading, setOutfitTypesLoading] = useState(false);
   const [outfitTypesError, setOutfitTypesError] = useState('');
 
@@ -1245,7 +1245,7 @@ const Settings = ({ onLogout }) => {
                     <div className="roll-info">
                       <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
                       <div className="roll-details">
-                        <span className="roll-role">- {staffMember.roleid?.name || ''}</span>
+                        <span className="roll-role theme-color">- {staffMember.roleid?.name || ''}</span>
                       </div>
                     </div>
                     <div className="roll-actions">

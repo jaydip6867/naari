@@ -84,6 +84,9 @@ body {
   padding: 0;
   font-family: var(--font-primary);
 }
+.theme-color{
+  color: var(--primary-color) !important;
+}
 
 /* ========================================
    LOGIN PAGE STYLES
@@ -810,7 +813,6 @@ body {
 }
 
 .roll-name {
-  font-weight: 600;
   color: #1f2937;
   font-size: 16px;
 }
