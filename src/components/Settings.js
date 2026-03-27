@@ -4,10 +4,11 @@ import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
 import SkillModal from './SkillModal.js';
 import WorkTypeModal from './WorkTypeModal.js';
+import StaffModal from './StaffModal.js';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI } from '../services/api';
+import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI, staffAPI } from '../services/api';
 import { FiEdit, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
@@ -41,6 +42,8 @@ const Settings = ({ onLogout }) => {
     fetchSkills();
     fetchWorkTypes();
     fetchOutfitTypes();
+    fetchStaff();
+    fetchRoles();
   }, []);
 
   const fetchUserRoles = async () => {
@@ -164,6 +167,82 @@ const Settings = ({ onLogout }) => {
   };
 
   // Measurements API functions
+  // Staff API functions
+  const fetchRoles = async () => {
+    try {
+      const roles = await userRoleAPI.listRoles();
+      console.log('Roles fetched:', roles);
+      return roles;
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      return [];
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      setStaffLoading(true);
+      setStaffError('');
+      const staffData = await staffAPI.getStaffList();
+      
+      // Handle different API response structures
+      let staffList = [];
+      if (Array.isArray(staffData)) {
+        staffList = staffData;
+      } else if (staffData && Array.isArray(staffData.data)) {
+        staffList = staffData.data;
+      } else if (staffData && Array.isArray(staffData.staffList)) {
+        staffList = staffData.staffList;
+      } else if (staffData && typeof staffData === 'object') {
+        // Try to find array in the response object
+        staffList = Object.values(staffData).find(Array.isArray) || [];
+      }
+      
+      console.log('Staff data received:', staffData);
+      console.log('Staff list extracted:', staffList);
+      
+      setStaff(staffList);
+    } catch (err) {
+      console.error('Error fetching staff:', err);
+      setStaffError(err.message || 'Failed to fetch staff');
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const saveStaff = async (staffData) => {
+    try {
+      console.log('Settings - Received staff data:', staffData);
+      console.log('Settings - staffId in received data:', staffData.staffId);
+      
+      const savedStaff = await staffAPI.saveStaff(staffData);
+      console.log('Staff saved:', savedStaff);
+      
+      // Refresh the staff list
+      await fetchStaff();
+      
+      return savedStaff;
+    } catch (err) {
+      console.error('Error saving staff:', err);
+      throw err;
+    }
+  };
+
+  // Staff modal functions
+  const openStaffModal = () => {
+    setIsStaffModalOpen(true);
+  };
+
+  const openEditStaffModal = (staffMember) => {
+    setEditingStaff(staffMember);
+    setIsStaffModalOpen(true);
+  };
+
+  const closeStaffModal = () => {
+    setIsStaffModalOpen(false);
+    setEditingStaff(null);
+  };
+
   const fetchOutfitTypes = async () => {
     try {
       setOutfitTypesLoading(true);
@@ -311,6 +390,13 @@ const Settings = ({ onLogout }) => {
   const [skillsError, setSkillsError] = useState('');
   const [outfitTypes, setOutfitTypes] = useState([]);
   const [categoryFields, setCategoryFields] = useState({});
+
+  // Staff state
+  const [staff, setStaff] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState('');
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
 
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
@@ -576,17 +662,27 @@ const Settings = ({ onLogout }) => {
     setIsSubcategoryModalOpen(false);
   };
 
-  const deleteSubcategory = (outfitName, subcategoryIndex) => {
-    setOutfitTypes(prevOutfits =>
-      prevOutfits.map(outfit =>
-        outfit.name === outfitName
-          ? {
-            ...outfit,
-            subcategories: outfit.subcategories.filter((_, index) => index !== subcategoryIndex)
-          }
-          : outfit
-      )
-    );
+  const deleteSubcategory = async (outfitName, subcategoryIndex) => {
+    try {
+      const outfit = outfitTypes.find(o => o.name === outfitName);
+      if (outfit && outfit.subCategories && outfit.subCategories[subcategoryIndex]) {
+        const subcategoryToDelete = outfit.subCategories[subcategoryIndex].name;
+        
+        // Call API to delete subcategory
+        await measurementsAPI.deleteSubcategory(outfit._id, subcategoryToDelete);
+        
+        // Refresh data from API
+        await fetchOutfitTypes();
+        
+        // If the deleted subcategory was selected, clear selection
+        if (selectedSubcategory === subcategoryToDelete) {
+          setSelectedSubcategory(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting subcategory:', err);
+      setOutfitTypesError(err.message || 'Failed to delete subcategory');
+    }
   };
 
   const saveSubcategory = (subcategoryName) => {
@@ -877,8 +973,8 @@ const Settings = ({ onLogout }) => {
             {/* Outfit Types Section */}
             <div className="content-section outfit-types-section">
               <div className="section-header">
-                <h2 className="section-title">Outfit Types <span className='fields-tag'>{outfitTypes.length > 0 && outfitTypes.length <= 10 ? '0' + outfitTypes.length : outfitTypes.length} Types</span></h2>
-                <button className="add-btn" onClick={fetchOutfitTypes}><FiRefreshCw /> Refresh</button>
+                <h2 className="section-title">Outfit Types</h2>
+                {/* <button className="add-btn" onClick={fetchOutfitTypes}><FiRefreshCw /></button> */}
               </div>
 
               {outfitTypesError && (
@@ -1118,10 +1214,65 @@ const Settings = ({ onLogout }) => {
           </div>
         )}
 
-        {activeTab !== 'measurements' && activeTab !== 'rolls' && activeTab !== 'skills' && activeTab !== 'worktype' && activeTab !== 'staff' && (
+        {/* Staff Account Tab */}
+        {activeTab === 'staff' && (
           <div className="content-section">
-            <h2 className="section-title">{tabs.find(tab => tab.id === activeTab)?.label}</h2>
-            <p style={{ color: '#6b7280' }}>Content for {tabs.find(tab => tab.id === activeTab)?.label} will be implemented here.</p>
+            <div className="section-header">
+              <h2 className="section-title">Staff Account</h2>
+              <button className="add-btn" onClick={fetchStaff}><FiRefreshCw /> Refresh</button>
+              <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
+            </div>
+
+            {staffError && (
+              <div style={{
+                color: 'var(--alert-color)',
+                background: 'rgba(255, 0, 0, 0.1)',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '16px',
+                border: '1px solid rgba(255, 0, 0, 0.2)'
+              }}>
+                {staffError}
+              </div>
+            )}
+
+            {staffLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                Loading staff...
+              </div>
+            ) : Array.isArray(staff) && staff.length > 0 ? (
+              <div className="roll-list">
+                {staff.map((staffMember, index) => (
+                  <div key={staffMember._id || index} className="roll-item">
+                    <div className="roll-info">
+                      <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
+                      <div className="roll-details">
+                        <span className="roll-role">- {staffMember.roleid?.name || ''}</span>
+                      </div>
+                    </div>
+                    <div className="roll-actions">
+                      <button 
+                        className="edit-btn" 
+                        onClick={() => openEditStaffModal(staffMember)}
+                        title="Edit Staff"
+                      >
+                        <FiEdit />
+                      </button>
+                      <button className="delete-btn skills-delete" onClick={() => saveStaff({ staffId: staffMember._id, type: 'Remove' })}>
+                        <FiX />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <p>No staff members found.</p>
+                  <button className="add-btn" onClick={openStaffModal}>+ Add Your First Staff Member</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1274,6 +1425,15 @@ const Settings = ({ onLogout }) => {
           editingWorkType={editingWorkType}
         />
       </div>
+
+      {/* Staff Modal */}
+      <StaffModal
+        isOpen={isStaffModalOpen}
+        onClose={closeStaffModal}
+        onSave={saveStaff}
+        editingStaff={editingStaff}
+        userRoles={userRoles}
+      />
     </div>
   );
 };

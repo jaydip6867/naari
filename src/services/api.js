@@ -170,6 +170,101 @@ export const measurementsAPI = {
       throw new Error(response.data.Message || 'Failed to delete outfit type');
     }
   },
+
+  deleteSubcategory: async (outfitTypeId, subcategoryName) => {
+    const response = await api.post('/user/outfittype/deleteSubCategory', { outfitTypeId, name: subcategoryName });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete subcategory');
+    }
+  },
+
+  // Staff API calls
+  saveStaff: async (staffData) => {
+    const response = await api.post('/user/staff/save', staffData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save staff');
+    }
+  },
+
+  getStaffList: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      console.log(response.data.Data);
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffById: async (staffId) => {
+    const response = await api.post('/user/staff/getone', { staffId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  },
+};
+
+// Staff API export
+export const staffAPI = {
+  saveStaff: async (staffData) => {
+    const response = await api.post('/user/staff/save', staffData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save staff');
+    }
+  },
+
+  getStaffList: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffById: async (staffId) => {
+    const response = await api.post('/user/staff/getone', { staffId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  }
 };
 
 // Generic API calls
