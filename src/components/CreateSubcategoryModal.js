@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../styles.css';
 
-const CreateSubcategoryModal = ({ isOpen, onClose, onSave }) => {
+const CreateSubcategoryModal = ({ isOpen, onClose, onSave, outfitTypeId }) => {
   const [subcategoryName, setSubcategoryName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -15,7 +15,7 @@ const CreateSubcategoryModal = ({ isOpen, onClose, onSave }) => {
     setIsSubmitting(true);
     
     try {
-      await onSave(subcategoryName.trim());
+      await onSave(subcategoryName.trim(), outfitTypeId);
       setSubcategoryName('');
       onClose();
     } catch (error) {

@@ -785,7 +785,6 @@ body {
   border: 1px solid var(--light-gray-color);
   border-radius: 8px;
   transition: all 0.2s;
-  margin-bottom: 12px;
 }
 .modal-error{
   color: var(--alert-color);
@@ -940,10 +939,7 @@ body {
   cursor: move;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  margin-bottom: 12px;
-  /* position: sticky; */
-  /* top: 20px; */
-  /* z-index: 5; */
+  margin-bottom: 4px;
 }
 
 .field-item:hover {
@@ -1158,6 +1154,10 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.roll-list .roll-item{
+    margin-bottom: 12px;
+  }
 
 /* ========================================
    ROLL MODAL SPECIFIC STYLES
@@ -1689,7 +1689,7 @@ body {
   .field-name {
     flex: 1 1 100%;
   }
-  
+
   .roll-item {
     flex-direction: row;
     /* align-items: flex-start; */

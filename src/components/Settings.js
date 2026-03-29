@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
@@ -9,12 +9,13 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI, staffAPI } from '../services/api';
-import { FiEdit, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
 const Settings = ({ onLogout }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('measurements');
+  const [visitedTabs, setVisitedTabs] = useState(new Set(['measurements'])); // Track which tabs have been visited
   const [selectedOutfit, setSelectedOutfit] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [newOutfitType, setNewOutfitType] = useState('');
@@ -29,18 +30,71 @@ const Settings = ({ onLogout }) => {
   const [workTypesError, setWorkTypesError] = useState('');
   const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
   const [editingWorkType, setEditingWorkType] = useState(null);
-  const [outfitTypesLoading, setOutfitTypesLoading] = useState(false);
-  const [outfitTypesError, setOutfitTypesError] = useState('');
 
-  // Fetch user roles when component mounts
+  // Outfit Types API function - defined before useEffect to avoid hoisting issues
+  const fetchOutfitTypes = useCallback(async () => {
+    try {
+      setOutfitTypesLoading(true);
+      setOutfitTypesError('');
+      const outfitTypesData = await measurementsAPI.getOutfitTypes();
+      setOutfitTypes(outfitTypesData || []);
+
+      // Set selected outfit to first available outfit if none selected
+      if (outfitTypesData && outfitTypesData.length > 0 && !selectedOutfit) {
+        const firstOutfit = outfitTypesData[0];
+        setSelectedOutfit(firstOutfit.name);
+
+        // Auto-select first subcategory if available
+        if (firstOutfit.hasSubCategories && firstOutfit.subCategories && firstOutfit.subCategories.length > 0) {
+          setSelectedSubcategory(firstOutfit.subCategories[0].name);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching outfit types:', err);
+      setOutfitTypesError(err.message || 'Failed to fetch outfit types');
+    } finally {
+      setOutfitTypesLoading(false);
+    }
+  }, [selectedOutfit]);
+
+  // Fetch data only when a tab becomes active for the first time
+  const handleTabChange = (tabId) => {
+    if (tabId === activeTab) return; // Don't do anything if clicking the same tab
+    
+    setActiveTab(tabId);
+    
+    // Only fetch data if this tab hasn't been visited before
+    if (!visitedTabs.has(tabId)) {
+      setVisitedTabs(prev => new Set(prev).add(tabId));
+      
+      // Fetch data based on the tab
+      switch (tabId) {
+        case 'measurements':
+          fetchOutfitTypes();
+          break;
+        case 'rolls':
+          fetchUserRoles();
+          break;
+        case 'skills':
+          fetchSkills();
+          break;
+        case 'worktype':
+          fetchWorkTypes();
+          break;
+        case 'staff':
+          fetchStaff();
+          fetchRoles();
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  // Initial fetch only for the default active tab (measurements)
   useEffect(() => {
-    fetchUserRoles();
-    fetchSkills();
-    fetchWorkTypes();
     fetchOutfitTypes();
-    fetchStaff();
-    fetchRoles();
-  }, []); // Removed circular dependency
+  }, [fetchOutfitTypes]);
 
   const fetchUserRoles = async () => {
     try {
@@ -110,7 +164,7 @@ const Settings = ({ onLogout }) => {
   const saveSkill = async (skillData) => {
     try {
       const savedSkill = await skillsAPI.saveSkill(skillData);
-      console.log('Skill saved:', savedSkill);
+      // console.log('Skill saved:', savedSkill);
 
       // Refresh the skills list
       await fetchSkills();
@@ -150,7 +204,7 @@ const Settings = ({ onLogout }) => {
   const saveWorkType = async (workTypeData) => {
     try {
       const savedWorkType = await workTypeAPI.saveWorkType(workTypeData);
-      console.log('Work type saved:', savedWorkType);
+      // console.log('Work type saved:', savedWorkType);
 
       // Refresh the work types list
       await fetchWorkTypes();
@@ -167,7 +221,7 @@ const Settings = ({ onLogout }) => {
   const fetchRoles = async () => {
     try {
       const roles = await userRoleAPI.listRoles();
-      console.log('Roles fetched:', roles);
+      // console.log('Roles fetched:', roles);
       return roles;
     } catch (err) {
       console.error('Error fetching roles:', err);
@@ -194,8 +248,8 @@ const Settings = ({ onLogout }) => {
         staffList = Object.values(staffData).find(Array.isArray) || [];
       }
       
-      console.log('Staff data received:', staffData);
-      console.log('Staff list extracted:', staffList);
+      // console.log('Staff data received:', staffData);
+      // console.log('Staff list extracted:', staffList);
       
       setStaff(staffList);
     } catch (err) {
@@ -208,11 +262,11 @@ const Settings = ({ onLogout }) => {
 
   const saveStaff = async (staffData) => {
     try {
-      console.log('Settings - Received staff data:', staffData);
-      console.log('Settings - staffId in received data:', staffData.staffId);
+      // console.log('Settings - Received staff data:', staffData);
+      // console.log('Settings - staffId in received data:', staffData.staffId);
       
       const savedStaff = await staffAPI.saveStaff(staffData);
-      console.log('Staff saved:', savedStaff);
+      // console.log('Staff saved:', savedStaff);
       
       // Refresh the staff list
       await fetchStaff();
@@ -226,10 +280,10 @@ const Settings = ({ onLogout }) => {
 
   const deleteStaff = async (staffId) => {
     try {
-      console.log('Settings - Deleting staff with ID:', staffId);
+      // console.log('Settings - Deleting staff with ID:', staffId);
       
       const deletedStaff = await staffAPI.deleteStaff(staffId);
-      console.log('Staff deleted:', deletedStaff);
+      // console.log('Staff deleted:', deletedStaff);
       
       // Refresh the staff list
       await fetchStaff();
@@ -254,64 +308,6 @@ const Settings = ({ onLogout }) => {
   const closeStaffModal = () => {
     setIsStaffModalOpen(false);
     setEditingStaff(null);
-  };
-
-  const fetchOutfitTypes = async () => {
-    try {
-      setOutfitTypesLoading(true);
-      setOutfitTypesError('');
-      const outfitTypesData = await measurementsAPI.getOutfitTypes();
-      setOutfitTypes(outfitTypesData || []);
-
-      // Process categoryFields from API response
-      const processedCategoryFields = {};
-      outfitTypesData?.forEach(outfitType => {
-        if (outfitType.hasSubCategories && outfitType.subCategories) {
-          // For outfits with subcategories, combine all fields from all subcategories
-          const allFields = [];
-          outfitType.subCategories.forEach(subCategory => {
-            if (subCategory.fields) {
-              subCategory.fields.forEach((field, index) => {
-                allFields.push({
-                  id: index + 1,
-                  name: field.label,
-                  unit: field.unit,
-                  required: field.isRequired
-                });
-              });
-            }
-          });
-          processedCategoryFields[outfitType.name] = allFields;
-        } else if (outfitType.fields) {
-          // For outfits without subcategories, use direct fields
-          const directFields = outfitType.fields.map((field, index) => ({
-            id: index + 1,
-            name: field.label,
-            unit: field.unit,
-            required: field.isRequired
-          }));
-          processedCategoryFields[outfitType.name] = directFields;
-        }
-      });
-
-      // setCategoryFields(processedCategoryFields);
-
-      // Set selected outfit to first available outfit if none selected
-      if (outfitTypesData && outfitTypesData.length > 0 && !selectedOutfit) {
-        const firstOutfit = outfitTypesData[0];
-        setSelectedOutfit(firstOutfit.name);
-
-        // Auto-select first subcategory if available
-        if (firstOutfit.hasSubCategories && firstOutfit.subCategories && firstOutfit.subCategories.length > 0) {
-          setSelectedSubcategory(firstOutfit.subCategories[0].name);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching outfit types:', err);
-      setOutfitTypesError(err.message || 'Failed to fetch outfit types');
-    } finally {
-      setOutfitTypesLoading(false);
-    }
   };
 
   const addOutfitTypeAPI = async () => {
@@ -404,7 +400,21 @@ const Settings = ({ onLogout }) => {
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
   const [outfitTypes, setOutfitTypes] = useState([]);
-  // const [categoryFields, setCategoryFields] = useState({});
+  const [outfitTypesLoading, setOutfitTypesLoading] = useState(false);
+  const [outfitTypesError, setOutfitTypesError] = useState('');
+
+  // Separate state for measurement tab field items (for drag functionality)
+  const [fieldItems, setFieldItems] = useState([]);
+
+  // Sync fieldItems with current fields when outfit/subcategory changes
+  // Note: outfitTypes is included so fieldItems updates after add/delete operations
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeTab === 'measurements') {
+      const currentFields = getCurrentFields();
+      setFieldItems(currentFields);
+    }
+  }, [selectedOutfit, selectedSubcategory, outfitTypes, activeTab]);
 
   // Staff state
   const [staff, setStaff] = useState([]);
@@ -658,17 +668,42 @@ const Settings = ({ onLogout }) => {
     }
   };
 
-  const saveSubcategory = (subcategoryName) => {
-    // Add the subcategory to the selected outfit
-    setOutfitTypes(prevOutfits =>
-      prevOutfits.map(outfit =>
-        outfit.name === selectedOutfit
-          ? { ...outfit, subcategories: [...(outfit.subcategories || []), subcategoryName] }
-          : outfit
-      )
-    );
-    console.log('Saving subcategory:', subcategoryName, 'to', selectedOutfit);
-    return Promise.resolve();
+  const saveSubcategory = async (subcategoryName, outfitTypeId) => {
+    try {
+      // Use passed outfitTypeId or fall back to current outfit
+      const currentOutfit = outfitTypeId 
+        ? outfitTypes.find(o => o._id === outfitTypeId)
+        : getCurrentOutfit();
+        
+      if (!currentOutfit) {
+        console.error('No outfit selected');
+        return;
+      }
+
+      // Prepare subcategories array with the new one added
+      const updatedSubCategories = [
+        ...(currentOutfit.subCategories || []),
+        { name: subcategoryName, fields: [] }
+      ];
+
+      // Save to API
+      await measurementsAPI.saveOutfitTypeField({
+        outfitTypeId: currentOutfit._id,
+        hasSubCategories: true,
+        subCategories: updatedSubCategories
+      });
+
+      // Refresh data from API
+      await fetchOutfitTypes();
+
+      // Auto-select the newly created subcategory
+      setSelectedSubcategory(subcategoryName);
+
+      console.log('Subcategory saved:', subcategoryName, 'to', selectedOutfit);
+    } catch (err) {
+      console.error('Error saving subcategory:', err);
+      setOutfitTypesError(err.message || 'Failed to save subcategory');
+    }
   };
 
   // Roll management functions
@@ -685,7 +720,7 @@ const Settings = ({ onLogout }) => {
   const saveRoll = async (rollData) => {
     try {
       const savedRoll = await userRoleAPI.saveRole(rollData);
-      console.log('Roll saved:', savedRoll);
+      // console.log('Roll saved:', savedRoll);
 
       // Refresh the roles list
       await fetchUserRoles();
@@ -784,54 +819,64 @@ const Settings = ({ onLogout }) => {
   //   e.dataTransfer.dropEffect = 'move';
   // };
 
-  const handleDrop = (e, targetItem, targetType, targetIndex = null) => {
+  const handleDrop = async (e, targetItem, targetType, targetIndex = null) => {
     e.preventDefault();
 
     if (draggedItem && draggedItemType === 'measurementField' && targetType === 'measurementField') {
-      const currentFields = getCurrentFields();
-      const draggedIndex = currentFields.findIndex(field => field.id === draggedItem.id);
-      const targetIdx = targetIndex !== null ? targetIndex : currentFields.findIndex(field => field.id === targetItem.id);
+      const draggedIndex = fieldItems.findIndex(field => field.id === draggedItem.id);
+      const targetIdx = targetIndex !== null ? targetIndex : fieldItems.findIndex(field => field.id === targetItem.id);
 
-      if (draggedIndex !== -1 && targetIdx !== -1) {
-        const newFields = [...currentFields];
+      if (draggedIndex !== -1 && targetIdx !== -1 && draggedIndex !== targetIdx) {
+        // Reorder fieldItems state for immediate UI feedback
+        const newFields = [...fieldItems];
         const [removed] = newFields.splice(draggedIndex, 1);
         newFields.splice(targetIdx, 0, removed);
+        setFieldItems(newFields);
 
-        // Update the field in the correct subcategory
-        if (selectedSubcategory) {
-          const currentOutfit = getCurrentOutfit();
-          if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
-            const updatedSubcategories = currentOutfit.subCategories.map(sub => {
-              if (sub.name === selectedSubcategory) {
-                return {
-                  ...sub,
-                  fields: newFields
-                };
-              }
-              return sub;
-            });
+        // Convert back to API format and persist
+        const apiFields = newFields.map(field => ({
+          label: field.name,
+          unit: field.unit,
+          isRequired: field.required
+        }));
 
-            // Update outfit types with new field order
-            setOutfitTypes(prev => prev.map(outfit =>
-              outfit.name === selectedOutfit
-                ? { ...outfit, subCategories: updatedSubcategories }
-                : outfit
-            ));
-          }
-        } else {
-          // For outfits without subcategories, update directly
+        try {
           const currentOutfit = getCurrentOutfit();
-          if (currentOutfit && !currentOutfit.hasSubCategories) {
-            setOutfitTypes(prev => prev.map(outfit =>
-              outfit.name === selectedOutfit
-                ? { ...outfit, fields: newFields }
-                : outfit
-            ));
+          if (!currentOutfit) return;
+
+          if (selectedSubcategory) {
+            // Update subcategory fields
+            if (currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+              const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+                if (sub.name === selectedSubcategory) {
+                  return { ...sub, fields: apiFields };
+                }
+                return sub;
+              });
+
+              await measurementsAPI.saveOutfitTypeField({
+                outfitTypeId: currentOutfit._id,
+                hasSubCategories: true,
+                subCategories: updatedSubcategories
+              });
+            }
+          } else {
+            // Update outfit-level fields
+            if (!currentOutfit.hasSubCategories) {
+              await measurementsAPI.saveOutfitTypeField({
+                outfitTypeId: currentOutfit._id,
+                hasSubCategories: false,
+                fields: apiFields
+              });
+            }
           }
+          // Note: No fetchOutfitTypes() call here to prevent unnecessary API calls during drag
+        } catch (err) {
+          console.error('Error saving reordered fields:', err);
+          setFieldItems(getCurrentFields());
         }
       }
     } else if (draggedItemType === 'roll' && targetType === 'roll' && targetIndex !== null) {
-      // Handle roll reordering
       const newRolls = [...userRoles];
       const draggedIdx = draggedRollIndex;
 
@@ -842,26 +887,43 @@ const Settings = ({ onLogout }) => {
       }
     }
 
-    // Reset drag state
     setDraggedItem(null);
     setDraggedItemType(null);
     setDraggedRollIndex(null);
   };
 
+  // Remove field-specific drag handlers (no longer needed)
+  // const handleFieldDragStart = (e, field, index) => {
+  //   setDraggedItem(field);
+  //   setDraggedItemType('measurementField');
+  //   setDraggedFieldIndex(index);
+  //   e.dataTransfer.effectAllowed = 'move';
+  //   e.target.style.opacity = '0.5';
+  // };
+
+  // const handleFieldDragEnd = (e) => {
+  //   e.target.style.opacity = '';
+  //   setDraggedItem(null);
+  //   setDraggedItemType(null);
+  //   setDraggedFieldIndex(null);
+  // };
+
+  // const handleFieldDragOver = (e) => {
+  //   e.preventDefault();
+  //   e.dataTransfer.dropEffect = 'move';
+  // };
+
   // Field-specific drag handlers
   const handleFieldDragStart = (e, field, index) => {
     setDraggedItem(field);
     setDraggedItemType('measurementField');
-    // setDraggedFieldIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
+    e.dataTransfer.setData('text/plain', JSON.stringify(field));
   };
 
   const handleFieldDragEnd = (e) => {
-    e.target.style.opacity = '';
     setDraggedItem(null);
     setDraggedItemType(null);
-    // setDraggedFieldIndex(null);
   };
 
   const handleFieldDragOver = (e) => {
@@ -907,7 +969,7 @@ const Settings = ({ onLogout }) => {
             <button
               key={tab.id}
               className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
             >
               {tab.label}
             </button>
@@ -1013,7 +1075,7 @@ const Settings = ({ onLogout }) => {
                 <h2 className="section-title">
                   {selectedOutfit}
                   {selectedSubcategory && ` - ${selectedSubcategory}`}
-                  <span className='fields-tag'>{getCurrentFields().length.toString().padStart(2, '0')} Fields</span>
+                  <span className='fields-tag'>{fieldItems.length.toString().padStart(2, '0')} Fields</span>
                 </h2>
                 <button className="add-btn" onClick={openSubcategoryModal}>+ Sub Category Add</button>
               </div>
@@ -1052,17 +1114,17 @@ const Settings = ({ onLogout }) => {
                 </div>
 
                 <div className="field-list">
-                  {getCurrentFields().map((field, index) => (
+                  {fieldItems.map((field, index) => (
                     <div
                       key={field.id}
-                      className="field-item draggable-item"
+                      className={`field-item draggable-item ${draggedItem?.id === field.id && draggedItemType === 'measurementField' ? 'dragging' : ''}`}
                       draggable
                       onDragStart={(e) => handleFieldDragStart(e, field, index)}
                       onDragEnd={handleFieldDragEnd}
                       onDragOver={handleFieldDragOver}
                       onDrop={(e) => handleDrop(e, field, 'measurementField', index)}
                     >
-                      <RxDragHandleDots2 />
+                      <RxDragHandleDots2 className="drag-handle" />
                       <div className="field-name">{field.name}</div>
                       <select className="dropdown" value={field.unit} onChange={(e) => handleFieldUnitChange(field.id, e.target.value)}>
                         <option value="inch">In</option>
@@ -1102,8 +1164,8 @@ const Settings = ({ onLogout }) => {
             <div className="section-header">
               <h2 className="section-title">Worker Rolls <span className='fields-tag'>{userRoles.length} Rolls</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="add-btn" onClick={fetchUserRoles}><FiRefreshCw /> Refresh</button>
-                <button className="add-btn" onClick={() => openRollModal()}>Add New Roll</button>
+                {/* <button className="add-btn" onClick={fetchUserRoles}><FiRefreshCw /> Refresh</button> */}
+                <button className="add-btn" onClick={() => openRollModal()}>+ Add New Roll</button>
               </div>
             </div>
 
@@ -1166,8 +1228,10 @@ const Settings = ({ onLogout }) => {
           <div className="content-section">
             <div className="section-header">
               <h2 className="section-title">Staff Account</h2>
-              <button className="add-btn" onClick={fetchStaff}><FiRefreshCw /> Refresh</button>
-              <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
+              <div style={{display:'flex' , gap: '12px'}}>
+                {/* <button className="add-btn" onClick={fetchStaff}><FiRefreshCw /> Refresh</button> */}
+                <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
+              </div>
             </div>
 
             {staffError && (
@@ -1229,8 +1293,8 @@ const Settings = ({ onLogout }) => {
             <div className="section-header">
               <h2 className="section-title">Skills <span className='fields-tag'>{skills.length > 0 && skills.length <= 10 ? '0' + skills.length : skills.length} Skills</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="add-btn" onClick={fetchSkills}><FiRefreshCw /> Refresh</button>
-                <button className="add-btn" onClick={() => openSkillModal()}>Add New Skill</button>
+                {/* <button className="add-btn" onClick={fetchSkills}><FiRefreshCw /> Refresh</button> */}
+                <button className="add-btn" onClick={() => openSkillModal()}>+ Add New Skill</button>
               </div>
             </div>
 
@@ -1288,8 +1352,8 @@ const Settings = ({ onLogout }) => {
             <div className="section-header">
               <h2 className="section-title">Work Types <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0' + workTypes.length : workTypes.length} Work Types</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="add-btn" onClick={fetchWorkTypes}><FiRefreshCw /> Refresh</button>
-                <button className="add-btn" onClick={() => openWorkTypeModal()}>Add New Work Type</button>
+                {/* <button className="add-btn" onClick={fetchWorkTypes}><FiRefreshCw /> Refresh</button> */}
+                <button className="add-btn" onClick={() => openWorkTypeModal()}>+ Add New Work Type</button>
               </div>
             </div>
 
@@ -1346,6 +1410,7 @@ const Settings = ({ onLogout }) => {
           isOpen={isSubcategoryModalOpen}
           onClose={closeSubcategoryModal}
           onSave={saveSubcategory}
+          outfitTypeId={getCurrentOutfit()?._id}
         />
 
         {/* Roll Modal */}
