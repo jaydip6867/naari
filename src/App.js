@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/Login.js';
 import Settings from './components/Settings.js';
 import Dashboard from './components/Dashboard.js';
+import Customer from './components/Customer.js';
+import Order from './components/Order.js';
+import Team from './components/Team.js';
+import Tasks from './components/Tasks.js';
 import './styles.css';
 import { storage } from './utils/storage';
 
@@ -129,6 +133,38 @@ function App() {
               element={
                 isLoggedIn ? 
                   <Settings onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/customers" 
+              element={
+                isLoggedIn ? 
+                  <Customer onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/orders" 
+              element={
+                isLoggedIn ? 
+                  <Order onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/team" 
+              element={
+                isLoggedIn ? 
+                  <Team onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/tasks" 
+              element={
+                isLoggedIn ? 
+                  <Tasks onLogout={handleLogout} /> : 
                   <Navigate to="/" replace />
               } 
             />

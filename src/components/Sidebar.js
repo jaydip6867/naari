@@ -21,6 +21,10 @@ const Sidebar = ({ onLogout }) => {
   const getActiveItem = () => {
     const path = location.pathname;
     if (path === '/dashboard') return 'dashboard';
+    if (path === '/customers') return 'customers';
+    if (path === '/orders') return 'orders';
+    if (path === '/team') return 'team';
+    if (path === '/tasks') return 'tasks';
     if (path === '/settings') return 'settings';
     return 'dashboard'; // default
   };
@@ -28,14 +32,9 @@ const Sidebar = ({ onLogout }) => {
   const activeItem = getActiveItem();
 
   const handleNavClick = (itemId) => {
-    if (itemId === 'dashboard') {
-      navigate('/dashboard');
-    } else if (itemId === 'settings') {
-      navigate('/settings');
-    }
+    navigate(`/${itemId}`);
     // Close mobile menu after navigation
     setIsMobileMenuOpen(false);
-    // Add other navigation logic as needed
   };
 
   const handleLogout = (e) => {
