@@ -14,7 +14,7 @@ const Customer = ({ onLogout }) => {
   };
 
   return (
-    <div className="customer-container">
+    <div className="settings-container">
       {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
 

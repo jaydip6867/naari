@@ -14,7 +14,7 @@ const Tasks = ({ onLogout }) => {
   };
 
   return (
-    <div className="tasks-container">
+    <div className="settings-container">
       {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
 

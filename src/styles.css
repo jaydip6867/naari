@@ -513,11 +513,12 @@ body {
   box-shadow: 0 4px 8px var(--primary-light);
 }
 
-.outfit-types-section{
+.content-section.outfit-types-section{
   background: #F2F2F2;
 }
 
 .content-section {
+  background-color: var(--white-color);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -528,6 +529,7 @@ body {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   min-width: 0;
+  flex-grow: 1;
 }
 
 .content-sections-wrapper {
@@ -1560,7 +1562,13 @@ body {
   .main-content {
     padding: 25px;
   }
+
+  .content-sections-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
 }
+
 
 @media (max-width: 768px) {
   .settings-container {
@@ -1656,10 +1664,7 @@ body {
     padding: 0 15px;
   }
   
-  .content-sections-wrapper {
-    flex-direction: column;
-    gap: 16px;
-  }
+  
   
   .content-section {
     padding: 16px;
@@ -1678,7 +1683,6 @@ body {
   }
   
   .field-item {
-    flex-wrap: wrap;
     gap: 8px;
     padding: 12px 16px;
     position: relative;
@@ -1771,5 +1775,11 @@ body {
   
   .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 450px) {
+  .field-item {
+    flex-wrap: wrap;
   }
 }

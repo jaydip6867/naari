@@ -1030,7 +1030,7 @@ const Settings = ({ onLogout }) => {
                           <div className="outfit-content">
                             <span className="outfit-fields-tag">
                               {outfit.hasSubCategories && outfit.subCategories
-                                ? `${outfit.subCategories.length} Subcategories`
+                                ? `${outfit.subCategories.length} Sub cat.`
                                 : `${(outfit.fields?.length || 0)} Fields`
                               }
                             </span>

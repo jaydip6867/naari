@@ -14,7 +14,7 @@ const Team = ({ onLogout }) => {
   };
 
   return (
-    <div className="team-container">
+    <div className="settings-container">
       {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
 

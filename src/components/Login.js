@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import '../styles.css';
 import { authAPI } from '../services/api';
 import { storage } from '../utils/storage';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -76,16 +78,40 @@ const Login = ({ onLogin }) => {
             <label className="form-label" htmlFor="password">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              className="form-input"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
+            <div className="password-input-wrapper" style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                className="form-input"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -94,31 +120,9 @@ const Login = ({ onLogin }) => {
             </div>
           )}
 
-          <div className="form-checkbox-group">
-            <div className="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="remember"
-                className="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <label htmlFor="remember" className="checkbox-label">
-                Remember me
-              </label>
-            </div>
-            <a href="#forgot" className="forgot-link">
-              Forgot password?
-            </a>
-          </div>
-
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
-
-          {/* <div className="signup-prompt">
-            Don't have an account? <a href="#signup" className="signup-link">Sign up</a>
-          </div> */}
         </form>
       </div>
     </div>

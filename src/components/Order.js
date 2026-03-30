@@ -14,7 +14,7 @@ const Order = ({ onLogout }) => {
   };
 
   return (
-    <div className="order-container">
+    <div className="settings-container">
       {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
 
