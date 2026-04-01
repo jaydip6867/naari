@@ -1140,15 +1140,8 @@ const Settings = ({ onLogout }) => {
                         />
                         <label className="checkbox-label">Required</label>
                       </div>
-                      <svg
-                        className="field-delete"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        onClick={() => deleteMeasurementField(field.id)}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <FiX className="delete-field-icon" onClick={() => deleteMeasurementField(field.id)}/>
+                      
                     </div>
                   ))}
 
@@ -1269,9 +1262,9 @@ const Settings = ({ onLogout }) => {
                       >
                         <FiEdit />
                       </button>
-                      <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)} title="Delete Staff">
-                        <FiX />
-                      </button>
+                      {/* <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)} title="Delete Staff"> */}
+                        <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)}/>
+                      {/* </button> */}
                     </div>
                   </div>
                 ))}

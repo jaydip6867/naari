@@ -277,6 +277,70 @@ export const staffAPI = {
   }
 };
 
+// Customer API calls
+export const customerAPI = {
+  saveCustomer: async (customerData) => {
+    const response = await api.post('/user/customers/save', customerData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save customer');
+    }
+  },
+
+  getCustomers: async (search = '') => {
+    const response = await api.post('/user/customers', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      // console.log(response.data.Data)
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customers');
+    }
+  },
+
+  getCustomersWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/customers/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customers');
+    }
+  },
+
+  getCustomerById: async (customerId) => {
+    const response = await api.post('/user/customers/getone', { customerId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customer');
+    }
+  }
+};
+
+// Upload API calls
+export const uploadAPI = {
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/user/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to upload image');
+    }
+  }
+};
+
 // Generic API calls
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
