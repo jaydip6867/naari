@@ -338,6 +338,25 @@ export const uploadAPI = {
     } else {
       throw new Error(response.data.Message || 'Failed to upload image');
     }
+  },
+
+  uploadMultipleImages: async (files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    
+    const response = await api.post('/user/upload/multiple/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to upload images');
+    }
   }
 };
 

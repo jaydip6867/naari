@@ -20,7 +20,8 @@ const AddEditCustomer = ({ onLogout }) => {
     address: '',
     dob: '',
     reference: '',
-    profile_pic: ''
+    profile_pic: '',
+    notes: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,8 @@ const AddEditCustomer = ({ onLogout }) => {
           address: data.address || '',
           dob: data.dob ? formatDateForInput(data.dob) : '',
           reference: data.reference || '',
-          profile_pic: data.profile_pic || ''
+          profile_pic: data.profile_pic || '',
+          notes: data.notes || ''
         });
         if (data.profile_pic) {
           setImagePreview(data.profile_pic);
@@ -178,7 +180,8 @@ const AddEditCustomer = ({ onLogout }) => {
         address: formData.address,
         dob: formatDateForAPI(formData.dob),
         reference: formData.reference,
-        profile_pic: formData.profile_pic
+        profile_pic: formData.profile_pic,
+        notes: formData.notes
       };
 
       if (isEditMode) {
@@ -338,6 +341,18 @@ const AddEditCustomer = ({ onLogout }) => {
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Enter complete address"
+                  rows="3"
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label htmlFor="notes">Notes</label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Enter additional notes (optional)"
                   rows="3"
                 />
               </div>
