@@ -160,7 +160,7 @@ const Customer = ({ onLogout }) => {
                         <h3 className="customer-name">{customer.fullName}</h3>
                         {customer.reference && (
                           <span className="customer-reference">
-                            <FaUserTag /> {customer.reference}
+                            <FaUserTag className='icon_fix' /> <span>{customer.reference}</span>
                           </span>
                         )}
                       </div>

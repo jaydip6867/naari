@@ -2516,6 +2516,12 @@ body {
   white-space: nowrap;
 }
 
+.icon_fix{
+  font-size: 14px;
+  min-width: 14px;
+  height: 14px;
+}
+
 .customer-reference {
   display: inline-flex;
   align-items: center;
@@ -2525,6 +2531,7 @@ body {
   background: white;
   padding: 2px 8px;
   border-radius: 4px;
+  word-break: break-all;
 }
 
 .customer-details {
@@ -2543,12 +2550,13 @@ body {
 }
 
 .detail-item.address {
+  word-break: break-all;
   align-items: flex-start;
 }
 
 .detail-item.address span {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -250,6 +250,7 @@ export const staffAPI = {
     const response = await api.post('/user/staff/list', { search, page, limit });
     
     if (response.data.IsSuccess && response.data.Status === 200) {
+      console.log(response.data.Data);
       return response.data.Data;
     } else {
       throw new Error(response.data.Message || 'Failed to fetch staff list');

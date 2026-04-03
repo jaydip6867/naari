@@ -65,24 +65,32 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
     }
   }, [isOpen, editingStaff]);
 
-  // Auto-select role by matching role name when roles are loaded
+  // Auto-select role by matching role ID or role name when roles are loaded
   useEffect(() => {
-    if (editingStaff && rolesList.length > 0 && !staffData.roleid) {
-      const staffRoleName = editingStaff.roleName || editingStaff.rolename || editingStaff.role || '';
-      if (staffRoleName) {
-        const matchedRole = rolesList.find(role => 
-          (role.name || role.roleName || '') === staffRoleName || 
-          (role._id || role.id) === (editingStaff.roleid || editingStaff.roleId)
-        );
-        if (matchedRole) {
-          setStaffData(prev => ({
-            ...prev,
-            roleid: matchedRole._id || matchedRole.id
-          }));
-        }
+    if (editingStaff && rolesList.length > 0) {
+      // roleid might be an object from API or a string
+      const staffRoleId = typeof editingStaff.roleid === 'object' 
+        ? editingStaff.roleid?._id || editingStaff.roleid?.id || ''
+        : editingStaff.roleid || editingStaff.roleId || '';
+      
+      const staffRoleName = typeof editingStaff.roleid === 'object'
+        ? editingStaff.roleid?.name || editingStaff.roleid?.roleName || ''
+        : editingStaff.roleName || editingStaff.rolename || editingStaff.role || '';
+      
+      // Try to find matching role by ID first, then by name
+      const matchedRole = rolesList.find(role => 
+        (role._id || role.id) === staffRoleId || 
+        (role.name || role.roleName || '') === staffRoleName
+      );
+      
+      if (matchedRole) {
+        setStaffData(prev => ({
+          ...prev,
+          roleid: matchedRole._id || matchedRole.id
+        }));
       }
     }
-  }, [rolesList, editingStaff, staffData.roleid]);
+  }, [rolesList, editingStaff]);
 
   const fetchRoles = async () => {
     try {
