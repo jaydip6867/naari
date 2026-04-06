@@ -8,7 +8,7 @@ import StaffModal from './StaffModal.js';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI, staffAPI } from '../services/api';
+import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI, staffAPI, addonsAPI } from '../services/api';
 import { FiEdit, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
@@ -84,6 +84,9 @@ const Settings = ({ onLogout }) => {
         case 'staff':
           fetchStaff();
           fetchRoles();
+          break;
+        case 'addons':
+          fetchAddons();
           break;
         default:
           break;
@@ -213,6 +216,178 @@ const Settings = ({ onLogout }) => {
     } catch (err) {
       console.error('Error saving work type:', err);
       throw err;
+    }
+  };
+
+  // Addons management functions
+  const fetchAddons = async () => {
+    try {
+      setAddonsLoading(true);
+      setAddonsError('');
+      const addonsData = await addonsAPI.getAddons();
+      setAddons(addonsData || []);
+      if (addonsData && addonsData.length > 0 && !selectedAddonType) {
+        setSelectedAddonType(addonsData[0]);
+      }
+    } catch (err) {
+      console.error('Error fetching addons:', err);
+      setAddonsError(err.message || 'Failed to fetch addons');
+    } finally {
+      setAddonsLoading(false);
+    }
+  };
+
+  const handleAddonTypeSelect = (addon) => {
+    setSelectedAddonType(addon);
+  };
+
+  const quickAddAddon = async () => {
+    if (!newAddonTypeName.trim()) return;
+    // Open outfit selector modal to select outfits before saving
+    setSelectedOutfitsForAddon([]);
+    setIsQuickAddOutfitModalOpen(true);
+  };
+
+  const saveQuickAddAddon = async () => {
+    try {
+      if (!newAddonTypeName.trim()) return;
+      
+      const addonData = {
+        addonsId: '',
+        title: newAddonTypeName.trim(),
+        fieldType: 'text',
+        options: [],
+        outfitTypes: selectedOutfitsForAddon
+      };
+
+      const savedAddon = await addonsAPI.saveAddon(addonData);
+      await fetchAddons();
+      setNewAddonTypeName('');
+      setSelectedOutfitsForAddon([]);
+      setIsQuickAddOutfitModalOpen(false);
+      
+      // Auto-select the newly created addon
+      if (savedAddon && savedAddon._id) {
+        setSelectedAddonType(savedAddon);
+      }
+    } catch (err) {
+      console.error('Error saving addon:', err);
+      setAddonsError(err.message || 'Failed to save addon');
+    }
+  };
+
+  const closeQuickAddOutfitModal = () => {
+    setIsQuickAddOutfitModalOpen(false);
+    setSelectedOutfitsForAddon([]);
+  };
+
+  const openAddonTypeModal = () => {
+    setModalAddonTitle('');
+    setSelectedFieldType('text');
+    setNewAddonOptions(['']);
+    setIsAddonTypeModalOpen(true);
+  };
+
+  const closeAddonTypeModal = () => {
+    setIsAddonTypeModalOpen(false);
+    setModalAddonTitle('');
+    setSelectedFieldType('text');
+    setNewAddonOptions(['']);
+  };
+
+  const saveAddonType = async () => {
+    try {
+      if (!modalAddonTitle.trim()) return;
+      
+      const addonData = {
+        addonsId: '',
+        title: modalAddonTitle.trim(),
+        fieldType: selectedFieldType,
+        options: (selectedFieldType === 'checkbox' || selectedFieldType === 'radio') 
+          ? newAddonOptions.filter(opt => opt.trim() !== '') 
+          : [],
+        outfitTypes: []
+      };
+
+      const savedAddon = await addonsAPI.saveAddon(addonData);
+      await fetchAddons();
+      closeAddonTypeModal();
+      
+      // Auto-select the newly created addon
+      if (savedAddon && savedAddon._id) {
+        setSelectedAddonType(savedAddon);
+      }
+    } catch (err) {
+      console.error('Error saving addon:', err);
+      setAddonsError(err.message || 'Failed to save addon');
+    }
+  };
+
+  const deleteAddon = async (addonsId) => {
+    try {
+      await addonsAPI.deleteAddon(addonsId);
+      await fetchAddons();
+      if (selectedAddonType && selectedAddonType._id === addonsId) {
+        setSelectedAddonType(null);
+      }
+    } catch (err) {
+      console.error('Error deleting addon:', err);
+      setAddonsError(err.message || 'Failed to delete addon');
+    }
+  };
+
+  const addOptionField = () => {
+    setNewAddonOptions([...newAddonOptions, '']);
+  };
+
+  const removeOptionField = (index) => {
+    const updatedOptions = newAddonOptions.filter((_, i) => i !== index);
+    setNewAddonOptions(updatedOptions);
+  };
+
+  const updateOptionField = (index, value) => {
+    const updatedOptions = [...newAddonOptions];
+    updatedOptions[index] = value;
+    setNewAddonOptions(updatedOptions);
+  };
+
+  const toggleOutfitSelectionForAddon = (outfitId) => {
+    if (selectedOutfitsForAddon.includes(outfitId)) {
+      setSelectedOutfitsForAddon(selectedOutfitsForAddon.filter(id => id !== outfitId));
+    } else {
+      setSelectedOutfitsForAddon([...selectedOutfitsForAddon, outfitId]);
+    }
+  };
+
+  const openOutfitSelector = () => {
+    if (!selectedAddonType) return;
+    setSelectedOutfitsForAddon(selectedAddonType.outfitTypes || []);
+    setIsOutfitSelectorOpen(true);
+  };
+
+  const closeOutfitSelector = () => {
+    setIsOutfitSelectorOpen(false);
+    setSelectedOutfitsForAddon([]);
+  };
+
+  const saveAddonOutfits = async () => {
+    try {
+      if (!selectedAddonType) return;
+      
+      const addonData = {
+        addonsId: selectedAddonType._id,
+        title: selectedAddonType.title,
+        fieldType: selectedAddonType.fieldType,
+        options: selectedAddonType.options || [],
+        outfitTypes: selectedOutfitsForAddon
+      };
+
+      await addonsAPI.saveAddon(addonData);
+      await fetchAddons();
+      closeOutfitSelector();
+    } catch (err) {
+      console.error('Error updating addon outfits:', err);
+      setAddonsError(err.message || 'Failed to update addon outfits');
     }
   };
 
@@ -423,12 +598,27 @@ const Settings = ({ onLogout }) => {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
 
+  // Addons state
+  const [addons, setAddons] = useState([]);
+  const [addonsLoading, setAddonsLoading] = useState(false);
+  const [addonsError, setAddonsError] = useState('');
+  const [selectedAddonType, setSelectedAddonType] = useState(null);
+  const [newAddonTypeName, setNewAddonTypeName] = useState('');
+  const [isAddonTypeModalOpen, setIsAddonTypeModalOpen] = useState(false);
+  const [modalAddonTitle, setModalAddonTitle] = useState('');
+  const [selectedFieldType, setSelectedFieldType] = useState('text');
+  const [newAddonOptions, setNewAddonOptions] = useState(['']);
+  const [isOutfitSelectorOpen, setIsOutfitSelectorOpen] = useState(false);
+  const [isQuickAddOutfitModalOpen, setIsQuickAddOutfitModalOpen] = useState(false);
+  const [selectedOutfitsForAddon, setSelectedOutfitsForAddon] = useState([]);
+
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
+    { id: 'addons', label: 'Addons' },
     { id: 'rolls', label: 'Rolls' },
     { id: 'skills', label: 'Skills' },
     { id: 'worktype', label: 'Work Type' },
-    { id: 'staff', label: 'Staff Account' }
+    { id: 'staff', label: 'Staff Account' },
   ];
 
 
@@ -1392,6 +1582,346 @@ const Settings = ({ onLogout }) => {
                   <button className="add-btn" onClick={() => openWorkTypeModal()}>
                     + Add Your First Work Type
                   </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Addons Tab */}
+        {activeTab === 'addons' && (
+          <div className="content-sections-wrapper">
+            {/* Addons Type Section (Left) */}
+            <div className="content-section outfit-types-section">
+              <div className="section-header">
+                <h2 className="section-title">Addons Type</h2>
+              </div>
+
+              {addonsError && (
+                <div style={{
+                  color: 'var(--alert-color)',
+                  background: 'rgba(255, 0, 0, 0.1)',
+                  padding: '12px',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(255, 0, 0, 0.2)'
+                }}>
+                  {addonsError}
+                </div>
+              )}
+
+              <div className="add-field-container">
+                <input
+                  type="text"
+                  className="input-field measurements_input"
+                  placeholder="Enter Addons name"
+                  value={newAddonTypeName}
+                  onChange={(e) => setNewAddonTypeName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && quickAddAddon()}
+                />
+                <button 
+                  className="add-btn measurements_add_btn" 
+                  onClick={quickAddAddon}
+                  disabled={!newAddonTypeName.trim()}
+                >
+                  + Add
+                </button>
+              </div>
+
+              {addonsLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                  Loading addons...
+                </div>
+              ) : (
+                <div className="outfit-list">
+                  {addons.map((addon) => (
+                    <div
+                      key={addon._id}
+                      className={`outfit-item ${selectedAddonType?._id === addon._id ? 'selected' : ''}`}
+                      onClick={() => handleAddonTypeSelect(addon)}
+                    >
+                      <span className="outfit-name">{addon.title}</span>
+                      <div className="outfit-content">
+                        <span className="outfit-fields-tag" style={{ textTransform: 'capitalize' }}>
+                          {addon.fieldType === 'text' ? 'Input' : addon.fieldType}
+                        </span>
+                        <FiTrash2 
+                          className='delete-icon' 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteAddon(addon._id);
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Addon Details Section (Right) */}
+            <div className="content-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  {selectedAddonType?.title || 'Select an Addon Type'}
+                </h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="add-btn" 
+                    onClick={openOutfitSelector}
+                    disabled={!selectedAddonType}
+                  >
+                    Select Outfit Type
+                  </button>
+                  <button 
+                    className="add-btn" 
+                    onClick={openAddonTypeModal}
+                  >
+                    + Addons Type
+                  </button>
+                </div>
+              </div>
+
+              {selectedAddonType ? (
+                <div className="measurement-fields">
+                  {/* Sub Category Input Row */}
+                  <div className="field-input-container" style={{ marginBottom: '16px' }}>
+                    <input
+                      type="text"
+                      className="field-input subcategory_input"
+                      placeholder="Enter Sub Category Name"
+                      disabled
+                      style={{ flex: 1 }}
+                    />
+                    <button className="add-btn">+ Add Option</button>
+                  </div>
+
+                  {/* Options/Fields List */}
+                  <div className="field-list">
+                    {selectedAddonType.options && selectedAddonType.options.length > 0 ? (
+                      selectedAddonType.options.map((option, index) => (
+                        <div key={index} className="field-item">
+                          <RxDragHandleDots2 className="drag-handle" />
+                          <div className="field-name">{option}</div>
+                          <FiX className='delete-field-icon' />
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
+                        No options added for this addon type
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
+                  Select an addon type from the left to view details
+                </div>
+              )}
+            </div>
+
+            {/* Select Addons Type Modal */}
+            {isAddonTypeModalOpen && (
+              <div className="modal-overlay" onClick={closeAddonTypeModal}>
+                <div className="modal modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                  <div className="modal-header">
+                    <h3>Select Addons Type</h3>
+                    {/* <button className="close-btn" onClick={closeAddonTypeModal}>
+                      <FiX />
+                    </button> */}
+                  </div>
+                  <div className="modal-body">
+                    
+                    <div className="form-group">
+                      <label>Field Type</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="fieldType"
+                          value="text"
+                          checked={selectedFieldType === 'text'}
+                          onChange={(e) => setSelectedFieldType(e.target.value)}
+                        />
+                        <span style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: '#e07b54',
+                          display: 'inline-block'
+                        }}></span>
+                        Input Field
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="fieldType"
+                          value="radio"
+                          checked={selectedFieldType === 'radio'}
+                          onChange={(e) => setSelectedFieldType(e.target.value)}
+                        />
+                        <span style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: '#6b7280',
+                          display: 'inline-block'
+                        }}></span>
+                        Radio
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="fieldType"
+                          value="checkbox"
+                          checked={selectedFieldType === 'checkbox'}
+                          onChange={(e) => setSelectedFieldType(e.target.value)}
+                        />
+                        <span style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: '#6b7280',
+                          display: 'inline-block'
+                        }}></span>
+                        Checkbox
+                      </label>
+                    </div>
+
+                    {(selectedFieldType === 'radio' || selectedFieldType === 'checkbox') && (
+                      <div className="form-group" style={{ marginTop: '16px' }}>
+                        <label>Options</label>
+                        {newAddonOptions.map((option, index) => (
+                          <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                            <input
+                              type="text"
+                              className="input-field"
+                              placeholder={`Option ${index + 1}`}
+                              value={option}
+                              onChange={(e) => updateOptionField(index, e.target.value)}
+                            />
+                            <button
+                              className="delete-btn"
+                              onClick={() => removeOptionField(index)}
+                              disabled={newAddonOptions.length <= 1}
+                            >
+                              <FiX />
+                            </button>
+                          </div>
+                        ))}
+                        <button className="add-btn" onClick={addOptionField}>
+                          + Add Option
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-cancel" onClick={closeAddonTypeModal}>Cancel</button>
+                    <button 
+                      className="btn btn-save" 
+                      onClick={saveAddonType}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Select Outfit Type Modal */}
+            {isOutfitSelectorOpen && selectedAddonType && (
+              <div className="modal-overlay" onClick={closeOutfitSelector}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                  <div className="modal-header">
+                    <h3>Select Outfit Type</h3>
+                    <button className="close-btn" onClick={closeOutfitSelector}>
+                      <FiX />
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-group">
+                      <label style={{ marginBottom: '12px', display: 'block' }}>
+                        Select applicable outfit types for <strong>{selectedAddonType.title}</strong>
+                      </label>
+                      <div className="outfit-checkbox-list" style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px' }}>
+                        {outfitTypes.length > 0 ? (
+                          outfitTypes.map((outfit) => (
+                            <div key={outfit._id} style={{ display: 'flex', alignItems: 'center', padding: '8px 0' }}>
+                              <input
+                                type="checkbox"
+                                id={`outfit-sel-${outfit._id}`}
+                                checked={selectedOutfitsForAddon.includes(outfit._id)}
+                                onChange={() => toggleOutfitSelectionForAddon(outfit._id)}
+                                style={{ marginRight: '12px', width: '18px', height: '18px', cursor: 'pointer' }}
+                              />
+                              <label htmlFor={`outfit-sel-${outfit._id}`} style={{ cursor: 'pointer', fontSize: '14px' }}>{outfit.name}</label>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{ color: '#6b7280', fontSize: '14px', padding: '8px' }}>No outfit types available</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-cancel" onClick={closeOutfitSelector}>Cancel</button>
+                    <button 
+                      className="btn btn-save" 
+                      onClick={saveAddonOutfits}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Add - Select Outfit Type Modal */}
+            {isQuickAddOutfitModalOpen && (
+              <div className="modal-overlay" onClick={closeQuickAddOutfitModal}>
+                <div className="modal modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                  <div className="modal-header">
+                    <h3>Select Outfit Type</h3>
+                    {/* <button className="close-btn" onClick={closeQuickAddOutfitModal}>
+                      <FiX />
+                    </button> */}
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-group">
+                      <label style={{ marginBottom: '12px', display: 'block' }}>
+                        Creating addon: <strong>{newAddonTypeName}</strong>
+                      </label>
+                      <label style={{ marginBottom: '12px', display: 'block', fontSize: '14px', color: '#6b7280' }}>
+                        Select applicable outfit types
+                      </label>
+                      <div className="outfit-checkbox-list" style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px' }}>
+                        {outfitTypes.length > 0 ? (
+                          outfitTypes.map((outfit) => (
+                            <div key={outfit._id} style={{ display: 'flex', alignItems: 'center', padding: '8px 0' }}>
+                              <input
+                                type="checkbox"
+                                id={`quick-outfit-sel-${outfit._id}`}
+                                checked={selectedOutfitsForAddon.includes(outfit._id)}
+                                onChange={() => toggleOutfitSelectionForAddon(outfit._id)}
+                                style={{ marginRight: '12px', width: '18px', height: '18px', cursor: 'pointer' }}
+                              />
+                              <label htmlFor={`quick-outfit-sel-${outfit._id}`} style={{ cursor: 'pointer', fontSize: '14px' }}>{outfit.name}</label>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{ color: '#6b7280', fontSize: '14px', padding: '8px' }}>No outfit types available</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-cancel" onClick={closeQuickAddOutfitModal}>Cancel</button>
+                    <button 
+                      className="btn btn-save" 
+                      onClick={saveQuickAddAddon}
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

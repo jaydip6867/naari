@@ -361,7 +361,59 @@ export const uploadAPI = {
   }
 };
 
-// Generic API calls
+// Addons API calls
+export const addonsAPI = {
+  saveAddon: async (addonData) => {
+    const response = await api.post('/user/addons/save', addonData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save addon');
+    }
+  },
+
+  getAddons: async (search = '', outfitTypeId = '') => {
+    const response = await api.post('/user/addons', { search, outfitTypeId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addons');
+    }
+  },
+
+  getAddonsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/addons/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addons');
+    }
+  },
+
+  getAddonById: async (addonsId) => {
+    const response = await api.post('/user/addons/getone', { addonsId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addon');
+    }
+  },
+
+  deleteAddon: async (addonsId) => {
+    const response = await api.post('/user/addons/delete', { addonsId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete addon');
+    }
+  }
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,
