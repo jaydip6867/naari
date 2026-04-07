@@ -1180,6 +1180,9 @@ body {
   margin-bottom: 12px;
 }
 
+.modal-header h3{
+  margin: 0;
+}
 /* ========================================
    ROLL MODAL SPECIFIC STYLES
    ======================================== */
@@ -1392,6 +1395,10 @@ body {
 
 .staff-modal .form-label{
   color: var(--primary-dark);
+}
+
+.addons-field{
+  padding: 12px 8px;
 }
 
 @media (max-width: 640px) {

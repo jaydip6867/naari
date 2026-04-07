@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
@@ -226,7 +226,14 @@ const Settings = ({ onLogout }) => {
       setAddonsError('');
       const addonsData = await addonsAPI.getAddons();
       setAddons(addonsData || []);
-      if (addonsData && addonsData.length > 0 && !selectedAddonType) {
+      
+      // Sync selectedAddonType with fresh data if it exists
+      if (selectedAddonType && addonsData) {
+        const updatedAddon = addonsData.find(a => a._id === selectedAddonType._id);
+        if (updatedAddon) {
+          setSelectedAddonType(updatedAddon);
+        }
+      } else if (addonsData && addonsData.length > 0 && !selectedAddonType) {
         setSelectedAddonType(addonsData[0]);
       }
     } catch (err) {
@@ -281,15 +288,26 @@ const Settings = ({ onLogout }) => {
     setSelectedOutfitsForAddon([]);
   };
 
-  const openAddonTypeModal = () => {
-    setModalAddonTitle('');
-    setSelectedFieldType('text');
-    setNewAddonOptions(['']);
+  const openAddonTypeModal = (addon = null) => {
+    if (addon) {
+      // Editing existing addon
+      setEditingAddonId(addon._id);
+      setModalAddonTitle(addon.title || '');
+      setSelectedFieldType(addon.fieldType || 'text');
+      setNewAddonOptions(addon.options?.length > 0 ? addon.options : ['']);
+    } else {
+      // Creating new addon
+      setEditingAddonId(null);
+      setModalAddonTitle('');
+      setSelectedFieldType('text');
+      setNewAddonOptions(['']);
+    }
     setIsAddonTypeModalOpen(true);
   };
 
   const closeAddonTypeModal = () => {
     setIsAddonTypeModalOpen(false);
+    setEditingAddonId(null);
     setModalAddonTitle('');
     setSelectedFieldType('text');
     setNewAddonOptions(['']);
@@ -297,29 +315,88 @@ const Settings = ({ onLogout }) => {
 
   const saveAddonType = async () => {
     try {
-      if (!modalAddonTitle.trim()) return;
+      // if (!modalAddonTitle.trim()) return;
+      
+      // Get existing addon data if editing
+      const existingAddon = editingAddonId ? addons.find(a => a._id === editingAddonId) : null;
+      
+      // Filter out empty options
+      const filteredOptions = (selectedFieldType === 'radio' || selectedFieldType === 'checkbox')
+        ? newAddonOptions.filter(opt => opt.trim() !== '')
+        : [];
       
       const addonData = {
-        addonsId: '',
+        addonsId: editingAddonId || '',
         title: modalAddonTitle.trim(),
         fieldType: selectedFieldType,
-        options: (selectedFieldType === 'checkbox' || selectedFieldType === 'radio') 
-          ? newAddonOptions.filter(opt => opt.trim() !== '') 
-          : [],
-        outfitTypes: []
+        options: filteredOptions,
+        outfitTypes: existingAddon?.outfitTypes || []
       };
-
+      console.log(addonData);
       const savedAddon = await addonsAPI.saveAddon(addonData);
       await fetchAddons();
       closeAddonTypeModal();
       
-      // Auto-select the newly created addon
+      // Auto-select the newly created/updated addon
       if (savedAddon && savedAddon._id) {
         setSelectedAddonType(savedAddon);
       }
     } catch (err) {
       console.error('Error saving addon:', err);
       setAddonsError(err.message || 'Failed to save addon');
+    }
+  };
+
+  // Add option to selected addon type
+  const addOptionToAddon = async () => {
+    try {
+      if (!selectedAddonType || !newOptionInput.trim()) return;
+      
+      const updatedOptions = [...(selectedAddonType.options || []), newOptionInput.trim()];
+      
+      const addonData = {
+        addonsId: selectedAddonType._id,
+        title: selectedAddonType.title,
+        fieldType: selectedAddonType.fieldType,
+        options: updatedOptions,
+        outfitTypes: selectedAddonType.outfitTypes || []
+      };
+
+      const savedAddon = await addonsAPI.saveAddon(addonData);
+      await fetchAddons();
+      setSelectedAddonType(savedAddon);
+      setNewOptionInput('');
+    } catch (err) {
+      console.error('Error adding option:', err);
+      setAddonsError(err.message || 'Failed to add option');
+    }
+  };
+
+  const removeOptionFromAddon = async (optionIndex) => {
+    try {
+      if (!selectedAddonType) return;
+      
+      const updatedOptions = selectedAddonType.options.filter((_, index) => index !== optionIndex);
+      
+      const addonData = {
+        addonsId: selectedAddonType._id,
+        title: selectedAddonType.title,
+        fieldType: selectedAddonType.fieldType,
+        options: updatedOptions,
+        outfitTypes: selectedAddonType.outfitTypes || []
+      };
+
+      await addonsAPI.saveAddon(addonData);
+      await fetchAddons();
+      
+      // Find and update the selected addon from the fresh list
+      const updatedAddon = addons.find(a => a._id === selectedAddonType._id);
+      if (updatedAddon) {
+        setSelectedAddonType(updatedAddon);
+      }
+    } catch (err) {
+      console.error('Error removing option:', err);
+      setAddonsError(err.message || 'Failed to remove option');
     }
   };
 
@@ -361,7 +438,12 @@ const Settings = ({ onLogout }) => {
 
   const openOutfitSelector = () => {
     if (!selectedAddonType) return;
-    setSelectedOutfitsForAddon(selectedAddonType.outfitTypes || []);
+    // Get fresh data from addons array to ensure outfitTypes are current
+    const currentAddon = addons.find(a => a._id === selectedAddonType._id);
+    const outfitTypesArray = currentAddon?.outfitTypes || selectedAddonType.outfitTypes || [];
+    // Extract _id from outfit type objects
+    const outfitTypeIds = outfitTypesArray.map(o => o._id || o);
+    setSelectedOutfitsForAddon(outfitTypeIds);
     setIsOutfitSelectorOpen(true);
   };
 
@@ -611,6 +693,10 @@ const Settings = ({ onLogout }) => {
   const [isOutfitSelectorOpen, setIsOutfitSelectorOpen] = useState(false);
   const [isQuickAddOutfitModalOpen, setIsQuickAddOutfitModalOpen] = useState(false);
   const [selectedOutfitsForAddon, setSelectedOutfitsForAddon] = useState([]);
+  const [editingAddonId, setEditingAddonId] = useState(null);
+  const [newOptionInput, setNewOptionInput] = useState('');
+  const [draggedOptionIndex, setDraggedOptionIndex] = useState(null);
+  const pendingOptionSaveRef = useRef(null);
 
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
@@ -1030,41 +1116,41 @@ const Settings = ({ onLogout }) => {
           isRequired: field.required
         }));
 
-        try {
-          const currentOutfit = getCurrentOutfit();
-          if (!currentOutfit) return;
+        // try {
+        //   const currentOutfit = getCurrentOutfit();
+        //   if (!currentOutfit) return;
 
-          if (selectedSubcategory) {
-            // Update subcategory fields
-            if (currentOutfit.hasSubCategories && currentOutfit.subCategories) {
-              const updatedSubcategories = currentOutfit.subCategories.map(sub => {
-                if (sub.name === selectedSubcategory) {
-                  return { ...sub, fields: apiFields };
-                }
-                return sub;
-              });
+        //   if (selectedSubcategory) {
+        //     // Update subcategory fields
+        //     if (currentOutfit.hasSubCategories && currentOutfit.subCategories) {
+        //       const updatedSubcategories = currentOutfit.subCategories.map(sub => {
+        //         if (sub.name === selectedSubcategory) {
+        //           return { ...sub, fields: apiFields };
+        //         }
+        //         return sub;
+        //       });
 
-              await measurementsAPI.saveOutfitTypeField({
-                outfitTypeId: currentOutfit._id,
-                hasSubCategories: true,
-                subCategories: updatedSubcategories
-              });
-            }
-          } else {
-            // Update outfit-level fields
-            if (!currentOutfit.hasSubCategories) {
-              await measurementsAPI.saveOutfitTypeField({
-                outfitTypeId: currentOutfit._id,
-                hasSubCategories: false,
-                fields: apiFields
-              });
-            }
-          }
-          // Note: No fetchOutfitTypes() call here to prevent unnecessary API calls during drag
-        } catch (err) {
-          console.error('Error saving reordered fields:', err);
-          setFieldItems(getCurrentFields());
-        }
+        //       await measurementsAPI.saveOutfitTypeField({
+        //         outfitTypeId: currentOutfit._id,
+        //         hasSubCategories: true,
+        //         subCategories: updatedSubcategories
+        //       });
+        //     }
+        //   } else {
+        //     // Update outfit-level fields
+        //     if (!currentOutfit.hasSubCategories) {
+        //       await measurementsAPI.saveOutfitTypeField({
+        //         outfitTypeId: currentOutfit._id,
+        //         hasSubCategories: false,
+        //         fields: apiFields
+        //       });
+        //     }
+        //   }
+        //   // Note: No fetchOutfitTypes() call here to prevent unnecessary API calls during drag
+        // } catch (err) {
+        //   console.error('Error saving reordered fields:', err);
+        //   setFieldItems(getCurrentFields());
+        // }
       }
     } else if (draggedItemType === 'roll' && targetType === 'roll' && targetIndex !== null) {
       const newRolls = [...userRoles];
@@ -1116,9 +1202,51 @@ const Settings = ({ onLogout }) => {
     setDraggedItemType(null);
   };
 
+  const handleOptionDragStart = (e, index) => {
+    setDraggedOptionIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleOptionDragEnd = (e) => {
+    e.target.style.opacity = '';
+    setDraggedOptionIndex(null);
+  };
+
+  const handleOptionDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  // Restore handleFieldDragOver for measurements fields
   const handleFieldDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleOptionDrop = (e, targetIndex) => {
+    e.preventDefault();
+    
+    if (draggedOptionIndex !== null && draggedOptionIndex !== targetIndex) {
+      // Reorder options
+      const newOptions = [...selectedAddonType.options];
+      const [removed] = newOptions.splice(draggedOptionIndex, 1);
+      newOptions.splice(targetIndex, 0, removed);
+      
+      // Update local state immediately for UI feedback
+      const updatedAddon = {
+        ...selectedAddonType,
+        options: newOptions
+      };
+      setSelectedAddonType(updatedAddon);
+      
+      // Clear any pending save
+      if (pendingOptionSaveRef.current) {
+        clearTimeout(pendingOptionSaveRef.current);
+      }
+    }
+    
+    setDraggedOptionIndex(null);
   };
 
   // Roll-specific drag handlers
@@ -1675,7 +1803,8 @@ const Settings = ({ onLogout }) => {
                   </button>
                   <button 
                     className="add-btn" 
-                    onClick={openAddonTypeModal}
+                    onClick={() => openAddonTypeModal(selectedAddonType)}
+                    disabled={!selectedAddonType}
                   >
                     + Addons Type
                   </button>
@@ -1684,34 +1813,60 @@ const Settings = ({ onLogout }) => {
 
               {selectedAddonType ? (
                 <div className="measurement-fields">
-                  {/* Sub Category Input Row */}
-                  <div className="field-input-container" style={{ marginBottom: '16px' }}>
-                    <input
-                      type="text"
-                      className="field-input subcategory_input"
-                      placeholder="Enter Sub Category Name"
-                      disabled
-                      style={{ flex: 1 }}
-                    />
-                    <button className="add-btn">+ Add Option</button>
-                  </div>
-
-                  {/* Options/Fields List */}
-                  <div className="field-list">
-                    {selectedAddonType.options && selectedAddonType.options.length > 0 ? (
-                      selectedAddonType.options.map((option, index) => (
-                        <div key={index} className="field-item">
-                          <RxDragHandleDots2 className="drag-handle" />
-                          <div className="field-name">{option}</div>
-                          <FiX className='delete-field-icon' />
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
-                        No options added for this addon type
+                  {/* Show Add Option section only for checkbox or radio field types */}
+                  {(selectedAddonType.fieldType === 'checkbox' || selectedAddonType.fieldType === 'radio') && (
+                    <>
+                      {/* Add Option Input Row */}
+                      <div className="field-input-container" style={{ marginBottom: '16px' }}>
+                        <input
+                          type="text"
+                          className="field-input subcategory_input"
+                          placeholder="Enter Option Name"
+                          value={newOptionInput}
+                          onChange={(e) => setNewOptionInput(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addOptionToAddon()}
+                          style={{ flex: 1 }}
+                        />
+                        <button className="add-btn" onClick={addOptionToAddon}>+ Add Option</button>
                       </div>
-                    )}
-                  </div>
+
+                      {/* Options/Fields List */}
+                      <div className="field-list">
+                        {selectedAddonType.options && selectedAddonType.options.length > 0 ? (
+                          selectedAddonType.options.map((option, index) => (
+                            <div 
+                              key={index} 
+                              className="field-item addons-field"
+                              draggable
+                              onDragStart={(e) => handleOptionDragStart(e, index)}
+                              onDragEnd={handleOptionDragEnd}
+                              onDragOver={handleOptionDragOver}
+                              onDrop={(e) => handleOptionDrop(e, index)}
+                            >
+                              <RxDragHandleDots2 className="drag-handle" style={{ cursor: 'grab' }} />
+                              <div className="field-name">{option}</div>
+                              <FiX 
+                                className='delete-field-icon' 
+                                onClick={() => removeOptionFromAddon(index)}
+                                style={{ cursor: 'pointer' }}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
+                            No options added for this addon type
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Show message for text field type */}
+                  {selectedAddonType.fieldType === 'text' && (
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
+                      This addon type uses a text input field. No options needed.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
@@ -1731,16 +1886,29 @@ const Settings = ({ onLogout }) => {
                     </button> */}
                   </div>
                   <div className="modal-body">
+                    <div className="form-group">
+                      <label>Title</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Enter addon title"
+                        value={modalAddonTitle}
+                        disabled
+                        onChange={(e) => setModalAddonTitle(e.target.value)}
+                        style={{ width: '100%', marginBottom: '16px' }}
+                      />
+                    </div>
                     
                     <div className="form-group">
                       <label>Field Type</label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: newAddonOptions.some(opt => opt.trim() !== '') ? 'not-allowed' : 'pointer', opacity: newAddonOptions.some(opt => opt.trim() !== '') ? 0.5 : 1 }}>
                         <input
                           type="radio"
                           name="fieldType"
                           value="text"
                           checked={selectedFieldType === 'text'}
                           onChange={(e) => setSelectedFieldType(e.target.value)}
+                          disabled={newAddonOptions.some(opt => opt.trim() !== '')}
                         />
                         <span style={{ 
                           width: '8px', 
@@ -1798,11 +1966,13 @@ const Settings = ({ onLogout }) => {
                               placeholder={`Option ${index + 1}`}
                               value={option}
                               onChange={(e) => updateOptionField(index, e.target.value)}
+                              style={{ flex: 1 }}
                             />
                             <button
                               className="delete-btn"
                               onClick={() => removeOptionField(index)}
                               disabled={newAddonOptions.length <= 1}
+                              style={{ padding: '8px 12px' }}
                             >
                               <FiX />
                             </button>
@@ -1830,12 +2000,12 @@ const Settings = ({ onLogout }) => {
             {/* Select Outfit Type Modal */}
             {isOutfitSelectorOpen && selectedAddonType && (
               <div className="modal-overlay" onClick={closeOutfitSelector}>
-                <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                <div className="modal modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                   <div className="modal-header">
                     <h3>Select Outfit Type</h3>
-                    <button className="close-btn" onClick={closeOutfitSelector}>
+                    {/* <button className="close-btn" onClick={closeOutfitSelector}>
                       <FiX />
-                    </button>
+                    </button> */}
                   </div>
                   <div className="modal-body">
                     <div className="form-group">

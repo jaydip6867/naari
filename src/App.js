@@ -8,6 +8,7 @@ import AddEditCustomer from './components/AddEditCustomer.js';
 import Order from './components/Order.js';
 import Team from './components/Team.js';
 import Tasks from './components/Tasks.js';
+import Product from './components/Product.js';
 import './styles.css';
 import { storage } from './utils/storage';
 
@@ -182,6 +183,14 @@ function App() {
               element={
                 isLoggedIn ? 
                   <Tasks onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/products" 
+              element={
+                isLoggedIn ? 
+                  <Product onLogout={handleLogout} /> : 
                   <Navigate to="/" replace />
               } 
             />

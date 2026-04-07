@@ -414,6 +414,58 @@ export const addonsAPI = {
   }
 };
 
+// Product API calls
+export const productAPI = {
+  createProduct: async (productData) => {
+    const response = await api.post('/user/products/add', productData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to create product');
+    }
+  },
+
+  getProducts: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/products/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch products');
+    }
+  },
+
+  getProductById: async (productId) => {
+    const response = await api.post('/user/products/getone', { productId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch product');
+    }
+  },
+
+  updateProduct: async (productData) => {
+    const response = await api.post('/user/products/update', productData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to update product');
+    }
+  },
+
+  deleteProduct: async (productId) => {
+    const response = await api.post('/user/products/delete', { productId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete product');
+    }
+  }
+};
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,

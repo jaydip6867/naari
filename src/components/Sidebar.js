@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles.css';
-import { FiFileText, FiLayout, FiLogOut, FiMenu, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
+import { FiFileText, FiLayout, FiLogOut, FiMenu, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
 
 const Sidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ const Sidebar = ({ onLogout }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <FiLayout /> },
     { id: 'customers', label: 'Customers', icon: <FiUser /> },
+    { id: 'products', label: 'Products', icon: <FiPackage /> },
     { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
     { id: 'team', label: 'Team', icon: <FiUsers /> },
     { id: 'tasks', label: 'Tasks', icon: <FiFileText /> },
@@ -22,6 +23,7 @@ const Sidebar = ({ onLogout }) => {
     const path = location.pathname;
     if (path === '/dashboard') return 'dashboard';
     if (path === '/customers') return 'customers';
+    if (path === '/products') return 'products';
     if (path === '/orders') return 'orders';
     if (path === '/team') return 'team';
     if (path === '/tasks') return 'tasks';
