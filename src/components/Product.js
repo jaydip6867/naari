@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { productAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
 
 const Product = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -12,17 +12,14 @@ const Product = ({ onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchProducts = async (page = 1, search = '') => {
+  const fetchProducts = async (search = '') => {
     try {
       setLoading(true);
       setError('');
-      const response = await productAPI.getProducts(search, page, 10);
-      setProducts(response.products || []);
-      setTotalPages(response.totalPages || 1);
-      setCurrentPage(page);
+      const response = await productAPI.getProducts(search);
+      // API returns array directly or in Data property
+      setProducts(Array.isArray(response) ? response : (response || []));
     } catch (err) {
       console.error('Error fetching products:', err);
       setError(err.message || 'Failed to fetch products');
@@ -37,7 +34,7 @@ const Product = ({ onLogout }) => {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    fetchProducts(1, e.target.value);
+    fetchProducts(e.target.value);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -45,7 +42,7 @@ const Product = ({ onLogout }) => {
     
     try {
       await productAPI.deleteProduct(productId);
-      fetchProducts(currentPage, searchQuery);
+      fetchProducts(searchQuery);
     } catch (err) {
       console.error('Error deleting product:', err);
       setError(err.message || 'Failed to delete product');
@@ -119,6 +116,7 @@ const Product = ({ onLogout }) => {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Image</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Name</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Subcategory</th>
@@ -128,6 +126,19 @@ const Product = ({ onLogout }) => {
                 <tbody>
                   {products.map((product, index) => (
                     <tr key={product._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
+                          {product.outfitStyleRefImg && product.outfitStyleRefImg.length > 0 ? (
+                            <img
+                              src={product.outfitStyleRefImg[0]}
+                              alt={product.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <FiPackage size={24} color="var(--gray-color)" />
+                          )}
+                        </div>
+                      </td>
                       <td style={{ padding: '12px' }}>{product.name}</td>
                       <td style={{ padding: '12px' }}>{product.outfitTypeId?.name || '-'}</td>
                       <td style={{ padding: '12px' }}>{product.subCategoryName || '-'}</td>
@@ -172,21 +183,6 @@ const Product = ({ onLogout }) => {
                 <FiPlus style={{ marginRight: '6px' }} />
                 Add Your First Product
               </button>
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`btn ${currentPage === i + 1 ? 'btn-save' : 'btn-cancel'}`}
-                  onClick={() => fetchProducts(i + 1, searchQuery)}
-                  style={{ minWidth: '36px', padding: '6px 12px' }}
-                >
-                  {i + 1}
-                </button>
-              ))}
             </div>
           )}
         </div>

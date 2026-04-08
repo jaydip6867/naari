@@ -10,6 +10,9 @@ import Team from './components/Team.js';
 import Tasks from './components/Tasks.js';
 import Product from './components/Product.js';
 import AddEditProduct from './components/AddEditProduct.js';
+import ViewProduct from './components/ViewProduct.js';
+import AddEditOrder from './components/AddEditOrder.js';
+import ViewOrder from './components/ViewOrder.js';
 import './styles.css';
 import { storage } from './utils/storage';
 
@@ -208,6 +211,38 @@ function App() {
               element={
                 isLoggedIn ? 
                   <AddEditProduct onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/products/view/:productId" 
+              element={
+                isLoggedIn ? 
+                  <ViewProduct onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/orders/add" 
+              element={
+                isLoggedIn ? 
+                  <AddEditOrder onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/orders/edit/:orderId" 
+              element={
+                isLoggedIn ? 
+                  <AddEditOrder onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/orders/view/:orderId" 
+              element={
+                isLoggedIn ? 
+                  <ViewOrder onLogout={handleLogout} /> : 
                   <Navigate to="/" replace />
               } 
             />

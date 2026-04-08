@@ -426,8 +426,8 @@ export const productAPI = {
     }
   },
 
-  getProducts: async (search = '', page = 1, limit = 10) => {
-    const response = await api.post('/user/products/list', { search, page, limit });
+  getProducts: async (search = '') => {
+    const response = await api.post('/user/products', { search });
     
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
@@ -466,6 +466,59 @@ export const productAPI = {
     }
   }
 };
+
+export const orderAPI = {
+  createOrder: async (orderData) => {
+    const response = await api.post('/user/orders/add', orderData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to create order');
+    }
+  },
+
+  getOrders: async (search = '') => {
+    const response = await api.post('/user/orders', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch orders');
+    }
+  },
+
+  getOrderById: async (orderId) => {
+    const response = await api.post('/user/orders/getone', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch order');
+    }
+  },
+
+  updateOrder: async (orderData) => {
+    const response = await api.post('/user/orders/update', orderData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to update order');
+    }
+  },
+
+  deleteOrder: async (orderId) => {
+    const response = await api.post('/user/orders/delete', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete order');
+    }
+  }
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,

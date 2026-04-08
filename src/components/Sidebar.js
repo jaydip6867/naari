@@ -22,12 +22,12 @@ const Sidebar = ({ onLogout }) => {
   const getActiveItem = () => {
     const path = location.pathname;
     if (path === '/dashboard') return 'dashboard';
-    if (path === '/customers') return 'customers';
-    if (path === '/products') return 'products';
-    if (path === '/orders') return 'orders';
-    if (path === '/team') return 'team';
-    if (path === '/tasks') return 'tasks';
-    if (path === '/settings') return 'settings';
+    if (path === '/customers' || path.startsWith('/customers/')) return 'customers';
+    if (path === '/products' || path.startsWith('/products/')) return 'products';
+    if (path === '/orders' || path.startsWith('/orders/')) return 'orders';
+    if (path === '/team' || path.startsWith('/team/')) return 'team';
+    if (path === '/tasks' || path.startsWith('/tasks/')) return 'tasks';
+    if (path === '/settings' || path.startsWith('/settings/')) return 'settings';
     return 'dashboard'; // default
   };
 
