@@ -143,7 +143,11 @@ const ViewOrder = ({ onLogout }) => {
               </div>
               <div className="view-item">
                 <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Customer</label>
-                <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.customerId?.name || order.customerId || '-'}</p>
+                <p style={{ fontWeight: '500', marginTop: '4px' }}>
+                  {typeof order.customerId === 'object' && order.customerId !== null
+                    ? (order.customerId.fullName || '-')
+                    : (order.customerId || '-')}
+                </p>
               </div>
               <div className="view-item">
                 <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Order Type</label>
@@ -156,14 +160,14 @@ const ViewOrder = ({ onLogout }) => {
               {order.orderType === 'product' && (
                 <div className="view-item">
                   <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Product</label>
-                  <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.productId?.name || order.productId || '-'}</p>
+                  <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.productName || '-'}</p>
                 </div>
               )}
               {order.orderType === 'customized' && (
                 <>
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Outfit Type</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.outfitTypeId?.name || order.outfitTypeId || '-'}</p>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.outfitTypeName || '-'}</p>
                   </div>
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Subcategory</label>
@@ -315,7 +319,11 @@ const ViewOrder = ({ onLogout }) => {
                 )}
                 <div className="view-item">
                   <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Assign Worker</label>
-                  <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.assignWorker || '-'}</p>
+                  <p style={{ fontWeight: '500', marginTop: '4px' }}>
+                    {typeof order.assignWorker === 'object' && order.assignWorker !== null
+                      ? (order.assignWorker.fullName || '-')
+                      : (order.assignWorker || '-')}
+                  </p>
                 </div>
                 <div className="view-item">
                   <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Stitching Style</label>

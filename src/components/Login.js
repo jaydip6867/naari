@@ -62,7 +62,7 @@ const Login = ({ onLogin }) => {
               Email Address
             </label>
             <input
-              type="email"
+              type="text"
               id="email"
               className="form-input"
               placeholder="Enter your email"

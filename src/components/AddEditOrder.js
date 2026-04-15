@@ -64,10 +64,12 @@ const AddEditOrder = ({ onLogout }) => {
   const [outfitTypes, setOutfitTypes] = useState([]);
   const [availableAddons, setAvailableAddons] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [imageFiles, setImageFiles] = useState([]);
+  const [pendingUploads, setPendingUploads] = useState([]); // Track files needing upload
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
@@ -92,15 +94,32 @@ const AddEditOrder = ({ onLogout }) => {
   };
 
   useEffect(() => {
-    if (formData.outfitTypeId) {
+    if (formData.outfitTypeId && formData.orderType === 'customized') {
+      const outfit = outfitTypes.find(o => o._id === formData.outfitTypeId);
+      setSelectedOutfit(outfit || null);
       fetchAddons(formData.outfitTypeId);
-      populateMeasurementsFromOutfitType(formData.outfitTypeId);
+      populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
+    } else {
+      setSelectedOutfit(null);
     }
-  }, [formData.outfitTypeId]);
+  }, [formData.outfitTypeId, formData.orderType, outfitTypes]);
+
+  // Re-fetch measurements when subcategory changes
+  useEffect(() => {
+    if (formData.outfitTypeId && formData.orderType === 'customized' && formData.subCategoryName) {
+      populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
+    }
+  }, [formData.subCategoryName, formData.outfitTypeId, formData.orderType]);
 
   useEffect(() => {
-    if (formData.productId && products.length > 0) {
-      const product = products.find(p => p._id === formData.productId);
+    if (formData.productId) {
+      fetchProductDetails(formData.productId);
+    }
+  }, [formData.productId]);
+
+  const fetchProductDetails = async (productId) => {
+    try {
+      const product = await productAPI.getProductById(productId);
       if (product) {
         setSelectedProduct(product);
         setFormData(prev => ({
@@ -111,8 +130,10 @@ const AddEditOrder = ({ onLogout }) => {
           addons: product.addons || []
         }));
       }
+    } catch (err) {
+      console.error('Error fetching product details:', err);
     }
-  }, [formData.productId, products]);
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -221,15 +242,40 @@ const AddEditOrder = ({ onLogout }) => {
     }
   };
 
-  const populateMeasurementsFromOutfitType = (outfitTypeId) => {
-    const outfit = outfitTypes.find(o => o._id === outfitTypeId);
-    if (outfit && outfit.measurements && outfit.measurements.length > 0) {
-      const measurements = outfit.measurements.map(m => ({
-        fieldLable: m.fieldLable || m.label || '',
-        unit: m.unit || 'inch',
-        fieldValue: ''
-      }));
-      setFormData(prev => ({ ...prev, measurement: measurements }));
+  const populateMeasurementsFromOutfitType = async (outfitTypeId, subCategoryName = null) => {
+    try {
+      const outfitTypesList = await measurementsAPI.getOutfitTypes();
+      const outfit = outfitTypesList.find(o => o._id === outfitTypeId);
+
+      let fields = [];
+
+      if (outfit) {
+        // If has subcategories and subcategory is selected, get fields from subcategory
+        if (outfit.hasSubCategories && subCategoryName && outfit.subCategories) {
+          const subCategory = outfit.subCategories.find(s => s.name === subCategoryName);
+          if (subCategory && subCategory.fields) {
+            fields = subCategory.fields;
+          }
+        }
+        // Otherwise get fields from main outfit type
+        else if (outfit.fields && outfit.fields.length > 0) {
+          fields = outfit.fields;
+        }
+      }
+
+      if (fields.length > 0) {
+        const measurements = fields.map(f => ({
+          fieldLable: f.label || '',
+          unit: f.unit || 'inch',
+          fieldValue: ''
+        }));
+        setFormData(prev => ({ ...prev, measurement: measurements }));
+      } else {
+        setFormData(prev => ({ ...prev, measurement: [] }));
+      }
+    } catch (err) {
+      console.error('Error fetching outfit type measurements:', err);
+      setFormData(prev => ({ ...prev, measurement: [] }));
     }
   };
 
@@ -255,18 +301,37 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleImageUpload = async (field, files) => {
     if (!files || files.length === 0) return;
-    
+
     const newFiles = Array.from(files);
-    setImageFiles(prev => [...prev, ...newFiles]);
-    
-    const previews = newFiles.map(file => URL.createObjectURL(file));
-    setFormData(prev => ({ ...prev, [field]: [...prev[field], ...previews] }));
+    const newPreviews = newFiles.map(file => ({
+      url: URL.createObjectURL(file),
+      file: file,
+      isNew: true
+    }));
+
+    setPendingUploads(prev => [...prev, ...newFiles]);
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], ...newPreviews.map(p => p.url)]
+    }));
   };
 
   const removeImage = (field, index) => {
     setFormData(prev => {
       const updated = [...prev[field]];
+      const removedUrl = updated[index];
       updated.splice(index, 1);
+
+      // Also remove from pending uploads if it was a new file
+      if (removedUrl && removedUrl.startsWith('blob:')) {
+        setPendingUploads(prev => prev.filter(f => {
+          const blobUrl = URL.createObjectURL(f);
+          const shouldRemove = blobUrl === removedUrl;
+          URL.revokeObjectURL(blobUrl);
+          return !shouldRemove;
+        }));
+      }
+
       return { ...prev, [field]: updated };
     });
   };
@@ -277,19 +342,22 @@ const AddEditOrder = ({ onLogout }) => {
     setError('');
 
     try {
-      let uploadedImageUrls = formData.outfitStyleRefImg.filter(img => !img.startsWith('blob:'));
-      
-      const newImageFiles = imageFiles.filter(file => {
-        const blobUrl = formData.outfitStyleRefImg.find(img => img.includes(file.name));
-        return blobUrl && blobUrl.startsWith('blob:');
-      });
+      // Separate existing URLs from new blob URLs
+      const existingUrls = formData.outfitStyleRefImg.filter(img => !img.startsWith('blob:'));
+      const blobUrls = formData.outfitStyleRefImg.filter(img => img.startsWith('blob:'));
 
-      if (newImageFiles.length > 0) {
-        const uploadResponse = await uploadAPI.uploadMultipleImages(newImageFiles);
-        const newUrls = Array.isArray(uploadResponse) ? uploadResponse : 
+      let uploadedImageUrls = [...existingUrls];
+
+      // Upload new images if any
+      if (pendingUploads.length > 0) {
+        const uploadResponse = await uploadAPI.uploadMultipleImages(pendingUploads);
+        const newUrls = Array.isArray(uploadResponse) ? uploadResponse :
                        uploadResponse?.Data || uploadResponse?.urls || [];
         uploadedImageUrls = [...uploadedImageUrls, ...newUrls];
       }
+
+      // Clean up pending uploads
+      setPendingUploads([]);
 
       const payload = {
         customerId: formData.customerId,
@@ -369,8 +437,6 @@ const AddEditOrder = ({ onLogout }) => {
     onLogout();
     navigate('/');
   };
-
-  const selectedOutfit = outfitTypes.find(o => o._id === formData.outfitTypeId);
 
   if (initialLoading) {
     return (
@@ -537,47 +603,56 @@ const AddEditOrder = ({ onLogout }) => {
           </div>
 
           {/* Measurements */}
-          {formData.measurement.length > 0 && (
+          {(formData.orderType === 'customized' || formData.orderType === 'product') && (
             <div className="form-section">
               <h3 className="section-title form-section-title">Measurements</h3>
-              <div className="measurements-grid">
-                {formData.measurement.map((measure, index) => (
-                  <div key={index} className="measurement-item">
-                    <div className="form-group">
-                      <label className="form-label">Field Label</label>
-                      <input
-                        type="text"
-                        className="input-field input-disabled"
-                        value={measure.fieldLable}
-                        disabled
-                      />
+              {formData.measurement.length > 0 ? (
+                <div className="measurements-grid">
+                  {formData.measurement.map((measure, index) => (
+                    <div key={index} className="measurement-item">
+                      <div className="form-group">
+                        <label className="form-label">Field Label</label>
+                        <input
+                          type="text"
+                          className="input-field input-disabled"
+                          value={measure.fieldLable}
+                          disabled
+                        />
+                      </div>
+                      <div className="form-group" style={{ width: '100px' }}>
+                        <label className="form-label">Unit</label>
+                        <select
+                          className="input-field input-disabled"
+                          value={measure.unit}
+                          disabled
+                        >
+                          <option value="inch">inch</option>
+                          <option value="cm">cm</option>
+                          <option value="feet">feet</option>
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ flex: 1 }}>
+                        <label className="form-label">Value</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="input-field"
+                          value={measure.fieldValue}
+                          onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
+                          placeholder="Enter value"
+                        />
+                      </div>
                     </div>
-                    <div className="form-group" style={{ width: '100px' }}>
-                      <label className="form-label">Unit</label>
-                      <select
-                        className="input-field input-disabled"
-                        value={measure.unit}
-                        disabled
-                      >
-                        <option value="inch">inch</option>
-                        <option value="cm">cm</option>
-                        <option value="feet">feet</option>
-                      </select>
-                    </div>
-                    <div className="form-group" style={{ flex: 1 }}>
-                      <label className="form-label">Value</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="input-field"
-                        value={measure.fieldValue}
-                        onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
-                        placeholder="Enter value"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
+                  {formData.orderType === 'product'
+                    ? (formData.productId ? 'No measurements available for this product.' : 'Select a product to see measurements.')
+                    : (formData.outfitTypeId ? 'No measurements available for this outfit type.' : 'Select an outfit type to see measurements.')
+                  }
+                </p>
+              )}
             </div>
           )}
 

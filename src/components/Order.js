@@ -152,7 +152,7 @@ const Order = ({ onLogout }) => {
                             <img
                               src={order.outfitStyleRefImg[0]}
                               alt={order._id}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              style={{ width: '100%', height: '100%' }}
                             />
                           ) : (
                             <FiPackage size={24} color="var(--gray-color)" />
