@@ -68,9 +68,13 @@ const AddEditProduct = ({ onLogout }) => {
   useEffect(() => {
     if (formData.outfitTypeId) {
       fetchAddons(formData.outfitTypeId);
-      populateMeasurementsFromOutfitType(formData.outfitTypeId);
+      // Only auto-populate measurements from outfit type for new products
+      // For edit mode, preserve the product's saved measurements
+      if (!isEditMode) {
+        populateMeasurementsFromOutfitType(formData.outfitTypeId);
+      }
     }
-  }, [formData.outfitTypeId]);
+  }, [formData.outfitTypeId, isEditMode]);
 
   const fetchOutfitTypes = async () => {
     try {
@@ -116,13 +120,18 @@ const AddEditProduct = ({ onLogout }) => {
       setLoading(true);
       const data = await productAPI.getProductById(productId);
       if (data) {
+        const outfitTypeId = data.outfitTypeId?._id || data.outfitTypeId || '';
+
+        // Merge saved measurements with outfit type fields to ensure all fields are shown
+        const mergedMeasurements = mergeMeasurementsWithOutfitType(outfitTypeId, data.measurement);
+
         setFormData({
           // Create Product fields
           name: data.name || '',
-          outfitTypeId: data.outfitTypeId?._id || data.outfitTypeId || '',
+          outfitTypeId: outfitTypeId,
           subCategoryName: data.subCategoryName || '',
           outfitStyleRefImg: data.outfitStyleRefImg || [],
-          measurement: data.measurement || [],
+          measurement: mergedMeasurements,
           addons: data.addons || [],
           // Update Product additional fields
           fabricType: data.fabricType || '',
@@ -169,7 +178,7 @@ const AddEditProduct = ({ onLogout }) => {
         unit: field.unit || 'inch',
         fieldValue: ''
       }));
-      
+
       setFormData(prev => ({
         ...prev,
         measurement: outfitMeasurements
@@ -181,6 +190,32 @@ const AddEditProduct = ({ onLogout }) => {
         measurement: []
       }));
     }
+  };
+
+  // For edit mode: Merge outfit type fields with existing product measurements
+  const mergeMeasurementsWithOutfitType = (outfitTypeId, existingMeasurements) => {
+    const selectedOutfit = outfitTypes.find(o => o._id === outfitTypeId);
+    if (!selectedOutfit?.fields) {
+      return existingMeasurements || [];
+    }
+
+    // Create a map of existing measurements by field label for quick lookup
+    const existingMap = new Map();
+    (existingMeasurements || []).forEach(m => {
+      existingMap.set(m.fieldLable, m);
+    });
+
+    // Merge: Use existing values where available, otherwise create new with empty value
+    const mergedMeasurements = selectedOutfit.fields.map(field => {
+      const existing = existingMap.get(field.label);
+      return {
+        fieldLable: field.label || '',
+        unit: field.unit || 'inch',
+        fieldValue: existing ? existing.fieldValue : ''
+      };
+    });
+
+    return mergedMeasurements;
   };
 
   const handleInputChange = (field, value) => {

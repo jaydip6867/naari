@@ -419,11 +419,11 @@ const AddEditOrder = ({ onLogout }) => {
         payload.specialInstructions = formData.specialInstructions;
 
         await orderAPI.updateOrder(payload);
+        navigate('/orders');
       } else {
-        await orderAPI.createOrder(payload);
+        const newOrder = await orderAPI.createOrder(payload);
+        navigate(`/orders/edit/${newOrder._id}`);
       }
-
-      navigate('/orders');
     } catch (err) {
       console.error('Error saving order:', err);
       setError(err.message || 'Failed to save order');

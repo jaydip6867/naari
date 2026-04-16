@@ -140,7 +140,7 @@ const Product = ({ onLogout }) => {
                         </div>
                       </td>
                       <td style={{ padding: '12px' }}>{product.name}</td>
-                      <td style={{ padding: '12px' }}>{product.outfitTypeId?.name || '-'}</td>
+                      <td style={{ padding: '12px' }}>{product.outfitTypeName || '-'}</td>
                       <td style={{ padding: '12px' }}>{product.subCategoryName || '-'}</td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -158,13 +158,13 @@ const Product = ({ onLogout }) => {
                           >
                             <FiEdit2 />
                           </button>
-                          <button 
+                          {/* <button 
                             className="delete-btn"
                             onClick={() => handleDeleteProduct(product._id)}
                             title="Delete"
                           >
                             <FiTrash2 />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
