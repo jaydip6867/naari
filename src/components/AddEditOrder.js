@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { orderAPI, productAPI, measurementsAPI, addonsAPI, customerAPI, uploadAPI } from '../services/api';
+import { orderAPI, productAPI, measurementsAPI, addonsAPI, customerAPI, uploadAPI, staffAPI } from '../services/api';
 import { FiPlus, FiTrash2, FiUpload, FiX, FiArrowLeft } from 'react-icons/fi';
 
 const AddEditOrder = ({ onLogout }) => {
@@ -65,6 +65,7 @@ const AddEditOrder = ({ onLogout }) => {
   const [availableAddons, setAvailableAddons] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedOutfit, setSelectedOutfit] = useState(null);
+  const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -83,6 +84,7 @@ const AddEditOrder = ({ onLogout }) => {
         fetchCustomers(),
         fetchProducts(),
         fetchOutfitTypes(),
+        fetchStaff(),
         isEditMode ? fetchOrder() : Promise.resolve()
       ]);
     } catch (err) {
@@ -90,6 +92,15 @@ const AddEditOrder = ({ onLogout }) => {
       setError('Failed to load data. Please refresh the page.');
     } finally {
       setInitialLoading(false);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const data = await staffAPI.getStaff();
+      setStaffList(data || []);
+    } catch (err) {
+      console.error('Error fetching staff:', err);
     }
   };
 
@@ -282,6 +293,66 @@ const AddEditOrder = ({ onLogout }) => {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Auto-calculate total days and total price
+  useEffect(() => {
+    const fabricPurchaseDays = parseInt(formData.fabricPurchaseDays) || 0;
+    const dyeingDays = parseInt(formData.dyeingDays) || 0;
+    const embroideryDays = parseInt(formData.embroideryDays) || 0;
+    const stitichingDays = parseInt(formData.stitichingDays) || 0;
+    const otherWorkDays = parseInt(formData.otherWorkDays) || 0;
+    const packingDays = parseInt(formData.packingDays) || 0;
+
+    const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
+    const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
+    const embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
+    const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
+    const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
+    const packingPrice = parseFloat(formData.packingPrice) || 0;
+
+    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays;
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice;
+
+    setFormData(prev => ({
+      ...prev,
+      totalDays: totalDays.toString(),
+      totalPrice: totalPrice.toFixed(2)
+    }));
+  }, [
+    formData.fabricPurchaseDays,
+    formData.dyeingDays,
+    formData.embroideryDays,
+    formData.stitichingDays,
+    formData.otherWorkDays,
+    formData.packingDays,
+    formData.fabricPurchasePrice,
+    formData.dyeingPrice,
+    formData.embroideryPrice,
+    formData.stitichingPrice,
+    formData.otherWorkPrice,
+    formData.packingPrice
+  ]);
+
+  // Auto-calculate delivery date: today + totalDays
+  useEffect(() => {
+    const totalDays = parseInt(formData.totalDays) || 0;
+    if (totalDays > 0) {
+      const today = new Date();
+      const deliveryDate = new Date(today);
+      deliveryDate.setDate(today.getDate() + totalDays);
+      
+      // Format as YYYY-MM-DD for date input
+      const year = deliveryDate.getFullYear();
+      const month = String(deliveryDate.getMonth() + 1).padStart(2, '0');
+      const day = String(deliveryDate.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      
+      setFormData(prev => ({
+        ...prev,
+        deliveryDate: formattedDate
+      }));
+    }
+  }, [formData.totalDays]);
 
   const handleMeasurementChange = (index, field, value) => {
     setFormData(prev => {
@@ -873,13 +944,18 @@ const AddEditOrder = ({ onLogout }) => {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Assign Worker</label>
-                    <input
-                      type="text"
+                    <select
                       className="input-field"
                       value={formData.assignWorker}
                       onChange={(e) => handleInputChange('assignWorker', e.target.value)}
-                      placeholder="Worker ID"
-                    />
+                    >
+                      <option value="">Select Worker</option>
+                      {staffList.map((staff) => (
+                        <option key={staff._id} value={staff._id}>
+                          {staff.fullName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stitching Style</label>
@@ -1050,24 +1126,24 @@ const AddEditOrder = ({ onLogout }) => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Total Days</label>
+                    <label className="form-label">Total Days (Auto-calculated)</label>
                     <input
                       type="number"
-                      className="input-field"
+                      className="input-field input-disabled"
                       value={formData.totalDays}
-                      onChange={(e) => handleInputChange('totalDays', e.target.value)}
-                      placeholder="Total Days"
+                      disabled
+                      placeholder="Auto-calculated"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Total Price (₹)</label>
+                    <label className="form-label">Total Price (₹) (Auto-calculated)</label>
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
+                      className="input-field input-disabled"
                       value={formData.totalPrice}
-                      onChange={(e) => handleInputChange('totalPrice', e.target.value)}
-                      placeholder="Total Price"
+                      disabled
+                      placeholder="Auto-calculated"
                     />
                   </div>
                   <div className="form-group">
@@ -1082,13 +1158,12 @@ const AddEditOrder = ({ onLogout }) => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Delivery Date</label>
+                    <label className="form-label">Delivery Date (Auto-calculated)</label>
                     <input
-                      type="text"
+                      type="date"
                       className="input-field"
                       value={formData.deliveryDate}
                       onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
-                      placeholder="DD-MM-YYYY"
                     />
                   </div>
                   <div className="form-group full-width">

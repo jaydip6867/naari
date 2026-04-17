@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { productAPI } from '../services/api';
-import { measurementsAPI, addonsAPI, uploadAPI } from '../services/api';
+import { measurementsAPI, addonsAPI, uploadAPI, staffAPI } from '../services/api';
 import { FiPlus, FiTrash2, FiUpload, FiX } from 'react-icons/fi';
 
 const AddEditProduct = ({ onLogout }) => {
@@ -20,6 +20,7 @@ const AddEditProduct = ({ onLogout }) => {
   // Dropdown data
   const [outfitTypes, setOutfitTypes] = useState([]);
   const [availableAddons, setAvailableAddons] = useState([]);
+  const [staffList, setStaffList] = useState([]);
 
   // Form state - includes Create and Update Product API fields
   const [formData, setFormData] = useState({
@@ -59,22 +60,23 @@ const AddEditProduct = ({ onLogout }) => {
   // Fetch initial data
   useEffect(() => {
     fetchOutfitTypes();
+    fetchStaff();
     if (isEditMode && productId) {
       fetchProduct();
     }
   }, [productId]);
 
-  // Fetch addons and outfit fields when outfit type changes
+  // Fetch addons and outfit fields when outfit type or subcategory changes
   useEffect(() => {
     if (formData.outfitTypeId) {
       fetchAddons(formData.outfitTypeId);
       // Only auto-populate measurements from outfit type for new products
       // For edit mode, preserve the product's saved measurements
       if (!isEditMode) {
-        populateMeasurementsFromOutfitType(formData.outfitTypeId);
+        populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
       }
     }
-  }, [formData.outfitTypeId, isEditMode]);
+  }, [formData.outfitTypeId, formData.subCategoryName, isEditMode]);
 
   const fetchOutfitTypes = async () => {
     try {
@@ -82,6 +84,15 @@ const AddEditProduct = ({ onLogout }) => {
       setOutfitTypes(data || []);
     } catch (err) {
       console.error('Error fetching outfit types:', err);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const data = await staffAPI.getStaff();
+      setStaffList(data || []);
+    } catch (err) {
+      console.error('Error fetching staff:', err);
     }
   };
 
@@ -122,8 +133,8 @@ const AddEditProduct = ({ onLogout }) => {
       if (data) {
         const outfitTypeId = data.outfitTypeId?._id || data.outfitTypeId || '';
 
-        // Merge saved measurements with outfit type fields to ensure all fields are shown
-        const mergedMeasurements = mergeMeasurementsWithOutfitType(outfitTypeId, data.measurement);
+        // Merge saved measurements with outfit type/subcategory fields to ensure all fields are shown
+        const mergedMeasurements = mergeMeasurementsWithOutfitType(outfitTypeId, data.measurement, data.subCategoryName);
 
         setFormData({
           // Create Product fields
@@ -168,12 +179,27 @@ const AddEditProduct = ({ onLogout }) => {
     return outfitTypes.find(o => o._id === formData.outfitTypeId);
   };
 
-  const populateMeasurementsFromOutfitType = (outfitTypeId) => {
+  const populateMeasurementsFromOutfitType = (outfitTypeId, subCategoryName = null) => {
     const selectedOutfit = outfitTypes.find(o => o._id === outfitTypeId);
-    if (selectedOutfit?.fields && selectedOutfit.fields.length > 0) {
-      // Create measurements from outfit type fields
-      // API field structure: { label: "Chest", unit: "inch", isRequired: false }
-      const outfitMeasurements = selectedOutfit.fields.map(field => ({
+    let fields = [];
+
+    if (selectedOutfit) {
+      // If has subcategories and subcategory is selected, get fields from subcategory
+      if (selectedOutfit.hasSubCategories && subCategoryName && selectedOutfit.subCategories) {
+        const subCategory = selectedOutfit.subCategories.find(s => s.name === subCategoryName);
+        if (subCategory && subCategory.fields && subCategory.fields.length > 0) {
+          fields = subCategory.fields;
+        }
+      }
+      // Otherwise get fields from main outfit type
+      else if (selectedOutfit.fields && selectedOutfit.fields.length > 0) {
+        fields = selectedOutfit.fields;
+      }
+    }
+
+    if (fields.length > 0) {
+      // Create measurements from fields
+      const outfitMeasurements = fields.map(field => ({
         fieldLable: field.label || '',
         unit: field.unit || 'inch',
         fieldValue: ''
@@ -192,10 +218,28 @@ const AddEditProduct = ({ onLogout }) => {
     }
   };
 
-  // For edit mode: Merge outfit type fields with existing product measurements
-  const mergeMeasurementsWithOutfitType = (outfitTypeId, existingMeasurements) => {
+  // For edit mode: Merge outfit type/subcategory fields with existing product measurements
+  const mergeMeasurementsWithOutfitType = (outfitTypeId, existingMeasurements, subCategoryName = null) => {
     const selectedOutfit = outfitTypes.find(o => o._id === outfitTypeId);
-    if (!selectedOutfit?.fields) {
+    if (!selectedOutfit) {
+      return existingMeasurements || [];
+    }
+
+    let fields = [];
+
+    // If has subcategories and subcategory is selected, get fields from subcategory
+    if (selectedOutfit.hasSubCategories && subCategoryName && selectedOutfit.subCategories) {
+      const subCategory = selectedOutfit.subCategories.find(s => s.name === subCategoryName);
+      if (subCategory && subCategory.fields) {
+        fields = subCategory.fields;
+      }
+    }
+    // Otherwise get fields from main outfit type
+    else if (selectedOutfit.fields) {
+      fields = selectedOutfit.fields;
+    }
+
+    if (fields.length === 0) {
       return existingMeasurements || [];
     }
 
@@ -206,7 +250,7 @@ const AddEditProduct = ({ onLogout }) => {
     });
 
     // Merge: Use existing values where available, otherwise create new with empty value
-    const mergedMeasurements = selectedOutfit.fields.map(field => {
+    const mergedMeasurements = fields.map(field => {
       const existing = existingMap.get(field.label);
       return {
         fieldLable: field.label || '',
@@ -221,6 +265,19 @@ const AddEditProduct = ({ onLogout }) => {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Auto-calculate total fusing price when price per meter or meters change
+  useEffect(() => {
+    if (formData.fusingRequired) {
+      const pricePerMeter = parseFloat(formData.fusingPricePerMeter) || 0;
+      const meters = parseFloat(formData.totalFusingMeters) || 0;
+      const totalPrice = pricePerMeter * meters;
+      setFormData(prev => ({
+        ...prev,
+        totalFusingPrice: totalPrice.toFixed(2)
+      }));
+    }
+  }, [formData.fusingPricePerMeter, formData.totalFusingMeters, formData.fusingRequired]);
 
   const handleMeasurementChange = (index, field, value) => {
     const newMeasurements = [...formData.measurement];
@@ -328,11 +385,11 @@ const AddEditProduct = ({ onLogout }) => {
           price: parseFloat(formData.price) || 0
         };
         await productAPI.updateProduct(updatePayload);
+        navigate('/products');
       } else {
-        await productAPI.createProduct(payload);
+        const newProduct = await productAPI.createProduct(payload);
+        navigate(`/products/edit/${newProduct._id}`);
       }
-
-      navigate('/products');
     } catch (err) {
       console.error('Error saving product:', err);
       setError(err.message || 'Failed to save product');
@@ -678,14 +735,14 @@ const AddEditProduct = ({ onLogout }) => {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Total Fusing Price</label>
+                      <label className="form-label">Total Fusing Price (Auto-calculated)</label>
                       <input
                         type="number"
                         step="0.1"
-                        className="input-field"
+                        className="input-field input-disabled"
                         value={formData.totalFusingPrice}
-                        onChange={(e) => handleInputChange('totalFusingPrice', e.target.value)}
-                        placeholder="e.g., 4.5"
+                        disabled
+                        placeholder="Auto-calculated"
                       />
                     </div>
                   </div>
@@ -723,13 +780,18 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Assign Worker</label>
-                    <input
-                      type="text"
+                    <select
                       className="input-field"
                       value={formData.assignWorker}
                       onChange={(e) => handleInputChange('assignWorker', e.target.value)}
-                      placeholder="Worker ID"
-                    />
+                    >
+                      <option value="">Select Worker</option>
+                      {staffList.map((staff) => (
+                        <option key={staff._id} value={staff._id}>
+                          {staff.fullName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stitching Style</label>

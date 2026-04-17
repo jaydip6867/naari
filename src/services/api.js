@@ -246,6 +246,16 @@ export const staffAPI = {
     }
   },
 
+  getStaff: async (search = '') => {
+    const response = await api.post('/user/staff', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  },
+
   getStaffList: async (search = '', page = 1, limit = 10) => {
     const response = await api.post('/user/staff/list', { search, page, limit });
     
