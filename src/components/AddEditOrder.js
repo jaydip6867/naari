@@ -33,7 +33,7 @@ const AddEditOrder = ({ onLogout }) => {
     workTypes: [],
     embroideryWorkNotes: '',
     embroideryRefImg: [],
-    assignWorker: '',
+    assignWorker: [], // Array of {workerId, status} objects
     stitichingStyle: '',
     stitichingNotes: '',
     stitichingRefImg: [],
@@ -221,7 +221,12 @@ const AddEditOrder = ({ onLogout }) => {
           workTypes: order.workTypes || [],
           embroideryWorkNotes: order.embroideryWorkNotes || '',
           embroideryRefImg: order.embroideryRefImg || [],
-          assignWorker: order.assignWorker || '',
+          assignWorker: Array.isArray(order.assignWorker)
+            ? order.assignWorker.map(w => {
+                const workerId = w.workerId?._id || w.workerId || '';
+                return { workerId, status: w.status || 'order_overview' };
+              })
+            : [],
           stitichingStyle: order.stitichingStyle || '',
           stitichingNotes: order.stitichingNotes || '',
           stitichingRefImg: order.stitichingRefImg || [],
@@ -292,6 +297,49 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Add work type
+  const addWorkType = (workType) => {
+    if (workType && !formData.workTypes.includes(workType)) {
+      setFormData(prev => ({
+        ...prev,
+        workTypes: [...prev.workTypes, workType]
+      }));
+    }
+  };
+
+  // Remove work type
+  const removeWorkType = (workType) => {
+    setFormData(prev => ({
+      ...prev,
+      workTypes: prev.workTypes.filter(w => w !== workType)
+    }));
+  };
+
+  // Add a new worker assignment
+  const addWorkerAssignment = () => {
+    setFormData(prev => ({
+      ...prev,
+      assignWorker: [...prev.assignWorker, { workerId: '', status: 'order_overview' }]
+    }));
+  };
+
+  // Remove a worker assignment
+  const removeWorkerAssignment = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      assignWorker: prev.assignWorker.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Update worker assignment field
+  const handleWorkerAssignmentChange = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...prev.assignWorker];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, assignWorker: updated };
+    });
   };
 
   // Auto-calculate total days and total price
@@ -917,14 +965,72 @@ const AddEditOrder = ({ onLogout }) => {
               <div className="form-section">
                 <h3 className="section-title form-section-title">Work Types</h3>
                 <div className="form-group full-width">
-                  <label className="form-label">Work Types (comma separated)</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.workTypes.join(', ')}
-                    onChange={(e) => handleInputChange('workTypes', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-                    placeholder="e.g., HANDWORK, ZARI WORK"
-                  />
+                  <label className="form-label">Work Types</label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      id="workTypeInput"
+                      placeholder="e.g., HANDWORK"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addWorkType(e.target.value.trim());
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="add-btn"
+                      onClick={() => {
+                        const input = document.getElementById('workTypeInput');
+                        addWorkType(input.value.trim());
+                        input.value = '';
+                      }}
+                    >
+                      <FiPlus size={16} /> Add
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {formData.workTypes.map((workType, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '6px 12px',
+                          background: 'var(--primary-light)',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: '14px',
+                          color: 'var(--primary-color)'
+                        }}
+                      >
+                        {workType}
+                        <button
+                          type="button"
+                          onClick={() => removeWorkType(workType)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: 'var(--primary-color)'
+                          }}
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </span>
+                    ))}
+                    {formData.workTypes.length === 0 && (
+                      <span style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
+                        No work types added. Enter a work type and click Add.
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -942,20 +1048,63 @@ const AddEditOrder = ({ onLogout }) => {
                       placeholder="Enter embroidery notes..."
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Assign Worker</label>
-                    <select
-                      className="input-field"
-                      value={formData.assignWorker}
-                      onChange={(e) => handleInputChange('assignWorker', e.target.value)}
+                  <div className="form-group full-width">
+                    <label className="form-label">Assign Workers</label>
+                    {formData.assignWorker.map((assignment, index) => (
+                      <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                        <select
+                          className="input-field"
+                          style={{ flex: 1 }}
+                          value={assignment.workerId}
+                          onChange={(e) => handleWorkerAssignmentChange(index, 'workerId', e.target.value)}
+                        >
+                          <option value="">Select Worker</option>
+                          {staffList.map((staff) => (
+                            <option key={staff._id} value={staff._id}>
+                              {staff.fullName}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          className="input-field"
+                          style={{ flex: 1 }}
+                          value={assignment.status}
+                          onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                        >
+                          <option value="order_overview">Order Overview</option>
+                          <option value="fabric_purchase">Fabric Purchase</option>
+                          <option value="dying">Dying</option>
+                          <option value="fusing">Fusing</option>
+                          <option value="khakha">Khakha</option>
+                          <option value="art_work">Art Work</option>
+                          <option value="add_ons">Add Ons</option>
+                          <option value="cutting">Cutting</option>
+                          <option value="stitching">Stitching</option>
+                          <option value="qc">QC</option>
+                          <option value="other_work">Other Work</option>
+                          <option value="packing">Packing</option>
+                          <option value="ready_to_delivery">Ready to Delivery</option>
+                          <option value="delivery_complete">Delivery Complete</option>
+                          <option value="repairing">Repairing</option>
+                        </select>
+                        <button
+                          type="button"
+                          className="btn-icon btn"
+                          onClick={() => removeWorkerAssignment(index)}
+                          style={{ padding: '8px' }}
+                        >
+                          <FiTrash2 size={16} className="delete-icon" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="add-btn"
+                      onClick={addWorkerAssignment}
+                      style={{ marginTop: '8px', justifyContent: 'center' }}
                     >
-                      <option value="">Select Worker</option>
-                      {staffList.map((staff) => (
-                        <option key={staff._id} value={staff._id}>
-                          {staff.fullName}
-                        </option>
-                      ))}
-                    </select>
+                      <FiPlus size={16} /> Add Worker
+                    </button>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stitching Style</label>
