@@ -31,6 +31,10 @@ api.interceptors.response.use(
       localStorage.removeItem('naari_token');
       localStorage.removeItem('naari_user');
       window.location.href = '/';
+    } else if (error.response?.status === 400) {
+      // Return error message from .Message key for 400 status
+      const errorMessage = error.response.data?.Message || 'Bad Request';
+      return Promise.reject(new Error(errorMessage));
     }
     return Promise.reject(error);
   }
@@ -260,7 +264,7 @@ export const staffAPI = {
     const response = await api.post('/user/staff/list', { search, page, limit });
     
     if (response.data.IsSuccess && response.data.Status === 200) {
-      console.log(response.data.Data);
+      // console.log(response.data.Data);
       return response.data.Data;
     } else {
       throw new Error(response.data.Message || 'Failed to fetch staff list');
