@@ -184,13 +184,13 @@ const Order = ({ onLogout }) => {
                           >
                             <FiEdit2 />
                           </button>
-                          <button
+                          {/* <button
                             className="delete-btn"
                             onClick={() => handleDeleteOrder(order._id)}
                             title="Delete"
                           >
                             <FiTrash2 />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
