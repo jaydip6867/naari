@@ -38,10 +38,9 @@ const AddEditProduct = ({ onLogout }) => {
     fabricNotes: '',
     fusingRequired: false,
     fusingColor: '',
-    fusingPricePerMeter: '',
-    totalFusingMeters: '',
-    totalFusingPrice: '',
     workTypes: [],
+    fabricRefImg: [],
+    workTypeRefImg: [],
     embroideryWorkNotes: '',
     embroideryRefImg: [],
     assignWorker: [], // Array of {workerId, status} objects
@@ -151,10 +150,9 @@ const AddEditProduct = ({ onLogout }) => {
           fabricNotes: data.fabricNotes || '',
           fusingRequired: data.fusingRequired || false,
           fusingColor: data.fusingColor || '',
-          fusingPricePerMeter: data.fusingPricePerMeter || '',
-          totalFusingMeters: data.totalFusingMeters || '',
-          totalFusingPrice: data.totalFusingPrice || '',
           workTypes: data.workTypes || [],
+          fabricRefImg: data.fabricRefImg || [],
+          workTypeRefImg: data.workTypeRefImg || [],
           embroideryWorkNotes: data.embroideryWorkNotes || '',
           embroideryRefImg: data.embroideryRefImg || [],
           assignWorker: Array.isArray(data.assignWorker)
@@ -315,19 +313,6 @@ const AddEditProduct = ({ onLogout }) => {
     });
   };
 
-  // Auto-calculate total fusing price when price per meter or meters change
-  useEffect(() => {
-    if (formData.fusingRequired) {
-      const pricePerMeter = parseFloat(formData.fusingPricePerMeter) || 0;
-      const meters = parseFloat(formData.totalFusingMeters) || 0;
-      const totalPrice = pricePerMeter * meters;
-      setFormData(prev => ({
-        ...prev,
-        totalFusingPrice: totalPrice.toFixed(2)
-      }));
-    }
-  }, [formData.fusingPricePerMeter, formData.totalFusingMeters, formData.fusingRequired]);
-
   const handleMeasurementChange = (index, field, value) => {
     const newMeasurements = [...formData.measurement];
     newMeasurements[index] = { ...newMeasurements[index], [field]: value };
@@ -398,6 +383,14 @@ const AddEditProduct = ({ onLogout }) => {
       const existingUrls = formData.outfitStyleRefImg.filter(url => !url.startsWith('blob:'));
       const finalImageUrls = [...existingUrls, ...uploadedImageUrls];
 
+      // Separate fabricRefImg URLs - keep existing, add new uploaded ones
+      const existingFabricUrls = formData.fabricRefImg.filter(url => !url.startsWith('blob:'));
+      const finalFabricUrls = [...existingFabricUrls, ...uploadedImageUrls];
+
+      // Separate workTypeRefImg URLs - keep existing, add new uploaded ones
+      const existingWorkTypeUrls = formData.workTypeRefImg.filter(url => !url.startsWith('blob:'));
+      const finalWorkTypeUrls = [...existingWorkTypeUrls, ...uploadedImageUrls];
+
       const payload = {
         name: formData.name,
         outfitTypeId: formData.outfitTypeId,
@@ -418,10 +411,9 @@ const AddEditProduct = ({ onLogout }) => {
           fabricNotes: formData.fabricNotes,
           fusingRequired: formData.fusingRequired,
           fusingColor: formData.fusingColor,
-          fusingPricePerMeter: parseFloat(formData.fusingPricePerMeter) || 0,
-          totalFusingMeters: parseFloat(formData.totalFusingMeters) || 0,
-          totalFusingPrice: parseFloat(formData.totalFusingPrice) || 0,
           workTypes: formData.workTypes,
+          fabricRefImg: finalFabricUrls,
+          workTypeRefImg: finalWorkTypeUrls,
           embroideryWorkNotes: formData.embroideryWorkNotes,
           embroideryRefImg: formData.embroideryRefImg,
           assignWorker: formData.assignWorker,
@@ -733,6 +725,33 @@ const AddEditProduct = ({ onLogout }) => {
                       placeholder="Enter fabric notes..."
                     />
                   </div>
+                  {/* Fabric Reference Images */}
+                  <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                    <label className="form-label">Fabric Reference Images</label>
+                    <div className="image-upload-container">
+                      {formData.fabricRefImg.map((img, index) => (
+                        <div key={index} className="image-preview">
+                          <img src={img} alt={`Fabric ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="image-remove-btn"
+                            onClick={() => removeImage('fabricRefImg', index)}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="image-upload-btn">
+                        <FiUpload size={24} />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload('fabricRefImg', e.target.files)}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -759,39 +778,6 @@ const AddEditProduct = ({ onLogout }) => {
                         value={formData.fusingColor}
                         onChange={(e) => handleInputChange('fusingColor', e.target.value)}
                         placeholder="e.g., Black"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Price per Meter</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input-field"
-                        value={formData.fusingPricePerMeter}
-                        onChange={(e) => handleInputChange('fusingPricePerMeter', e.target.value)}
-                        placeholder="e.g., 3"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Total Fusing Meters</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input-field"
-                        value={formData.totalFusingMeters}
-                        onChange={(e) => handleInputChange('totalFusingMeters', e.target.value)}
-                        placeholder="e.g., 1.5"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Total Fusing Price (Auto-calculated)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input-field input-disabled"
-                        value={formData.totalFusingPrice}
-                        disabled
-                        placeholder="Auto-calculated"
                       />
                     </div>
                   </div>
@@ -867,6 +853,33 @@ const AddEditProduct = ({ onLogout }) => {
                         No work types added. Enter a work type and click Add.
                       </span>
                     )}
+                  </div>
+                  {/* Work Type Reference Images */}
+                  <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                    <label className="form-label">Work Type Reference Images</label>
+                    <div className="image-upload-container">
+                      {formData.workTypeRefImg.map((img, index) => (
+                        <div key={index} className="image-preview">
+                          <img src={img} alt={`Work Type ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="image-remove-btn"
+                            onClick={() => removeImage('workTypeRefImg', index)}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="image-upload-btn">
+                        <FiUpload size={24} />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload('workTypeRefImg', e.target.files)}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

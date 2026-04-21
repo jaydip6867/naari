@@ -27,10 +27,11 @@ const AddEditOrder = ({ onLogout }) => {
     fabricNotes: '',
     fusingRequired: false,
     fusingColor: '',
-    fusingPricePerMeter: '',
-    totalFusingMeters: '',
-    totalFusingPrice: '',
+    fusingDays: '',
+    fusingPrice: '',
     workTypes: [],
+    fabricRefImg: [],
+    workTypeRefImg: [],
     embroideryWorkNotes: '',
     embroideryRefImg: [],
     assignWorker: [], // Array of {workerId, status} objects
@@ -215,10 +216,11 @@ const AddEditOrder = ({ onLogout }) => {
           fabricNotes: order.fabricNotes || '',
           fusingRequired: order.fusingRequired || false,
           fusingColor: order.fusingColor || '',
-          fusingPricePerMeter: order.fusingPricePerMeter || '',
-          totalFusingMeters: order.totalFusingMeters || '',
-          totalFusingPrice: order.totalFusingPrice || '',
+          fusingDays: order.fusingDays || '',
+          fusingPrice: order.fusingPrice || '',
           workTypes: order.workTypes || [],
+          fabricRefImg: order.fabricRefImg || [],
+          workTypeRefImg: order.workTypeRefImg || [],
           embroideryWorkNotes: order.embroideryWorkNotes || '',
           embroideryRefImg: order.embroideryRefImg || [],
           assignWorker: Array.isArray(order.assignWorker)
@@ -350,6 +352,7 @@ const AddEditOrder = ({ onLogout }) => {
     const stitichingDays = parseInt(formData.stitichingDays) || 0;
     const otherWorkDays = parseInt(formData.otherWorkDays) || 0;
     const packingDays = parseInt(formData.packingDays) || 0;
+    const fusingDays = parseInt(formData.fusingDays) || 0;
 
     const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
     const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
@@ -357,9 +360,10 @@ const AddEditOrder = ({ onLogout }) => {
     const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
     const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
     const packingPrice = parseFloat(formData.packingPrice) || 0;
+    const fusingPrice = parseFloat(formData.fusingPrice) || 0;
 
-    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays;
-    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice;
+    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays + fusingDays;
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + fusingPrice;
 
     setFormData(prev => ({
       ...prev,
@@ -373,12 +377,14 @@ const AddEditOrder = ({ onLogout }) => {
     formData.stitichingDays,
     formData.otherWorkDays,
     formData.packingDays,
+    formData.fusingDays,
     formData.fabricPurchasePrice,
     formData.dyeingPrice,
     formData.embroideryPrice,
     formData.stitichingPrice,
     formData.otherWorkPrice,
-    formData.packingPrice
+    formData.packingPrice,
+    formData.fusingPrice
   ]);
 
   // Auto-calculate delivery date: today + totalDays
@@ -461,9 +467,10 @@ const AddEditOrder = ({ onLogout }) => {
     setError('');
 
     try {
-      // Separate existing URLs from new blob URLs
+      // Separate existing URLs from new blob URLs for each image field
       const existingUrls = formData.outfitStyleRefImg.filter(img => !img.startsWith('blob:'));
-      const blobUrls = formData.outfitStyleRefImg.filter(img => img.startsWith('blob:'));
+      const existingFabricUrls = formData.fabricRefImg.filter(img => !img.startsWith('blob:'));
+      const existingWorkTypeUrls = formData.workTypeRefImg.filter(img => !img.startsWith('blob:'));
 
       let uploadedImageUrls = [...existingUrls];
 
@@ -477,6 +484,10 @@ const AddEditOrder = ({ onLogout }) => {
 
       // Clean up pending uploads
       setPendingUploads([]);
+
+      // Build final URLs for each image field (existing + newly uploaded)
+      const finalFabricUrls = [...existingFabricUrls, ...uploadedImageUrls.filter(url => !existingUrls.includes(url))];
+      const finalWorkTypeUrls = [...existingWorkTypeUrls, ...uploadedImageUrls.filter(url => !existingUrls.includes(url) && !finalFabricUrls.includes(url))];
 
       const payload = {
         customerId: formData.customerId,
@@ -507,10 +518,11 @@ const AddEditOrder = ({ onLogout }) => {
         payload.fabricNotes = formData.fabricNotes;
         payload.fusingRequired = formData.fusingRequired;
         payload.fusingColor = formData.fusingColor;
-        payload.fusingPricePerMeter = parseFloat(formData.fusingPricePerMeter) || 0;
-        payload.totalFusingMeters = parseFloat(formData.totalFusingMeters) || 0;
-        payload.totalFusingPrice = parseFloat(formData.totalFusingPrice) || 0;
+        payload.fusingDays = parseInt(formData.fusingDays) || 0;
+        payload.fusingPrice = parseFloat(formData.fusingPrice) || 0;
         payload.workTypes = formData.workTypes;
+        payload.fabricRefImg = finalFabricUrls;
+        payload.workTypeRefImg = finalWorkTypeUrls;
         payload.embroideryWorkNotes = formData.embroideryWorkNotes;
         payload.embroideryRefImg = formData.embroideryRefImg;
         payload.assignWorker = formData.assignWorker;
@@ -755,10 +767,11 @@ const AddEditOrder = ({ onLogout }) => {
                         <input
                           type="number"
                           step="0.01"
-                          className="input-field"
+                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                           value={measure.fieldValue}
                           onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
                           placeholder="Enter value"
+                          disabled={formData.orderType === 'product'}
                         />
                       </div>
                     </div>
@@ -789,6 +802,7 @@ const AddEditOrder = ({ onLogout }) => {
                         className="addon-checkbox"
                         checked={addon.isSelected}
                         onChange={(e) => handleAddonChange(index, 'isSelected', e.target.checked)}
+                        disabled={formData.orderType === 'product'}
                       />
                       <label htmlFor={`addon-${index}`} className="addon-title">{addon.title}</label>
                       <span className="addon-type">({addon.fieldType})</span>
@@ -799,21 +813,23 @@ const AddEditOrder = ({ onLogout }) => {
                         {addon.fieldType === 'text' && (
                           <input
                             type="text"
-                            className="input-field"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                             placeholder="Enter value"
                             value={addon.value}
                             onChange={(e) => handleAddonChange(index, 'value', e.target.value)}
+                            disabled={formData.orderType === 'product'}
                           />
                         )}
                         {addon.fieldType === 'radio' && (
                           <div className="radio-group">
                             {addon.options.map((option, optIndex) => (
-                              <label key={optIndex} className="radio-label">
+                              <label key={optIndex} className={`radio-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
                                 <input
                                   type="radio"
                                   name={`addon-${index}-option`}
                                   checked={addon.value === option}
                                   onChange={() => handleAddonChange(index, 'value', option)}
+                                  disabled={formData.orderType === 'product'}
                                 />
                                 <span>{option}</span>
                               </label>
@@ -823,7 +839,7 @@ const AddEditOrder = ({ onLogout }) => {
                         {addon.fieldType === 'checkbox' && (
                           <div className="checkbox-group">
                             {addon.options.map((option, optIndex) => (
-                              <label key={optIndex} className="checkbox-label">
+                              <label key={optIndex} className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
                                 <input
                                   type="checkbox"
                                   checked={addon.value?.includes(option)}
@@ -834,6 +850,7 @@ const AddEditOrder = ({ onLogout }) => {
                                       : currentValues.filter(v => v !== option);
                                     handleAddonChange(index, 'value', newValues.join(','));
                                   }}
+                                  disabled={formData.orderType === 'product'}
                                 />
                                 <span>{option}</span>
                               </label>
@@ -859,20 +876,22 @@ const AddEditOrder = ({ onLogout }) => {
                     <label className="form-label">Fabric Type</label>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       value={formData.fabricType}
                       onChange={(e) => handleInputChange('fabricType', e.target.value)}
                       placeholder="e.g., Cotton"
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Fabric Color</label>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       value={formData.fabricColor}
                       onChange={(e) => handleInputChange('fabricColor', e.target.value)}
                       placeholder="e.g., Maroon"
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                   <div className="form-group">
@@ -880,21 +899,53 @@ const AddEditOrder = ({ onLogout }) => {
                     <input
                       type="number"
                       step="0.1"
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       value={formData.metersRequired}
                       onChange={(e) => handleInputChange('metersRequired', e.target.value)}
                       placeholder="e.g., 3.5"
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                   <div className="form-group full-width">
                     <label className="form-label">Fabric Notes</label>
                     <textarea
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       rows="2"
                       value={formData.fabricNotes}
                       onChange={(e) => handleInputChange('fabricNotes', e.target.value)}
                       placeholder="Enter fabric notes..."
+                      disabled={formData.orderType === 'product'}
                     />
+                  </div>
+                  {/* Fabric Reference Images */}
+                  <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                    <label className="form-label">Fabric Reference Images</label>
+                    <div className="image-upload-container">
+                      {formData.fabricRefImg.map((img, index) => (
+                        <div key={index} className="image-preview">
+                          <img src={img} alt={`Fabric ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="image-remove-btn"
+                            onClick={() => removeImage('fabricRefImg', index)}
+                            style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                        <FiUpload size={24} />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload('fabricRefImg', e.target.files)}
+                          disabled={formData.orderType === 'product'}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -903,11 +954,12 @@ const AddEditOrder = ({ onLogout }) => {
               <div className="form-section">
                 <h3 className="section-title form-section-title">Fusing Details</h3>
                 <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label className="checkbox-label">
+                  <label className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
                     <input
                       type="checkbox"
                       checked={formData.fusingRequired}
                       onChange={(e) => handleInputChange('fusingRequired', e.target.checked)}
+                      disabled={formData.orderType === 'product'}
                     />
                     <span>Fusing Required</span>
                   </label>
@@ -918,43 +970,34 @@ const AddEditOrder = ({ onLogout }) => {
                       <label className="form-label">Fusing Color</label>
                       <input
                         type="text"
-                        className="input-field"
+                        className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                         value={formData.fusingColor}
                         onChange={(e) => handleInputChange('fusingColor', e.target.value)}
                         placeholder="e.g., Black"
+                        disabled={formData.orderType === 'product'}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Price per Meter</label>
+                      <label className="form-label">Fusing Days</label>
                       <input
                         type="number"
-                        step="0.1"
-                        className="input-field"
-                        value={formData.fusingPricePerMeter}
-                        onChange={(e) => handleInputChange('fusingPricePerMeter', e.target.value)}
-                        placeholder="e.g., 3"
+                        className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                        value={formData.fusingDays}
+                        onChange={(e) => handleInputChange('fusingDays', e.target.value)}
+                        placeholder="e.g., 2"
+                        disabled={formData.orderType === 'product'}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Total Fusing Meters</label>
+                      <label className="form-label">Fusing Price</label>
                       <input
                         type="number"
                         step="0.1"
-                        className="input-field"
-                        value={formData.totalFusingMeters}
-                        onChange={(e) => handleInputChange('totalFusingMeters', e.target.value)}
-                        placeholder="e.g., 1.5"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Total Fusing Price</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input-field"
-                        value={formData.totalFusingPrice}
-                        onChange={(e) => handleInputChange('totalFusingPrice', e.target.value)}
-                        placeholder="e.g., 4.5"
+                        className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                        value={formData.fusingPrice}
+                        onChange={(e) => handleInputChange('fusingPrice', e.target.value)}
+                        placeholder="e.g., 50"
+                        disabled={formData.orderType === 'product'}
                       />
                     </div>
                   </div>
@@ -969,7 +1012,7 @@ const AddEditOrder = ({ onLogout }) => {
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       id="workTypeInput"
                       placeholder="e.g., HANDWORK"
                       onKeyDown={(e) => {
@@ -979,6 +1022,7 @@ const AddEditOrder = ({ onLogout }) => {
                           e.target.value = '';
                         }
                       }}
+                      disabled={formData.orderType === 'product'}
                     />
                     <button
                       type="button"
@@ -988,6 +1032,7 @@ const AddEditOrder = ({ onLogout }) => {
                         addWorkType(input.value.trim());
                         input.value = '';
                       }}
+                      disabled={formData.orderType === 'product'}
                     >
                       <FiPlus size={16} /> Add
                     </button>
@@ -1014,12 +1059,14 @@ const AddEditOrder = ({ onLogout }) => {
                           style={{
                             background: 'none',
                             border: 'none',
-                            cursor: 'pointer',
+                            cursor: formData.orderType === 'product' ? 'not-allowed' : 'pointer',
                             padding: '2px',
                             display: 'flex',
                             alignItems: 'center',
-                            color: 'var(--primary-color)'
+                            color: 'var(--primary-color)',
+                            opacity: formData.orderType === 'product' ? 0.5 : 1
                           }}
+                          disabled={formData.orderType === 'product'}
                         >
                           <FiX size={14} />
                         </button>
@@ -1031,6 +1078,36 @@ const AddEditOrder = ({ onLogout }) => {
                       </span>
                     )}
                   </div>
+                  {/* Work Type Reference Images */}
+                  <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                    <label className="form-label">Work Type Reference Images</label>
+                    <div className="image-upload-container">
+                      {formData.workTypeRefImg.map((img, index) => (
+                        <div key={index} className="image-preview">
+                          <img src={img} alt={`Work Type ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="image-remove-btn"
+                            onClick={() => removeImage('workTypeRefImg', index)}
+                            style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                        <FiUpload size={24} />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload('workTypeRefImg', e.target.files)}
+                          disabled={formData.orderType === 'product'}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1041,11 +1118,12 @@ const AddEditOrder = ({ onLogout }) => {
                   <div className="form-group full-width">
                     <label className="form-label">Embroidery Work Notes</label>
                     <textarea
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       rows="2"
                       value={formData.embroideryWorkNotes}
                       onChange={(e) => handleInputChange('embroideryWorkNotes', e.target.value)}
                       placeholder="Enter embroidery notes..."
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                   <div className="form-group full-width">
@@ -1053,10 +1131,11 @@ const AddEditOrder = ({ onLogout }) => {
                     {formData.assignWorker.map((assignment, index) => (
                       <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                         <select
-                          className="input-field"
+                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                           style={{ flex: 1 }}
                           value={assignment.workerId}
                           onChange={(e) => handleWorkerAssignmentChange(index, 'workerId', e.target.value)}
+                          disabled={formData.orderType === 'product'}
                         >
                           <option value="">Select Worker</option>
                           {staffList.map((staff) => (
@@ -1066,10 +1145,11 @@ const AddEditOrder = ({ onLogout }) => {
                           ))}
                         </select>
                         <select
-                          className="input-field"
+                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                           style={{ flex: 1 }}
                           value={assignment.status}
                           onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                          disabled={formData.orderType === 'product'}
                         >
                           <option value="order_overview">Order Overview</option>
                           <option value="fabric_purchase">Fabric Purchase</option>
@@ -1091,9 +1171,10 @@ const AddEditOrder = ({ onLogout }) => {
                           type="button"
                           className="btn-icon btn"
                           onClick={() => removeWorkerAssignment(index)}
-                          style={{ padding: '8px' }}
+                          style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                          disabled={formData.orderType === 'product'}
                         >
-                          <FiTrash2 size={16} className="delete-icon" />
+                          <FiTrash2 size={16} className='delete-icon' />
                         </button>
                       </div>
                     ))}
@@ -1101,7 +1182,8 @@ const AddEditOrder = ({ onLogout }) => {
                       type="button"
                       className="add-btn"
                       onClick={addWorkerAssignment}
-                      style={{ marginTop: '8px', justifyContent: 'center' }}
+                      style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                      disabled={formData.orderType === 'product'}
                     >
                       <FiPlus size={16} /> Add Worker
                     </button>
@@ -1110,20 +1192,22 @@ const AddEditOrder = ({ onLogout }) => {
                     <label className="form-label">Stitching Style</label>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       value={formData.stitichingStyle}
                       onChange={(e) => handleInputChange('stitichingStyle', e.target.value)}
                       placeholder="e.g., Regular"
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                   <div className="form-group full-width">
                     <label className="form-label">Stitching Notes</label>
                     <textarea
-                      className="input-field"
+                      className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                       rows="2"
                       value={formData.stitichingNotes}
                       onChange={(e) => handleInputChange('stitichingNotes', e.target.value)}
                       placeholder="Enter stitching notes..."
+                      disabled={formData.orderType === 'product'}
                     />
                   </div>
                 </div>
@@ -1135,11 +1219,12 @@ const AddEditOrder = ({ onLogout }) => {
                 <div className="form-group full-width">
                   <label className="form-label">Other Work Details</label>
                   <textarea
-                    className="input-field"
+                    className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                     rows="2"
                     value={formData.otherWork}
                     onChange={(e) => handleInputChange('otherWork', e.target.value)}
                     placeholder="Enter other work details..."
+                    disabled={formData.orderType === 'product'}
                   />
                 </div>
               </div>
