@@ -2694,6 +2694,9 @@ body {
   border-bottom: 3px solid var(--primary-color);
   display: inline-block;
 }
+h3.form-section-title{
+  margin-top: 0;
+}
 
 .form-grid {
   display: grid;
@@ -2834,18 +2837,8 @@ textarea.input-field {
 /* Measurements Grid */
 .measurements-grid {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   gap: 12px;
-}
-
-.measurement-item {
-  display: flex;
-  gap: 16px;
-  align-items: flex-end;
-  padding: 16px;
-  background: var(--background-light);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
 }
 
 /* Addons Grid */
@@ -2971,5 +2964,77 @@ textarea.input-field {
 
   .form-actions .btn {
     width: 100%;
+  }
+}
+
+/* ========================================
+   ORDER TABS STYLING
+   ======================================== */
+
+.order-tabs-container {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.order-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.order-tab {
+  padding: 10px 20px;
+  background: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.order-tab:hover {
+  background: #2a2a2a;
+}
+
+.order-tab.active {
+  background: #ff6b6b;
+  color: #ffffff;
+}
+
+.order-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive tabs */
+@media (max-width: 768px) {
+  .order-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .order-tab {
+    padding: 8px 16px;
+    font-size: 13px;
   }
 }

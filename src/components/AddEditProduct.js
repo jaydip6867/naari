@@ -55,6 +55,24 @@ const AddEditProduct = ({ onLogout }) => {
 
   // Store actual file objects for upload
   const [imageFiles, setImageFiles] = useState([]);
+  const [activeTab, setActiveTab] = useState('basic');
+
+  // Tab configuration - show only 3 tabs for create mode, all tabs for edit mode
+  const tabs = isEditMode ? [
+    { id: 'basic', label: 'Basic' },
+    { id: 'measurements', label: 'Measurements' },
+    { id: 'addons', label: 'Addons' },
+    { id: 'fabric', label: 'Fabric' },
+    { id: 'fusing', label: 'Fusing' },
+    { id: 'worktype', label: 'Work Types' },
+    { id: 'embroidery', label: 'Embroidery & Stitching' },
+    { id: 'other', label: 'Other' },
+    { id: 'quantityprice', label: 'Quantity & Price' }
+  ] : [
+    { id: 'basic', label: 'Basic' },
+    { id: 'measurements', label: 'Measurements' },
+    { id: 'addons', label: 'Addons' }
+  ];
 
   // Fetch initial data
   useEffect(() => {
@@ -445,6 +463,29 @@ const AddEditProduct = ({ onLogout }) => {
     navigate('/');
   };
 
+  // Tab change handler
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  // Render tab navigation
+  const renderTabNavigation = () => (
+    <div className="tabs">
+      <div className="order-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => handleTabChange(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="settings-container">
@@ -480,10 +521,13 @@ const AddEditProduct = ({ onLogout }) => {
           </div>
         )}
 
+        {renderTabNavigation()}
         <form onSubmit={handleSubmit} className="content-section product-form">
-          {/* Basic Information */}
-          <div className="form-section">
-            <h3 className="section-title form-section-title">Basic Information</h3>
+          {/* Basic Information Tab */}
+          {activeTab === 'basic' && (
+            <div className="tab-content">
+              <div className="form-section">
+                <h3 className="section-title form-section-title">Basic Information</h3>
             <div className="form-grid">
               <div className="form-group">
                 <label className="form-label">Product Name <span className="required">*</span></label>
@@ -557,12 +601,15 @@ const AddEditProduct = ({ onLogout }) => {
                 </label>
               </div>
             </div>
-          </div>
+              </div>
+            </div>
+          )}
 
-          {/* Measurements - Auto-populated from Outfit Type */}
-          {formData.measurement.length > 0 && (
-            <div className="form-section">
-              <h3 className="section-title form-section-title">Measurements</h3>
+          {/* Measurements Tab */}
+          {activeTab === 'measurements' && formData.measurement.length > 0 && (
+            <div className="tab-content">
+              <div className="form-section">
+                <h3 className="section-title form-section-title">Measurements</h3>
               <div className="measurements-grid">
                 {formData.measurement.map((measure, index) => (
                   <div key={index} className="measurement-item">
@@ -602,12 +649,14 @@ const AddEditProduct = ({ onLogout }) => {
                 ))}
               </div>
             </div>
+            </div>
           )}
 
-          {/* Addons */}
-          {availableAddons.length > 0 && (
-            <div className="form-section">
-              <h3 className="section-title form-section-title">Addons</h3>
+          {/* Addons Tab */}
+          {activeTab === 'addons' && availableAddons.length > 0 && (
+            <div className="tab-content">
+              <div className="form-section">
+                <h3 className="section-title form-section-title">Addons</h3>
               <div className="addons-grid">
                 {formData.addons.map((addon, index) => (
                   <div key={index} className={`addon-card ${addon.isSelected ? 'selected' : ''}`}>
@@ -675,14 +724,17 @@ const AddEditProduct = ({ onLogout }) => {
                 ))}
               </div>
             </div>
+            </div>
           )}
 
-          {/* Update Product Additional Fields - Only in Edit Mode */}
+          {/* Edit Mode Only Tabs */}
           {isEditMode && (
             <>
-              {/* Fabric Details */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Fabric Details</h3>
+              {/* Fabric Tab */}
+              {activeTab === 'fabric' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Fabric Details</h3>
                 <div className="form-grid">
                   <div className="form-group">
                     <label className="form-label">Fabric Type</label>
@@ -754,10 +806,14 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 </div>
               </div>
+                </div>
+              )}
 
-              {/* Fusing Details */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Fusing Details</h3>
+              {/* Fusing Tab */}
+              {activeTab === 'fusing' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Fusing Details</h3>
                 <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="checkbox-label">
                     <input
@@ -783,10 +839,14 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 )}
               </div>
+                </div>
+              )}
 
-              {/* Work Types */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Work Types</h3>
+              {/* Work Type Tab */}
+              {activeTab === 'worktype' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Work Types</h3>
                 <div className="form-group full-width">
                   <label className="form-label">Work Types</label>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -883,10 +943,14 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 </div>
               </div>
+                </div>
+              )}
 
-              {/* Embroidery & Stitching */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Embroidery & Stitching</h3>
+              {/* Embroidery & Stitching Tab */}
+              {activeTab === 'embroidery' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Embroidery & Stitching</h3>
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label className="form-label">Embroidery Work Notes</label>
@@ -978,10 +1042,14 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 </div>
               </div>
+                </div>
+              )}
 
-              {/* Other Work */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Other Work</h3>
+              {/* Other Work Tab */}
+              {activeTab === 'other' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Other Work</h3>
                 <div className="form-group full-width">
                   <label className="form-label">Other Work Details</label>
                   <textarea
@@ -993,10 +1061,14 @@ const AddEditProduct = ({ onLogout }) => {
                   />
                 </div>
               </div>
+                </div>
+              )}
 
-              {/* Quantity & Price */}
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Quantity & Price</h3>
+              {/* Quantity & Price Tab */}
+              {activeTab === 'quantityprice' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Quantity & Price</h3>
                 <div className="form-grid">
                   <div className="form-group">
                     <label className="form-label">Quantity</label>
@@ -1021,6 +1093,8 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 </div>
               </div>
+                </div>
+              )}
             </>
           )}
 
