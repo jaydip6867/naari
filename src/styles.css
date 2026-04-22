@@ -2895,7 +2895,8 @@ textarea.input-field {
 .radio-group,
 .checkbox-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
