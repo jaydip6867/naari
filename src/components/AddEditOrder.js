@@ -79,6 +79,11 @@ const AddEditOrder = ({ onLogout }) => {
   const [customerSearchInput, setCustomerSearchInput] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
+  
+  // Product search state
+  const [productSearchInput, setProductSearchInput] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Tab configuration - show only 3 tabs for create mode, all tabs for edit mode
   const tabs = isEditMode ? [
@@ -155,6 +160,16 @@ const AddEditOrder = ({ onLogout }) => {
       }
     }
   }, [isEditMode, formData.customerId, customers]);
+
+  // Initialize product search input when editing existing order
+  useEffect(() => {
+    if (isEditMode && formData.productId && products.length > 0) {
+      const product = products.find(p => p._id === formData.productId);
+      if (product) {
+        setProductSearchInput(product.name);
+      }
+    }
+  }, [isEditMode, formData.productId, products]);
 
   useEffect(() => {
     if (formData.productId) {
@@ -645,6 +660,44 @@ const AddEditOrder = ({ onLogout }) => {
     }, 200);
   };
 
+  // Product search handlers
+  const handleProductSearch = (e) => {
+    const value = e.target.value;
+    setProductSearchInput(value);
+    
+    if (value.trim() === '') {
+      // Show all products when input is empty but dropdown is open
+      setFilteredProducts(products);
+      setShowProductDropdown(true);
+    } else {
+      const filtered = products.filter(product => 
+        product.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+      setShowProductDropdown(true);
+    }
+  };
+
+  const handleProductFocus = () => {
+    // Show all products when input is focused
+    setFilteredProducts(products);
+    setShowProductDropdown(true);
+  };
+
+  const handleProductSelect = (product) => {
+    setProductSearchInput(product.name);
+    handleInputChange('productId', product._id);
+    setShowProductDropdown(false);
+    setFilteredProducts([]);
+  };
+
+  const handleProductInputBlur = () => {
+    // Delay hiding dropdown to allow click on dropdown items
+    setTimeout(() => {
+      setShowProductDropdown(false);
+    }, 200);
+  };
+
   // Render searchable customer input
   const renderCustomerSearchInput = () => (
     <div className="customer-search-container" style={{ position: 'relative' }}>
@@ -684,7 +737,10 @@ const AddEditOrder = ({ onLogout }) => {
               className="customer-dropdown-item"
               onClick={() => handleCustomerSelect(customer)}
               style={{
-                
+                padding: '10px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border-color)',
+                transition: 'background-color 0.2s ease'
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = 'var(--primary-light)';
@@ -695,8 +751,71 @@ const AddEditOrder = ({ onLogout }) => {
             >
               <div style={{ fontWeight: '500' }}>{customer.fullName}</div>
               {customer.email && (
-                <div style={{ fontSize: '12px'}}>
+                <div style={{ fontSize: '12px', color: 'var(--gray-color)' }}>
                   {customer.email}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render searchable product input
+  const renderProductSearchInput = () => (
+    <div className="product-search-container" style={{ position: 'relative' }}>
+      <input
+        type="text"
+        className="input-field"
+        value={productSearchInput}
+        onChange={handleProductSearch}
+        onFocus={handleProductFocus}
+        onBlur={handleProductInputBlur}
+        placeholder="Click to see all products or type to search..."
+        required
+        style={{ width: '100%' }}
+      />
+      {showProductDropdown && filteredProducts.length > 0 && (
+        <div 
+          className="product-dropdown"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'var(--background-light)',
+            border: '1px solid var(--border-color)',
+            borderTop: 'none',
+            borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          {filteredProducts.map((product) => (
+            <div
+              key={product._id}
+              className="product-dropdown-item"
+              onClick={() => handleProductSelect(product)}
+              style={{
+                padding: '10px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border-color)',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'var(--primary-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{ fontWeight: '500' }}>{product.name}</div>
+              {product.outfitTypeId?.name && (
+                <div style={{ fontSize: '12px', color: 'var(--gray-color)' }}>
+                  {product.outfitTypeId.name}
                 </div>
               )}
             </div>
@@ -811,20 +930,7 @@ const AddEditOrder = ({ onLogout }) => {
                   {formData.orderType === 'product' && (
                     <div className="form-group">
                       <label className="form-label">Product <span className="required">*</span></label>
-                      <select
-                        className="input-field"
-                        value={formData.productId}
-                        onChange={(e) => handleInputChange('productId', e.target.value)}
-                        required={formData.orderType === 'product'}
-                        style={{ maxWidth: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
-                      >
-                        <option value="">Select Product</option>
-                        {products.map(product => (
-                          <option key={product._id} value={product._id} style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {product.name.length > 30 ? product.name.substring(0, 30) + '...' : product.name}
-                          </option>
-                        ))}
-                      </select>
+                      {renderProductSearchInput()}
                     </div>
                   )}
 
