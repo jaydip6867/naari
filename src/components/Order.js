@@ -9,16 +9,19 @@ import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-ico
 const Order = ({ onLogout }) => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]); // Store all orders for filtering
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchOrders = async (search = '') => {
+  const fetchOrders = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await orderAPI.getOrders(search);
-      setOrders(Array.isArray(response) ? response : (response || []));
+      const response = await orderAPI.getOrders(); // Fetch all orders without search
+      const ordersData = Array.isArray(response) ? response : (response || []);
+      setAllOrders(ordersData); // Store all orders
+      setOrders(ordersData); // Initially display all orders
     } catch (err) {
       console.error('Error fetching orders:', err);
       setError(err.message || 'Failed to fetch orders');
@@ -33,7 +36,24 @@ const Order = ({ onLogout }) => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchOrders(searchQuery);
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Filter orders locally
+    if (!query.trim()) {
+      setOrders(allOrders); // Show all orders if search is empty
+    } else {
+      const filteredOrders = allOrders.filter(order => {
+        const searchLower = query.toLowerCase();
+        return (
+          (order.orderId && order.orderId.toLowerCase().includes(searchLower)) ||
+          (order.customerId && order.customerId.fullName && order.customerId.fullName.toLowerCase().includes(searchLower)) ||
+          (order.orderType && order.orderType.toLowerCase().includes(searchLower)) ||
+          (order.status && order.status.toLowerCase().includes(searchLower))
+        );
+      });
+      setOrders(filteredOrders);
+    }
   };
 
   const handleDeleteOrder = async (orderId) => {
@@ -44,7 +64,7 @@ const Order = ({ onLogout }) => {
     try {
       setLoading(true);
       await orderAPI.deleteOrder(orderId);
-      fetchOrders(searchQuery);
+      fetchOrders(); // Refresh orders after deletion
     } catch (err) {
       console.error('Error deleting order:', err);
       alert(err.message || 'Failed to delete order');
