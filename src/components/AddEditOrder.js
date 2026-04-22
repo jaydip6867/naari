@@ -74,6 +74,11 @@ const AddEditOrder = ({ onLogout }) => {
   const [pendingUploads, setPendingUploads] = useState([]); // Track files needing upload
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('basic');
+  
+  // Customer search state
+  const [customerSearchInput, setCustomerSearchInput] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
 
   // Tab configuration - show only 3 tabs for create mode, all tabs for edit mode
   const tabs = isEditMode ? [
@@ -139,7 +144,17 @@ const AddEditOrder = ({ onLogout }) => {
     if (formData.outfitTypeId && formData.orderType === 'customized' && formData.subCategoryName) {
       populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
     }
-  }, [formData.subCategoryName, formData.outfitTypeId, formData.orderType]);
+  }, [formData.outfitTypeId, formData.orderType, formData.subCategoryName, isEditMode]);
+
+  // Initialize customer search input when editing existing order
+  useEffect(() => {
+    if (isEditMode && formData.customerId && customers.length > 0) {
+      const customer = customers.find(c => c._id === formData.customerId);
+      if (customer) {
+        setCustomerSearchInput(customer.fullName);
+      }
+    }
+  }, [isEditMode, formData.customerId, customers]);
 
   useEffect(() => {
     if (formData.productId) {
@@ -592,6 +607,105 @@ const AddEditOrder = ({ onLogout }) => {
     setActiveTab(tabId);
   };
 
+  // Customer search handlers
+  const handleCustomerSearch = (e) => {
+    const value = e.target.value;
+    setCustomerSearchInput(value);
+    
+    if (value.trim() === '') {
+      // Show all customers when input is empty but dropdown is open
+      setFilteredCustomers(customers);
+      setShowCustomerDropdown(true);
+    } else {
+      const filtered = customers.filter(customer => 
+        customer.fullName.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredCustomers(filtered);
+      setShowCustomerDropdown(true);
+    }
+  };
+
+  const handleCustomerFocus = () => {
+    // Show all customers when input is focused
+    setFilteredCustomers(customers);
+    setShowCustomerDropdown(true);
+  };
+
+  const handleCustomerSelect = (customer) => {
+    setCustomerSearchInput(customer.fullName);
+    handleInputChange('customerId', customer._id);
+    setShowCustomerDropdown(false);
+    setFilteredCustomers([]);
+  };
+
+  const handleCustomerInputBlur = () => {
+    // Delay hiding dropdown to allow click on dropdown items
+    setTimeout(() => {
+      setShowCustomerDropdown(false);
+    }, 200);
+  };
+
+  // Render searchable customer input
+  const renderCustomerSearchInput = () => (
+    <div className="customer-search-container" style={{ position: 'relative' }}>
+      <input
+        type="text"
+        className="input-field"
+        value={customerSearchInput}
+        onChange={handleCustomerSearch}
+        onFocus={handleCustomerFocus}
+        onBlur={handleCustomerInputBlur}
+        placeholder="Click to see all customers or type to search..."
+        required
+        style={{ width: '100%' }}
+      />
+      {showCustomerDropdown && filteredCustomers.length > 0 && (
+        <div 
+          className="customer-dropdown"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'var(--background-light)',
+            border: '1px solid var(--border-color)',
+            borderTop: 'none',
+            borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            padding: '8px'
+          }}
+        >
+          {filteredCustomers.map((customer) => (
+            <div
+              key={customer._id}
+              className="customer-dropdown-item"
+              onClick={() => handleCustomerSelect(customer)}
+              style={{
+                
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'var(--primary-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{ fontWeight: '500' }}>{customer.fullName}</div>
+              {customer.email && (
+                <div style={{ fontSize: '12px'}}>
+                  {customer.email}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   // Render tab navigation
   const renderTabNavigation = () => (
     <div className="tabs">
@@ -663,20 +777,7 @@ const AddEditOrder = ({ onLogout }) => {
                 <div className="form-grid">
                   <div className="form-group">
                     <label className="form-label">Customer <span className="required">*</span></label>
-                    <select
-                      className="input-field"
-                      value={formData.customerId}
-                      onChange={(e) => handleInputChange('customerId', e.target.value)}
-                      required
-                      style={{ maxWidth: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
-                    >
-                      <option value="">Select Customer</option>
-                      {customers.map(customer => (
-                        <option key={customer._id} value={customer._id} style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {customer.fullName.length > 30 ? customer.fullName.substring(0, 30) + '...' : customer.fullName}
-                        </option>
-                      ))}
-                    </select>
+                    {renderCustomerSearchInput()}
                   </div>
 
                   <div className="form-group">

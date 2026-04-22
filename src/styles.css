@@ -3014,6 +3014,17 @@ textarea.input-field {
   animation: fadeIn 0.3s ease;
 }
 
+.customer-dropdown-item{
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 400;
+  color: var(--gray-color);
+}
+.customer-dropdown-item + .customer-dropdown-item{
+  border-top: 1px solid var(--border-color);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
