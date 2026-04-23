@@ -533,6 +533,59 @@ export const orderAPI = {
   }
 };
 
+// Task API calls
+export const taskAPI = {
+  getTasks: async (search = '') => {
+    const response = await api.post('/user/task', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch tasks');
+    }
+  },
+
+  getTaskById: async (orderId) => {
+    const response = await api.post('/user/task/getone', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch task');
+    }
+  },
+
+  startTask: async (orderId) => {
+    const response = await api.post('/user/task/start', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to start task');
+    }
+  },
+
+  pauseTask: async (orderId) => {
+    const response = await api.post('/user/task/pause', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to pause task');
+    }
+  },
+
+  endTask: async (orderId, refImages = []) => {
+    const response = await api.post('/user/task/end', { orderId, refImages });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to end task');
+    }
+  }
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,
