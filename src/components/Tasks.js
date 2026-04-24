@@ -4,12 +4,15 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
 
 const Tasks = ({ onLogout }) => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [refImages, setRefImages] = useState([]);
@@ -23,23 +26,41 @@ const Tasks = ({ onLogout }) => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const tasksData = await taskAPI.getTasks(search);
-      setTasks(tasksData || []);
+      setError('');
+      const response = await taskAPI.getTasks(); // Fetch all tasks without search
+      const tasksData = Array.isArray(response) ? response : (response || []);
+      setAllTasks(tasksData); // Store all tasks
+      setTasks(tasksData); // Initially display all tasks
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      alert('Failed to fetch tasks: ' + error.message);
+      setError(error.message || 'Failed to fetch tasks');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-
-  const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchTasks();
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Filter tasks locally
+    if (!query.trim()) {
+      setTasks(allTasks); // Show all tasks if search is empty
+    } else {
+      const filteredTasks = allTasks.filter(task => {
+        const searchLower = query.toLowerCase();
+        return (
+          (task._id && task._id.toLowerCase().includes(searchLower)) ||
+          (task.customerId && task.customerId.fullName && task.customerId.fullName.toLowerCase().includes(searchLower)) ||
+          (task.productName && task.productName.toLowerCase().includes(searchLower)) ||
+          (task.outfitTypeName && task.outfitTypeName.toLowerCase().includes(searchLower)) ||
+          (task.assignWorker && task.assignWorker.fullName && task.assignWorker.fullName.toLowerCase().includes(searchLower)) ||
+          (task.status && task.status.toLowerCase().includes(searchLower))
+        );
+      });
+      setTasks(filteredTasks);
+    }
   };
 
   const handleTaskClick = (task) => {
@@ -161,280 +182,438 @@ const Tasks = ({ onLogout }) => {
         </div>
 
         <div className="content-section">
-          <div className="section-header">
+          {error && (
+            <div style={{
+              color: 'var(--alert-color)',
+              background: 'rgba(255, 0, 0, 0.1)',
+              padding: '12px',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '16px',
+              border: '1px solid rgba(255, 0, 0, 0.2)'
+            }}>
+              {error}
+            </div>
+          )}
+          
+          <div className="section-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
             <h2 className="section-title">Tasks</h2>
-            <form onSubmit={handleSearchSubmit} className="search-form">
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={search}
-                onChange={handleSearch}
-                className="search-input"
-              />
-              <button type="submit" className="search-btn">Search</button>
-            </form>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+              <div className="search-container" style={{ position: 'relative' }}>
+                <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-color)' }} />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  style={{
+                    padding: '8px 12px 8px 36px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '14px',
+                    width: '200px'
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="tasks-list">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>Loading tasks...</div>
-            ) : tasks.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>
-                No tasks found
-                <div style={{ marginTop: '16px' }}>
-                  <button className="add-btn" onClick={() => navigate('/orders')}>
-                    + Create Order to Generate Tasks
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="tasks-table-container">
-                <table className="tasks-table">
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>Loading tasks...</div>
+            ) : tasks.length > 0 ? (
+              <div className="table-container" style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Product</th>
-                      <th>Outfit Type</th>
-                      <th>Assigned To</th>
-                      <th>Delivery Date</th>
-                      <th>Price</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                    <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                      {/* <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th> */}
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Product</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Assigned To</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Delivery Date</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Price</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
+                      <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tasks.map((task) => (
-                      <tr key={task._id}>
-                        <td className="order-id">{task._id}</td>
-                        <td>{task.customerId?.fullName || 'N/A'}</td>
-                        <td>{task.productName || 'N/A'}</td>
-                        <td>{task.outfitTypeName || 'N/A'}</td>
-                        <td>{task.assignWorker?.fullName || 'Not assigned'}</td>
-                        <td>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
-                        <td>₹{task.totalPrice || 0}</td>
-                        <td>
+                      <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        {/* <td style={{ padding: '12px' }}>
+                          <span className="order-id">{task._id?.slice(-6) || '-'}</span>
+                        </td> */}
+                        <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
+                        <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
+                        <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
+                        <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
+                        <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
+                        <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
+                        <td style={{ padding: '12px' }}>
                           <span 
                             className="task-status" 
-                            style={{ backgroundColor: getTaskStatusColor(task.status) }}
+                            style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
                           >
                             {getTaskStatusText(task.status)}
                           </span>
                         </td>
-                        <td>
-                          <button 
-                            className="view-btn" 
-                            onClick={() => handleTaskClick(task)}
-                          >
-                            View
-                          </button>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => handleTaskClick(task)}
+                              title="View"
+                            >
+                              <FiEye />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
+                <p>No tasks found</p>
+                <div style={{ marginTop: '16px' }}>
+                  <button className="add-btn" onClick={() => navigate('/orders')}>
+                    <FiPlus /> Create Order to Generate Tasks
+                  </button>
+                </div>
+              </div>
             )}
-          </div>
         </div>
 
         {/* Task Detail Modal */}
         {showTaskDetail && selectedTask && (
           <div className="modal-overlay" onClick={() => setShowTaskDetail(false)}>
-            <div className="modal-content task-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Task Details</h2>
-                <button className="close-btn" onClick={() => setShowTaskDetail(false)}>×</button>
+            <div className="modal-content task-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0, color: 'var(--primary-dark)', fontSize: '24px' }}>Task Details</h2>
+                <button className="close-btn" onClick={() => setShowTaskDetail(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--gray-color)' }}>×</button>
               </div>
-              <div className="modal-body">
-                <div className="task-modal-grid">
-                  {/* Left Column - Order Information */}
-                  <div className="task-modal-left">
-                    <div className="task-detail-section">
-                      <h3>Order Information</h3>
-                      <div className="detail-grid">
-                        <div className="detail-item">
-                          <label>Order ID:</label>
-                          <span>{selectedTask._id}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Status:</label>
-                          <span 
-                            className="task-status" 
-                            style={{ backgroundColor: getTaskStatusColor(selectedTask.status) }}
-                          >
-                            {getTaskStatusText(selectedTask.status)}
-                          </span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Customer:</label>
-                          <span>{selectedTask.customerId?.fullName || 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Mobile:</label>
-                          <span>{selectedTask.customerId?.mobile || 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Address:</label>
-                          <span>{selectedTask.customerId?.address || 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Product:</label>
-                          <span>{selectedTask.productName || 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Outfit Type:</label>
-                          <span>{selectedTask.outfitTypeName || 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Assigned To:</label>
-                          <span>{selectedTask.assignWorker?.fullName || 'Not assigned'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Delivery Date:</label>
-                          <span>{selectedTask.deliveryDate ? new Date(selectedTask.deliveryDate).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Total Price:</label>
-                          <span>₹{selectedTask.totalPrice || 0}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Advance Amount:</label>
-                          <span>₹{selectedTask.advanceAmount || 0}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Total Days:</label>
-                          <span>{selectedTask.totalDays || 0} days</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Created:</label>
-                          <span>{selectedTask.createdAt ? new Date(selectedTask.createdAt).toLocaleString() : 'N/A'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Updated:</label>
-                          <span>{selectedTask.updatedAt ? new Date(selectedTask.updatedAt).toLocaleString() : 'N/A'}</span>
-                        </div>
-                      </div>
-                    </div>
+              
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                
+                {/* Task Status & Basic Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', padding: '16px', background: 'var(--background-light)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Order ID:</span>
+                    <span style={{ fontWeight: '500', color: 'var(--primary-dark)' }}>{selectedTask._id?.slice(-8) || 'N/A'}</span>
+                  </div> */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Status:</span>
+                    <span 
+                      style={{ 
+                        backgroundColor: getTaskStatusColor(selectedTask.status), 
+                        color: 'white', 
+                        padding: '4px 12px', 
+                        borderRadius: '12px', 
+                        fontSize: '12px', 
+                        fontWeight: '500', 
+                        textTransform: 'capitalize' 
+                      }}
+                    >
+                      {getTaskStatusText(selectedTask.status)}
+                    </span>
                   </div>
-
-                  {/* Right Column - Measurements, Addons, Images */}
-                  <div className="task-modal-right">
-                    {/* Measurements Section */}
-                    {selectedTask.measurement && selectedTask.measurement.length > 0 && (
-                      <div className="task-detail-section">
-                        <h3>Measurements</h3>
-                        <div className="measurements-grid">
-                          {selectedTask.measurement.map((measurement, index) => (
-                            <div key={index} className="measurement-item">
-                              <span className="measurement-label">{measurement.fieldLable}:</span>
-                              <span className="measurement-value">{measurement.fieldValue} {measurement.unit}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Addons Section */}
-                    {selectedTask.addons && selectedTask.addons.length > 0 && (
-                      <div className="task-detail-section">
-                        <h3>Addons</h3>
-                        <div className="addons-list">
-                          {selectedTask.addons.map((addon, index) => (
-                            <div key={index} className="addon-item">
-                              <span className="addon-title">{addon.title}:</span>
-                              <span className="addon-value">{addon.value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Outfit Style Reference Images */}
-                    {selectedTask.outfitStyleRefImg && selectedTask.outfitStyleRefImg.length > 0 && (
-                      <div className="task-detail-section">
-                        <h3>Outfit Style Reference Images</h3>
-                        <div className="ref-images-grid">
-                          {selectedTask.outfitStyleRefImg.map((img, index) => (
-                            <div key={index} className="ref-image-item">
-                              <img src={img} alt={`Outfit Style ${index + 1}`} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Created:</span>
+                    <span style={{ fontWeight: '500', color: 'var(--primary-dark)' }}>{selectedTask.createdAt ? new Date(selectedTask.createdAt).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Delivery Date:</span>
+                    <span style={{ fontWeight: '500', color: 'var(--primary-dark)' }}>{selectedTask.deliveryDate ? new Date(selectedTask.deliveryDate).toLocaleDateString() : 'N/A'}</span>
                   </div>
                 </div>
 
-                {/* Reference Images Section */}
-                <div className="task-detail-section">
-                  <h3>Work Reference Images</h3>
-                  <div className="image-upload-section">
-                    <input
-                      type="file"
-                      id="refImageUpload"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <label htmlFor="refImageUpload" className="upload-btn">
-                      + Upload Reference Images
-                    </label>
+                {/* Customer Information */}
+                <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '4px', height: '20px', background: 'var(--primary-color)', borderRadius: '2px' }}></span>
+                    Customer Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Name</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.customerId?.fullName || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Mobile</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.customerId?.mobile || 'N/A'}</span>
+                    </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Address</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.customerId?.address || 'N/A'}</span>
+                    </div>
                   </div>
-                  
-                  {imagePreviews.length > 0 && (
-                    <div className="image-preview-grid">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="image-preview-item">
-                          <img src={preview} alt={`Preview ${index + 1}`} />
-                          <button 
-                            className="remove-image-btn" 
-                            onClick={() => removeImage(index)}
-                          >
-                            ×
-                          </button>
+                </div>
+
+                {/* Product Information */}
+                <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '4px', height: '20px', background: 'var(--primary-color)', borderRadius: '2px' }}></span>
+                    Product Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Product Name</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.productName || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Outfit Type</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.outfitTypeName || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Assigned Worker</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.assignWorker?.fullName || 'Not assigned'}</span>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Total Days</label>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.totalDays || 0} days</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing Information */}
+                <div style={{ padding: '16px', background: 'var(--background-light)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '4px', height: '20px', background: 'var(--success-color)', borderRadius: '2px' }}></span>
+                    Pricing Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                    <div style={{ textAlign: 'center', padding: '12px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Total Price</div>
+                      <div style={{ fontSize: '20px', color: 'var(--primary-dark)', fontWeight: '700' }}>₹{selectedTask.totalPrice || 0}</div>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '12px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Advance Amount</div>
+                      <div style={{ fontSize: '20px', color: 'var(--primary-dark)', fontWeight: '700' }}>₹{selectedTask.advanceAmount || 0}</div>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '12px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Balance</div>
+                      <div style={{ fontSize: '20px', color: 'var(--primary-dark)', fontWeight: '700' }}>₹{(selectedTask.totalPrice || 0) - (selectedTask.advanceAmount || 0)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Measurements */}
+                {selectedTask.measurement && selectedTask.measurement.length > 0 && (
+                  <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '4px', height: '20px', background: 'var(--info-color)', borderRadius: '2px' }}></span>
+                      Measurements
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {selectedTask.measurement.map((measurement, index) => (
+                        <div key={index} style={{ padding: '8px 12px', background: 'var(--background-light)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--gray-color)', marginBottom: '2px', fontWeight: '600' }}>{measurement.fieldLable || measurement.fieldLabel}</div>
+                          <div style={{ fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{measurement.fieldValue} {measurement.unit || ''}</div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* Addons */}
+                {selectedTask.addons && selectedTask.addons.length > 0 && (
+                  <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '4px', height: '20px', background: 'var(--warning-color)', borderRadius: '2px' }}></span>
+                      Addons
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {selectedTask.addons.map((addon, index) => (
+                        <div key={index} style={{ padding: '6px 12px', background: 'var(--background-light)', borderRadius: '16px', border: '1px solid var(--border-color)', fontSize: '13px' }}>
+                          <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>{addon.title}:</span>
+                          <span style={{ marginLeft: '4px', color: 'var(--primary-dark)', fontWeight: '500' }}>{addon.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outfit Style Reference Images */}
+                {selectedTask.outfitStyleRefImg && selectedTask.outfitStyleRefImg.length > 0 && (
+                  <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '4px', height: '20px', background: 'var(--primary-color)', borderRadius: '2px' }}></span>
+                      Outfit Style Reference Images
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                      {selectedTask.outfitStyleRefImg.map((img, index) => (
+                        <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                          <img 
+                            src={img} 
+                            alt={`Outfit Style ${index + 1}`} 
+                            style={{ width: '100%', height: '120px', objectFit: 'cover' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Work Reference Images - Show only when task is in_progress or paused */}
+                {(selectedTask.status === 'in_progress' || selectedTask.status === 'paused') && (
+                  <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '4px', height: '20px', background: 'var(--secondary-color)', borderRadius: '2px' }}></span>
+                      Work Reference Images
+                    </h3>
+                    <div style={{ marginBottom: '16px' }}>
+                      <input
+                        type="file"
+                        id="refImageUpload"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <label 
+                        htmlFor="refImageUpload" 
+                        style={{ 
+                          display: 'inline-block', 
+                          padding: '8px 16px', 
+                          background: 'var(--primary-color)', 
+                          color: 'white', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer', 
+                          fontSize: '14px', 
+                          fontWeight: '500',
+                          border: 'none',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
+                      >
+                        + Upload Reference Images
+                      </label>
+                    </div>
+                    
+                    {imagePreviews.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                            <img 
+                              src={preview} 
+                              alt={`Preview ${index + 1}`} 
+                              style={{ width: '100%', height: '120px', objectFit: 'cover' }}
+                            />
+                            <button 
+                              onClick={() => removeImage(index)}
+                              style={{ 
+                                position: 'absolute', 
+                                top: '4px', 
+                                right: '4px', 
+                                background: 'rgba(255, 255, 255, 0.9)', 
+                                border: 'none', 
+                                borderRadius: '50%', 
+                                width: '24px', 
+                                height: '24px', 
+                                cursor: 'pointer', 
+                                fontSize: '16px', 
+                                color: 'var(--alert-color)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {imagePreviews.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)', background: 'var(--background-light)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                        No reference images uploaded yet
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
-              <div className="modal-footer">
-                <div className="task-actions">
-                  {selectedTask.status === 'pending' && (
-                    <button 
-                      className="start-btn" 
-                      onClick={() => handleStartTask(selectedTask._id)}
-                    >
-                      Start Task
-                    </button>
-                  )}
-                  {selectedTask.status === 'in_progress' && (
-                    <button 
-                      className="pause-btn" 
-                      onClick={() => handlePauseTask(selectedTask._id)}
-                    >
-                      Pause Task
-                    </button>
-                  )}
-                  {selectedTask.status === 'paused' && (
-                    <button 
-                      className="start-btn" 
-                      onClick={() => handleStartTask(selectedTask._id)}
-                    >
-                      Resume Task
-                    </button>
-                  )}
-                  {(selectedTask.status === 'in_progress' || selectedTask.status === 'paused') && (
-                    <button 
-                      className="end-btn" 
-                      onClick={() => handleEndTask(selectedTask._id)}
-                    >
-                      End Task
-                    </button>
-                  )}
-                </div>
+              
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                {selectedTask.status === 'pending' && (
+                  <button 
+                    onClick={() => handleStartTask(selectedTask._id)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: 'var(--success-color)', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer', 
+                      fontSize: '14px', 
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--success-color)'}
+                  >
+                    Start Task
+                  </button>
+                )}
+                {selectedTask.status === 'start' && (
+                  <button 
+                    onClick={() => handlePauseTask(selectedTask._id)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: 'var(--warn-color)', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer', 
+                      fontSize: '14px', 
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#e0a800'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--warn-color)'}
+                  >
+                    Pause Task
+                  </button>
+                )}
+                {(selectedTask.status === 'start' || selectedTask.status === 'paused') && (
+                  <button 
+                    onClick={() => handleEndTask(selectedTask._id)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: 'var(--primary-color)', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer', 
+                      fontSize: '14px', 
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
+                  >
+                    End Task
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowTaskDetail(false)}
+                  style={{ 
+                    padding: '8px 16px', 
+                    background: 'var(--gray-color)', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: 'pointer', 
+                    fontSize: '14px', 
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'var(--gray-color)'}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
