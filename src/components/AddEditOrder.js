@@ -91,9 +91,9 @@ const AddEditOrder = ({ onLogout }) => {
     { id: 'measurements', label: 'Measurements' },
     { id: 'addons', label: 'Add Ons' },
     { id: 'fabric', label: 'Fabric' },
-    { id: 'fusing', label: 'Fusing' },
-    { id: 'worktype', label: 'Work Type' },
-    { id: 'embroidery', label: 'Embroidery & Stitching' },
+    // { id: 'fusing', label: 'Fusing' },
+    { id: 'worktype', label: 'Art Work' },
+    { id: 'embroidery', label: 'Stitching' },
     { id: 'otherwork', label: 'Other Work' },
     { id: 'timeline', label: 'Time & Pricing' }
   ] : [
@@ -1203,13 +1203,6 @@ const AddEditOrder = ({ onLogout }) => {
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Fusing Tab */}
-              {activeTab === 'fusing' && (
-                <div className="tab-content">
-                  {/* Fusing Details */}
                   <div className="form-section">
                     <h3 className="section-title form-section-title">Fusing Details</h3>
                     <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -1227,14 +1220,16 @@ const AddEditOrder = ({ onLogout }) => {
                       <div className="form-grid">
                         <div className="form-group">
                           <label className="form-label">Fusing Color</label>
-                          <input
-                            type="text"
+                          <select
                             className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                             value={formData.fusingColor}
                             onChange={(e) => handleInputChange('fusingColor', e.target.value)}
-                            placeholder="e.g., Black"
                             disabled={formData.orderType === 'product'}
-                          />
+                          >
+                            <option value="">Select Color</option>
+                            <option value="Black">Black</option>
+                            <option value="White">White</option>
+                          </select>
                         </div>
                         <div className="form-group">
                           <label className="form-label">Fusing Days</label>
@@ -1264,6 +1259,66 @@ const AddEditOrder = ({ onLogout }) => {
                   </div>
                 </div>
               )}
+
+              {/* Fusing Tab */}
+              {/* {activeTab === 'fusing' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Fusing Details</h3>
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={formData.fusingRequired}
+                          onChange={(e) => handleInputChange('fusingRequired', e.target.checked)}
+                          disabled={formData.orderType === 'product'}
+                        />
+                        <span>Fusing Required</span>
+                      </label>
+                    </div>
+                    {formData.fusingRequired && (
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label className="form-label">Fusing Color</label>
+                          <select
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.fusingColor}
+                            onChange={(e) => handleInputChange('fusingColor', e.target.value)}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <option value="">Select Color</option>
+                            <option value="Black">Black</option>
+                            <option value="White">White</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Fusing Days</label>
+                          <input
+                            type="number"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.fusingDays}
+                            onChange={(e) => handleInputChange('fusingDays', e.target.value)}
+                            placeholder="e.g., 2"
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Fusing Price</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.fusingPrice}
+                            onChange={(e) => handleInputChange('fusingPrice', e.target.value)}
+                            placeholder="e.g., 50"
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )} */}
 
               {/* Work Type Tab */}
               {activeTab === 'worktype' && (

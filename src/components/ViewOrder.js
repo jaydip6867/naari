@@ -38,9 +38,9 @@ const ViewOrder = ({ onLogout }) => {
     { id: 'measurements', label: 'Measurements' },
     { id: 'addons', label: 'Add Ons' },
     { id: 'fabric', label: 'Fabric' },
-    { id: 'fusing', label: 'Fusing' },
-    { id: 'worktype', label: 'Work Type' },
-    { id: 'embroidery', label: 'Embroidery & Stitching' },
+    // { id: 'fusing', label: 'Fusing' },
+    { id: 'worktype', label: 'Art Work' },
+    { id: 'embroidery', label: 'Stitching' },
     { id: 'otherwork', label: 'Other Work' },
     { id: 'timeline', label: 'Time & Pricing' }
   ];
@@ -307,12 +307,6 @@ const ViewOrder = ({ onLogout }) => {
                   </div>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Fusing Tab */}
-          {activeTab === 'fusing' && order.fusingRequired && (
-            <div className="tab-content">
               <div className="form-section">
                 <h3 className="section-title form-section-title">Fusing Details</h3>
                 <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
@@ -332,6 +326,29 @@ const ViewOrder = ({ onLogout }) => {
               </div>
             </div>
           )}
+
+          {/* Fusing Tab */}
+          {/* {activeTab === 'fusing' && order.fusingRequired && (
+            <div className="tab-content">
+              <div className="form-section">
+                <h3 className="section-title form-section-title">Fusing Details</h3>
+                <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Color</label>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingColor || '-'}</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Days</label>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingDays || 0} days</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Price</label>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>₹{order.fusingPrice || 0}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )} */}
 
           {/* Work Type Tab */}
           {activeTab === 'worktype' && (
