@@ -3623,6 +3623,10 @@ textarea.input-field {
   background-color: #c82333;
 }
 
+.measurement-item .input-field{
+  width: 100%;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .search-form {

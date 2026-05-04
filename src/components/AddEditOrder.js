@@ -1393,6 +1393,36 @@ const AddEditOrder = ({ onLogout }) => {
                           disabled={formData.orderType === 'product'}
                         />
                       </div>
+                      {/* Embroidery Reference Images */}
+                      <div className="form-group full-width">
+                        <label className="form-label">Embroidery Reference Images</label>
+                        <div className="image-upload-container">
+                          {formData.embroideryRefImg.map((img, index) => (
+                            <div key={index} className="image-preview">
+                              <img src={img} alt={`Embroidery ${index + 1}`} />
+                              <button
+                                type="button"
+                                className="image-remove-btn"
+                                onClick={() => removeImage('embroideryRefImg', index)}
+                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                            <FiUpload size={24} />
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload('embroideryRefImg', e.target.files)}
+                              disabled={formData.orderType === 'product'}
+                            />
+                          </label>
+                        </div>
+                      </div>
                       <div className="form-group full-width">
                         <label className="form-label">Assign Workers</label>
                         {formData.assignWorker.map((assignment, index) => (
@@ -1477,6 +1507,36 @@ const AddEditOrder = ({ onLogout }) => {
                           disabled={formData.orderType === 'product'}
                         />
                       </div>
+                      {/* Stitching Reference Images */}
+                      <div className="form-group full-width">
+                        <label className="form-label">Stitching Reference Images</label>
+                        <div className="image-upload-container">
+                          {formData.stitichingRefImg.map((img, index) => (
+                            <div key={index} className="image-preview">
+                              <img src={img} alt={`Stitching ${index + 1}`} />
+                              <button
+                                type="button"
+                                className="image-remove-btn"
+                                onClick={() => removeImage('stitichingRefImg', index)}
+                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                            <FiUpload size={24} />
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload('stitichingRefImg', e.target.files)}
+                              disabled={formData.orderType === 'product'}
+                            />
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1497,6 +1557,36 @@ const AddEditOrder = ({ onLogout }) => {
                         placeholder="Enter other work details..."
                         disabled={formData.orderType === 'product'}
                       />
+                    </div>
+                    {/* Other Work Reference Images */}
+                    <div className="form-group full-width">
+                      <label className="form-label">Other Work Reference Images</label>
+                      <div className="image-upload-container">
+                        {formData.otherWorkRefImg.map((img, index) => (
+                          <div key={index} className="image-preview">
+                            <img src={img} alt={`Other Work ${index + 1}`} />
+                            <button
+                              type="button"
+                              className="image-remove-btn"
+                              onClick={() => removeImage('otherWorkRefImg', index)}
+                              style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                              disabled={formData.orderType === 'product'}
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                          <FiUpload size={24} />
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload('otherWorkRefImg', e.target.files)}
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
