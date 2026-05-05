@@ -314,41 +314,10 @@ const ViewOrder = ({ onLogout }) => {
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Color</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingColor || '-'}</p>
                   </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Days</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingDays || 0} days</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Price</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>₹{order.fusingPrice || 0}</p>
-                  </div>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Fusing Tab */}
-          {/* {activeTab === 'fusing' && order.fusingRequired && (
-            <div className="tab-content">
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Fusing Details</h3>
-                <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Color</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingColor || '-'}</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Days</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.fusingDays || 0} days</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fusing Price</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>₹{order.fusingPrice || 0}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )} */}
 
           {/* Work Type Tab */}
           {activeTab === 'worktype' && (
@@ -378,6 +347,12 @@ const ViewOrder = ({ onLogout }) => {
                         </div>
                       </div>
                     )}
+                    {order.embroideryWorkNotes && (
+                    <div className="view-item" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Art Work Notes</label>
+                      <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.embroideryWorkNotes}</p>
+                    </div>
+                  )}
                   </>
                 ) : (
                   <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>No work types specified.</p>
@@ -390,14 +365,9 @@ const ViewOrder = ({ onLogout }) => {
           {activeTab === 'embroidery' && (
             <div className="tab-content">
               <div className="form-section">
-                <h3 className="section-title form-section-title">Embroidery & Stitching</h3>
+                <h3 className="section-title form-section-title">Stitching</h3>
                 <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                  {order.embroideryWorkNotes && (
-                    <div className="view-item" style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Embroidery Notes</label>
-                      <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.embroideryWorkNotes}</p>
-                    </div>
-                  )}
+                  
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Stitching Style</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.stitichingStyle || '-'}</p>

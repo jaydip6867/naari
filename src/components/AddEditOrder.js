@@ -85,6 +85,11 @@ const AddEditOrder = ({ onLogout }) => {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
 
+  // Worker search state
+  const [workerSearchInputs, setWorkerSearchInputs] = useState({});
+  const [showWorkerDropdowns, setShowWorkerDropdowns] = useState({});
+  const [filteredStaffLists, setFilteredStaffLists] = useState({});
+
   // Tab configuration - show only 3 tabs for create mode, all tabs for edit mode
   const tabs = isEditMode ? [
     { id: 'basic', label: 'Basic' },
@@ -95,6 +100,7 @@ const AddEditOrder = ({ onLogout }) => {
     { id: 'worktype', label: 'Art Work' },
     { id: 'embroidery', label: 'Stitching' },
     { id: 'otherwork', label: 'Other Work' },
+    { id: 'assignworker', label: 'Assign Worker' },
     { id: 'timeline', label: 'Time & Pricing' }
   ] : [
     { id: 'basic', label: 'Basic' },
@@ -170,6 +176,22 @@ const AddEditOrder = ({ onLogout }) => {
       }
     }
   }, [isEditMode, formData.productId, products]);
+
+  // Initialize worker search inputs when editing existing order
+  useEffect(() => {
+    if (isEditMode && formData.assignWorker && staffList.length > 0) {
+      const searchInputs = {};
+      formData.assignWorker.forEach((assignment, index) => {
+        if (assignment.workerId) {
+          const staff = staffList.find(s => s._id === assignment.workerId);
+          if (staff) {
+            searchInputs[index] = staff.fullName;
+          }
+        }
+      });
+      setWorkerSearchInputs(searchInputs);
+    }
+  }, [isEditMode, formData.assignWorker, staffList]);
 
   useEffect(() => {
     if (formData.productId) {
@@ -660,6 +682,45 @@ const AddEditOrder = ({ onLogout }) => {
     }, 200);
   };
 
+  // Worker search handlers
+  const handleWorkerSearch = (index, value) => {
+    setWorkerSearchInputs(prev => ({ ...prev, [index]: value }));
+    
+    if (value.trim() === '') {
+      // Show all staff when input is empty but dropdown is open
+      setFilteredStaffLists(prev => ({ ...prev, [index]: staffList }));
+      setShowWorkerDropdowns(prev => ({ ...prev, [index]: true }));
+    } else {
+      const filtered = staffList.filter(staff => 
+        staff.fullName.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredStaffLists(prev => ({ ...prev, [index]: filtered }));
+      setShowWorkerDropdowns(prev => ({ ...prev, [index]: true }));
+    }
+  };
+
+  const handleWorkerFocus = (index) => {
+    // Show all staff when input is focused
+    setFilteredStaffLists(prev => ({ ...prev, [index]: staffList }));
+    setShowWorkerDropdowns(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleWorkerSelect = (index, staff) => {
+    const newSearchInputs = { ...workerSearchInputs };
+    newSearchInputs[index] = staff.fullName;
+    setWorkerSearchInputs(newSearchInputs);
+    handleWorkerAssignmentChange(index, 'workerId', staff._id);
+    setShowWorkerDropdowns(prev => ({ ...prev, [index]: false }));
+    setFilteredStaffLists(prev => ({ ...prev, [index]: [] }));
+  };
+
+  const handleWorkerInputBlur = (index) => {
+    // Delay hiding dropdown to allow click on dropdown items
+    setTimeout(() => {
+      setShowWorkerDropdowns(prev => ({ ...prev, [index]: false }));
+    }, 200);
+  };
+
   // Product search handlers
   const handleProductSearch = (e) => {
     const value = e.target.value;
@@ -755,6 +816,64 @@ const AddEditOrder = ({ onLogout }) => {
                   {customer.email}
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render searchable worker input
+  const renderWorkerSearchInput = (index) => (
+    <div className="worker-search-container" style={{ position: 'relative' }}>
+      <input
+        type="text"
+        className="input-field"
+        value={workerSearchInputs[index] || ''}
+        onChange={(e) => handleWorkerSearch(index, e.target.value)}
+        onFocus={() => handleWorkerFocus(index)}
+        onBlur={() => handleWorkerInputBlur(index)}
+        placeholder="Click to see all workers or type to search..."
+        disabled={formData.orderType === 'product'}
+        style={{ width: '100%' }}
+      />
+      {showWorkerDropdowns[index] && filteredStaffLists[index] && filteredStaffLists[index].length > 0 && (
+        <div 
+          className="worker-dropdown"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'var(--background-light)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            zIndex: 1000,
+            maxHeight: '200px',
+            overflowY: 'auto',
+            padding: '8px'
+          }}
+        >
+          {filteredStaffLists[index].map((staff) => (
+            <div
+              key={staff._id}
+              className="worker-dropdown-item"
+              onClick={() => handleWorkerSelect(index, staff)}
+              style={{
+                padding: '10px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border-color)',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'var(--primary-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <div style={{ fontWeight: '500' }}>{staff.fullName}</div>
             </div>
           ))}
         </div>
@@ -1225,34 +1344,12 @@ const AddEditOrder = ({ onLogout }) => {
                             value={formData.fusingColor}
                             onChange={(e) => handleInputChange('fusingColor', e.target.value)}
                             disabled={formData.orderType === 'product'}
+                            style={{maxWidth: '200px'}}
                           >
                             <option value="">Select Color</option>
                             <option value="Black">Black</option>
                             <option value="White">White</option>
                           </select>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Fusing Days</label>
-                          <input
-                            type="number"
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingDays}
-                            onChange={(e) => handleInputChange('fusingDays', e.target.value)}
-                            placeholder="e.g., 2"
-                            disabled={formData.orderType === 'product'}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Fusing Price</label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingPrice}
-                            onChange={(e) => handleInputChange('fusingPrice', e.target.value)}
-                            placeholder="e.g., 50"
-                            disabled={formData.orderType === 'product'}
-                          />
                         </div>
                       </div>
                     )}
@@ -1260,73 +1357,14 @@ const AddEditOrder = ({ onLogout }) => {
                 </div>
               )}
 
-              {/* Fusing Tab */}
-              {/* {activeTab === 'fusing' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Fusing Details</h3>
-                    <div className="form-group" style={{ marginBottom: '16px' }}>
-                      <label className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={formData.fusingRequired}
-                          onChange={(e) => handleInputChange('fusingRequired', e.target.checked)}
-                          disabled={formData.orderType === 'product'}
-                        />
-                        <span>Fusing Required</span>
-                      </label>
-                    </div>
-                    {formData.fusingRequired && (
-                      <div className="form-grid">
-                        <div className="form-group">
-                          <label className="form-label">Fusing Color</label>
-                          <select
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingColor}
-                            onChange={(e) => handleInputChange('fusingColor', e.target.value)}
-                            disabled={formData.orderType === 'product'}
-                          >
-                            <option value="">Select Color</option>
-                            <option value="Black">Black</option>
-                            <option value="White">White</option>
-                          </select>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Fusing Days</label>
-                          <input
-                            type="number"
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingDays}
-                            onChange={(e) => handleInputChange('fusingDays', e.target.value)}
-                            placeholder="e.g., 2"
-                            disabled={formData.orderType === 'product'}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Fusing Price</label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingPrice}
-                            onChange={(e) => handleInputChange('fusingPrice', e.target.value)}
-                            placeholder="e.g., 50"
-                            disabled={formData.orderType === 'product'}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )} */}
 
               {/* Work Type Tab */}
               {activeTab === 'worktype' && (
                 <div className="tab-content">
                   <div className="form-section">
-                    <h3 className="section-title form-section-title">Work Types</h3>
+                    <h3 className="section-title form-section-title">Art Work</h3>
                     <div className="form-group full-width">
-                      <label className="form-label">Work Types</label>
+                      <label className="form-label">Art Work</label>
                       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                         <input
                           type="text"
@@ -1355,6 +1393,7 @@ const AddEditOrder = ({ onLogout }) => {
                           <FiPlus size={16} /> Add
                         </button>
                       </div>
+                      
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {formData.workTypes.map((workType, index) => (
                           <span
@@ -1392,13 +1431,24 @@ const AddEditOrder = ({ onLogout }) => {
                         ))}
                         {formData.workTypes.length === 0 && (
                           <span style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
-                            No work types added. Enter a work type and click Add.
+                            No Art work types added. Enter a work type and click Add.
                           </span>
                         )}
                       </div>
+                      <div className="form-group full-width">
+                        <label className="form-label">Art Work Notes</label>
+                        <textarea
+                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                          rows="2"
+                          value={formData.embroideryWorkNotes}
+                          onChange={(e) => handleInputChange('embroideryWorkNotes', e.target.value)}
+                          placeholder="Enter Art Work notes..."
+                          disabled={formData.orderType === 'product'}
+                        />
+                      </div>
                       {/* Work Type Reference Images */}
                       <div className="form-group full-width" style={{ marginTop: '16px' }}>
-                        <label className="form-label">Work Type Reference Images</label>
+                        <label className="form-label">Art Work Reference Images</label>
                         <div className="image-upload-container">
                           {formData.workTypeRefImg.map((img, index) => (
                             <div key={index} className="image-preview">
@@ -1435,112 +1485,12 @@ const AddEditOrder = ({ onLogout }) => {
               {activeTab === 'embroidery' && (
                 <div className="tab-content">
                   <div className="form-section">
-                    <h3 className="section-title form-section-title">Embroidery & Stitching</h3>
+                    <h3 className="section-title form-section-title">Stitching</h3>
                     <div className="form-grid">
-                      <div className="form-group full-width">
-                        <label className="form-label">Embroidery Work Notes</label>
-                        <textarea
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          rows="2"
-                          value={formData.embroideryWorkNotes}
-                          onChange={(e) => handleInputChange('embroideryWorkNotes', e.target.value)}
-                          placeholder="Enter embroidery notes..."
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
+                      
                       {/* Embroidery Reference Images */}
-                      <div className="form-group full-width">
-                        <label className="form-label">Embroidery Reference Images</label>
-                        <div className="image-upload-container">
-                          {formData.embroideryRefImg.map((img, index) => (
-                            <div key={index} className="image-preview">
-                              <img src={img} alt={`Embroidery ${index + 1}`} />
-                              <button
-                                type="button"
-                                className="image-remove-btn"
-                                onClick={() => removeImage('embroideryRefImg', index)}
-                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                                disabled={formData.orderType === 'product'}
-                              >
-                                <FiX size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
-                            <FiUpload size={24} />
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload('embroideryRefImg', e.target.files)}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                      <div className="form-group full-width">
-                        <label className="form-label">Assign Workers</label>
-                        {formData.assignWorker.map((assignment, index) => (
-                          <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                            <select
-                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                              style={{ flex: 1 }}
-                              value={assignment.workerId}
-                              onChange={(e) => handleWorkerAssignmentChange(index, 'workerId', e.target.value)}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <option value="">Select Worker</option>
-                              {staffList.map((staff) => (
-                                <option key={staff._id} value={staff._id}>
-                                  {staff.fullName}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                              style={{ flex: 1 }}
-                              value={assignment.status}
-                              onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <option value="order_overview">Order Overview</option>
-                              <option value="fabric_purchase">Fabric Purchase</option>
-                              <option value="dying">Dying</option>
-                              <option value="fusing">Fusing</option>
-                              <option value="khakha">Khakha</option>
-                              <option value="art_work">Art Work</option>
-                              <option value="add_ons">Add Ons</option>
-                              <option value="cutting">Cutting</option>
-                              <option value="stitching">Stitching</option>
-                              <option value="qc">QC</option>
-                              <option value="other_work">Other Work</option>
-                              <option value="packing">Packing</option>
-                              <option value="ready_to_delivery">Ready to Delivery</option>
-                              <option value="delivery_complete">Delivery Complete</option>
-                              <option value="repairing">Repairing</option>
-                            </select>
-                            <button
-                              type="button"
-                              className="btn-icon btn"
-                              onClick={() => removeWorkerAssignment(index)}
-                              style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <FiTrash2 size={16} className='delete-icon' />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="add-btn"
-                          onClick={addWorkerAssignment}
-                          style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                          disabled={formData.orderType === 'product'}
-                        >
-                          <FiPlus size={16} /> Add Worker
-                        </button>
-                      </div>
-                      <div className="form-group">
+                     
+                                            <div className="form-group">
                         <label className="form-label">Stitching Style</label>
                         <input
                           type="text"
@@ -1642,6 +1592,64 @@ const AddEditOrder = ({ onLogout }) => {
                           />
                         </label>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Assign Worker Tab */}
+              {activeTab === 'assignworker' && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">Assign Worker</h3>
+                    <div className="form-group full-width">
+                      <label className="form-label">Assign Workers</label>
+                      {formData.assignWorker.map((assignment, index) => (
+                        <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          {renderWorkerSearchInput(index)}
+                          <select
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            style={{ flex: 1 }}
+                            value={assignment.status}
+                            onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <option value="order_overview">Order Overview</option>
+                            <option value="fabric_purchase">Fabric Purchase</option>
+                            <option value="dying">Dying</option>
+                            <option value="fusing">Fusing</option>
+                            <option value="khakha">Khakha</option>
+                            <option value="art_work">Art Work</option>
+                            <option value="add_ons">Add Ons</option>
+                            <option value="cutting">Cutting</option>
+                            <option value="stitching">Stitching</option>
+                            <option value="qc">QC</option>
+                            <option value="other_work">Other Work</option>
+                            <option value="packing">Packing</option>
+                            <option value="ready_to_delivery">Ready to Delivery</option>
+                            <option value="delivery_complete">Delivery Complete</option>
+                            <option value="repairing">Repairing</option>
+                          </select>
+                          <button
+                            type="button"
+                            className="btn-icon btn"
+                            onClick={() => removeWorkerAssignment(index)}
+                            style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <FiTrash2 size={16} className='delete-icon' />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="add-btn"
+                        onClick={addWorkerAssignment}
+                        style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                        disabled={formData.orderType === 'product'}
+                      >
+                        <FiPlus size={16} /> Add Worker
+                      </button>
                     </div>
                   </div>
                 </div>
