@@ -71,15 +71,14 @@ const AddEditOrder = ({ onLogout }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [imageFiles, setImageFiles] = useState([]);
-  const [pendingUploads, setPendingUploads] = useState([]); // Track files needing upload
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('basic');
-  
+
   // Customer search state
   const [customerSearchInput, setCustomerSearchInput] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  
+
   // Product search state
   const [productSearchInput, setProductSearchInput] = useState('');
   const [showProductDropdown, setShowProductDropdown] = useState(false);
@@ -115,13 +114,30 @@ const AddEditOrder = ({ onLogout }) => {
   const loadInitialData = async () => {
     setInitialLoading(true);
     try {
-      await Promise.all([
-        fetchCustomers(),
-        fetchProducts(),
-        fetchOutfitTypes(),
-        fetchStaff(),
-        isEditMode ? fetchOrder() : Promise.resolve()
-      ]);
+      if (isEditMode) {
+        // In edit mode, first fetch the order
+        await fetchOrder();
+
+        // Then fetch other data
+        await Promise.all([
+          fetchCustomers(),
+          fetchOutfitTypes(),
+          fetchStaff()
+        ]);
+
+        // Fetch products only if orderType is product
+        if (formData.orderType === 'product') {
+          await fetchProducts();
+        }
+      } else {
+        // In create mode, fetch all data including products
+        await Promise.all([
+          fetchCustomers(),
+          fetchProducts(),
+          fetchOutfitTypes(),
+          fetchStaff()
+        ]);
+      }
     } catch (err) {
       console.error('Error loading initial data:', err);
       setError('Failed to load data. Please refresh the page.');
@@ -144,15 +160,19 @@ const AddEditOrder = ({ onLogout }) => {
       const outfit = outfitTypes.find(o => o._id === formData.outfitTypeId);
       setSelectedOutfit(outfit || null);
       fetchAddons(formData.outfitTypeId);
-      populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
+
+      // Only populate measurements from outfit type in create mode, not edit mode
+      if (!isEditMode) {
+        populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
+      }
     } else {
       setSelectedOutfit(null);
     }
-  }, [formData.outfitTypeId, formData.orderType, outfitTypes]);
+  }, [formData.outfitTypeId, formData.orderType, outfitTypes, isEditMode]);
 
-  // Re-fetch measurements when subcategory changes
+  // Re-fetch measurements when subcategory changes (only in create mode)
   useEffect(() => {
-    if (formData.outfitTypeId && formData.orderType === 'customized' && formData.subCategoryName) {
+    if (formData.outfitTypeId && formData.orderType === 'customized' && formData.subCategoryName && !isEditMode) {
       populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
     }
   }, [formData.outfitTypeId, formData.orderType, formData.subCategoryName, isEditMode]);
@@ -194,10 +214,10 @@ const AddEditOrder = ({ onLogout }) => {
   }, [isEditMode, formData.assignWorker, staffList]);
 
   useEffect(() => {
-    if (formData.productId) {
+    if (formData.productId && formData.orderType === 'product') {
       fetchProductDetails(formData.productId);
     }
-  }, [formData.productId]);
+  }, [formData.productId, formData.orderType]);
 
   const fetchProductDetails = async (productId) => {
     try {
@@ -270,7 +290,7 @@ const AddEditOrder = ({ onLogout }) => {
     try {
       const response = await orderAPI.getOrderById(orderId);
       if (response) {
-        const order = response;
+        const order = response.Data || response;
         setFormData({
           customerId: order.customerId?._id || order.customerId || '',
           orderType: order.orderType || 'product',
@@ -498,34 +518,50 @@ const AddEditOrder = ({ onLogout }) => {
     if (!files || files.length === 0) return;
 
     const newFiles = Array.from(files);
-    const newPreviews = newFiles.map(file => ({
-      url: URL.createObjectURL(file),
-      file: file,
-      isNew: true
-    }));
+    
+    // Upload each image one by one for specific field
+    const uploadPromises = newFiles.map(async (file) => {
+      try {
+        // Pass file directly to uploadAPI.uploadImage (not FormData)
+        const response = await uploadAPI.uploadImage(file);
+        
+        // Handle response structure: response.data.Data contains the image data
+        const imageUrl = response?.url || response?.Data?.url || response;
+        
+        return {
+          url: imageUrl,
+          originalUrl: URL.createObjectURL(file),
+          isNew: true,
+          uploaded: true,
+          field: field // Track which field this image belongs to
+        };
+      } catch (error) {
+        console.error(`Error uploading image for field ${field}:`, error);
+        // Return blob URL as fallback
+        return {
+          url: URL.createObjectURL(file),
+          originalUrl: URL.createObjectURL(file),
+          isNew: true,
+          uploaded: false,
+          field: field
+        };
+      }
+    });
 
-    setPendingUploads(prev => [...prev, ...newFiles]);
+    // Wait for all uploads to complete for this specific field
+    const uploadedImages = await Promise.all(uploadPromises);
+    
+    // Update form data with uploaded images for this specific field only
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field], ...newPreviews.map(p => p.url)]
+      [field]: [...prev[field], ...uploadedImages.map(img => img.url)]
     }));
   };
 
   const removeImage = (field, index) => {
     setFormData(prev => {
       const updated = [...prev[field]];
-      const removedUrl = updated[index];
       updated.splice(index, 1);
-
-      // Also remove from pending uploads if it was a new file
-      if (removedUrl && removedUrl.startsWith('blob:')) {
-        setPendingUploads(prev => prev.filter(f => {
-          const blobUrl = URL.createObjectURL(f);
-          const shouldRemove = blobUrl === removedUrl;
-          URL.revokeObjectURL(blobUrl);
-          return !shouldRemove;
-        }));
-      }
 
       return { ...prev, [field]: updated };
     });
@@ -537,35 +573,27 @@ const AddEditOrder = ({ onLogout }) => {
     setError('');
 
     try {
-      // Separate existing URLs from new blob URLs for each image field
-      const existingUrls = formData.outfitStyleRefImg.filter(img => !img.startsWith('blob:'));
-      const existingFabricUrls = formData.fabricRefImg.filter(img => !img.startsWith('blob:'));
-      const existingWorkTypeUrls = formData.workTypeRefImg.filter(img => !img.startsWith('blob:'));
+      // Process each image field separately - filter out blob URLs and keep only uploaded URLs
+      const getUploadedImageUrls = (imageArray) => {
+        return imageArray.filter(img => !img.startsWith('blob:')).map(img => img);
+      };
 
-      let uploadedImageUrls = [...existingUrls];
-
-      // Upload new images if any
-      if (pendingUploads.length > 0) {
-        const uploadResponse = await uploadAPI.uploadMultipleImages(pendingUploads);
-        const newUrls = Array.isArray(uploadResponse) ? uploadResponse :
-          uploadResponse?.Data || uploadResponse?.urls || [];
-        uploadedImageUrls = [...uploadedImageUrls, ...newUrls];
-      }
-
-      // Clean up pending uploads
-      setPendingUploads([]);
-
-      // Build final URLs for each image field (existing + newly uploaded)
-      const finalFabricUrls = [...existingFabricUrls, ...uploadedImageUrls.filter(url => !existingUrls.includes(url))];
-      const finalWorkTypeUrls = [...existingWorkTypeUrls, ...uploadedImageUrls.filter(url => !existingUrls.includes(url) && !finalFabricUrls.includes(url))];
-
+      // Build payload with separate image arrays for each field
       const payload = {
         customerId: formData.customerId,
         orderType: formData.orderType,
         productId: formData.orderType === 'product' ? formData.productId : '',
         outfitTypeId: formData.orderType === 'customized' ? formData.outfitTypeId : '',
         subCategoryName: formData.subCategoryName,
-        outfitStyleRefImg: uploadedImageUrls,
+
+        // Each image field maintains its own separate array with uploaded URLs only
+        outfitStyleRefImg: getUploadedImageUrls(formData.outfitStyleRefImg || []),
+        fabricRefImg: getUploadedImageUrls(formData.fabricRefImg || []),
+        workTypeRefImg: getUploadedImageUrls(formData.workTypeRefImg || []),
+        embroideryRefImg: getUploadedImageUrls(formData.embroideryRefImg || []),
+        stitichingRefImg: getUploadedImageUrls(formData.stitichingRefImg || []),
+        otherWorkRefImg: getUploadedImageUrls(formData.otherWorkRefImg || []),
+
         measurement: formData.measurement.map(m => ({
           fieldLable: m.fieldLable,
           unit: m.unit,
@@ -591,16 +619,11 @@ const AddEditOrder = ({ onLogout }) => {
         payload.fusingDays = parseInt(formData.fusingDays) || 0;
         payload.fusingPrice = parseFloat(formData.fusingPrice) || 0;
         payload.workTypes = formData.workTypes;
-        payload.fabricRefImg = finalFabricUrls;
-        payload.workTypeRefImg = finalWorkTypeUrls;
         payload.embroideryWorkNotes = formData.embroideryWorkNotes;
-        payload.embroideryRefImg = formData.embroideryRefImg;
         payload.assignWorker = formData.assignWorker;
         payload.stitichingStyle = formData.stitichingStyle;
         payload.stitichingNotes = formData.stitichingNotes;
-        payload.stitichingRefImg = formData.stitichingRefImg;
         payload.otherWork = formData.otherWork;
-        payload.otherWorkRefImg = formData.otherWorkRefImg;
         payload.fabricPurchaseDays = parseInt(formData.fabricPurchaseDays) || 0;
         payload.fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
         payload.dyeingDays = parseInt(formData.dyeingDays) || 0;
@@ -648,13 +671,13 @@ const AddEditOrder = ({ onLogout }) => {
   const handleCustomerSearch = (e) => {
     const value = e.target.value;
     setCustomerSearchInput(value);
-    
+
     if (value.trim() === '') {
       // Show all customers when input is empty but dropdown is open
       setFilteredCustomers(customers);
       setShowCustomerDropdown(true);
     } else {
-      const filtered = customers.filter(customer => 
+      const filtered = customers.filter(customer =>
         customer.fullName.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredCustomers(filtered);
@@ -685,13 +708,13 @@ const AddEditOrder = ({ onLogout }) => {
   // Worker search handlers
   const handleWorkerSearch = (index, value) => {
     setWorkerSearchInputs(prev => ({ ...prev, [index]: value }));
-    
+
     if (value.trim() === '') {
       // Show all staff when input is empty but dropdown is open
       setFilteredStaffLists(prev => ({ ...prev, [index]: staffList }));
       setShowWorkerDropdowns(prev => ({ ...prev, [index]: true }));
     } else {
-      const filtered = staffList.filter(staff => 
+      const filtered = staffList.filter(staff =>
         staff.fullName.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredStaffLists(prev => ({ ...prev, [index]: filtered }));
@@ -725,13 +748,13 @@ const AddEditOrder = ({ onLogout }) => {
   const handleProductSearch = (e) => {
     const value = e.target.value;
     setProductSearchInput(value);
-    
+
     if (value.trim() === '') {
       // Show all products when input is empty but dropdown is open
       setFilteredProducts(products);
       setShowProductDropdown(true);
     } else {
-      const filtered = products.filter(product => 
+      const filtered = products.filter(product =>
         product.name.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredProducts(filtered);
@@ -774,7 +797,7 @@ const AddEditOrder = ({ onLogout }) => {
         style={{ width: '100%' }}
       />
       {showCustomerDropdown && filteredCustomers.length > 0 && (
-        <div 
+        <div
           className="customer-dropdown"
           style={{
             position: 'absolute',
@@ -838,7 +861,7 @@ const AddEditOrder = ({ onLogout }) => {
         style={{ width: '100%' }}
       />
       {showWorkerDropdowns[index] && filteredStaffLists[index] && filteredStaffLists[index].length > 0 && (
-        <div 
+        <div
           className="worker-dropdown"
           style={{
             position: 'absolute',
@@ -896,7 +919,7 @@ const AddEditOrder = ({ onLogout }) => {
         style={{ width: '100%' }}
       />
       {showProductDropdown && filteredProducts.length > 0 && (
-        <div 
+        <div
           className="product-dropdown"
           style={{
             position: 'absolute',
@@ -1131,14 +1154,13 @@ const AddEditOrder = ({ onLogout }) => {
                     {formData.measurement.map((measure, index) => (
                       <div key={index} className="measurement-item">
                         <div className="form-group" style={{ flex: 1 }}>
-                          <label className="form-label">{measure.fieldLable}</label>
+                          <label className="form-label">{measure.fieldLable} ({measure.unit})</label>
                           <input
-                            type="number"
-                            step="0.01"
+                            type="text"
                             className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
                             value={measure.fieldValue}
                             onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
-                            placeholder="Enter value"
+                            placeholder={`Enter value in ${measure.unit}`}
                             disabled={formData.orderType === 'product'}
                           />
                         </div>
@@ -1344,7 +1366,7 @@ const AddEditOrder = ({ onLogout }) => {
                             value={formData.fusingColor}
                             onChange={(e) => handleInputChange('fusingColor', e.target.value)}
                             disabled={formData.orderType === 'product'}
-                            style={{maxWidth: '200px'}}
+                            style={{ maxWidth: '200px' }}
                           >
                             <option value="">Select Color</option>
                             <option value="Black">Black</option>
@@ -1393,7 +1415,7 @@ const AddEditOrder = ({ onLogout }) => {
                           <FiPlus size={16} /> Add
                         </button>
                       </div>
-                      
+
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {formData.workTypes.map((workType, index) => (
                           <span
@@ -1487,10 +1509,10 @@ const AddEditOrder = ({ onLogout }) => {
                   <div className="form-section">
                     <h3 className="section-title form-section-title">Stitching</h3>
                     <div className="form-grid">
-                      
+
                       {/* Embroidery Reference Images */}
-                     
-                                            <div className="form-group">
+
+                      <div className="form-group">
                         <label className="form-label">Stitching Style</label>
                         <input
                           type="text"
@@ -1601,7 +1623,18 @@ const AddEditOrder = ({ onLogout }) => {
               {activeTab === 'assignworker' && (
                 <div className="tab-content">
                   <div className="form-section">
-                    <h3 className="section-title form-section-title">Assign Worker</h3>
+                    <div className='heading_button'>
+                      <h3 className="section-title form-section-title">Assign Worker </h3>
+                      <button
+                        type="button"
+                        className="add-btn"
+                        onClick={addWorkerAssignment}
+                        style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                        disabled={formData.orderType === 'product'}
+                      >
+                        <FiPlus size={16} /> Add Worker
+                      </button>
+                    </div>
                     <div className="form-group full-width">
                       <label className="form-label">Assign Workers</label>
                       {formData.assignWorker.map((assignment, index) => (
@@ -1609,7 +1642,7 @@ const AddEditOrder = ({ onLogout }) => {
                           {renderWorkerSearchInput(index)}
                           <select
                             className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            style={{ flex: 1 }}
+                            
                             value={assignment.status}
                             onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
                             disabled={formData.orderType === 'product'}
@@ -1641,15 +1674,7 @@ const AddEditOrder = ({ onLogout }) => {
                           </button>
                         </div>
                       ))}
-                      <button
-                        type="button"
-                        className="add-btn"
-                        onClick={addWorkerAssignment}
-                        style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                        disabled={formData.orderType === 'product'}
-                      >
-                        <FiPlus size={16} /> Add Worker
-                      </button>
+
                     </div>
                   </div>
                 </div>

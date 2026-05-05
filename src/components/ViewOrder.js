@@ -214,6 +214,14 @@ const ViewOrder = ({ onLogout }) => {
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Delivery Date</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.deliveryDate || '-'}</p>
                   </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Total Price</label>
+                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.totalPrice || 0}</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Paid Amount</label>
+                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.advanceAmount || 0}</p>
+                  </div>
                 </div>
                 
                 {/* Reference Images */}
@@ -323,7 +331,7 @@ const ViewOrder = ({ onLogout }) => {
           {activeTab === 'worktype' && (
             <div className="tab-content">
               <div className="form-section">
-                <h3 className="section-title form-section-title">Work Types</h3>
+                <h3 className="section-title form-section-title">Art Work</h3>
                 {order.workTypes && order.workTypes.length > 0 ? (
                   <>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
@@ -470,50 +478,90 @@ const ViewOrder = ({ onLogout }) => {
             <div className="tab-content">
               <div className="form-section">
                 <h3 className="section-title form-section-title">Timeline & Pricing</h3>
-                <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Fabric Purchase</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.fabricPurchaseDays || 0} days - ₹{order.fabricPurchasePrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Dyeing</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.dyeingDays || 0} days - ₹{order.dyeingPrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Embroidery</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.embroideryDays || 0} days - ₹{order.embroideryPrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Stitching</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.stitichingDays || 0} days - ₹{order.stitichingPrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Other Work</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.otherWorkDays || 0} days - ₹{order.otherWorkPrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: 'var(--background-light)', padding: '12px', borderRadius: '8px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Packing</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px', fontSize: '14px' }}>{order.packingDays || 0} days - ₹{order.packingPrice || 0}</p>
-                  </div>
-                  <div className="view-item" style={{ background: '#dbeafe', padding: '16px', borderRadius: '8px', gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#1e40af', textTransform: 'uppercase', fontWeight: '600' }}>Total Timeline & Price</label>
-                      <p style={{ fontWeight: '700', marginTop: '4px', fontSize: '18px', color: '#1e40af' }}>{order.totalDays || 0} days - ₹{order.totalPrice || 0}</p>
+                
+                <div className="card">
+
+                  <div className="table">
+                    <div className="table-head">
+                      <span>Work Stage</span>
+                      <span>Days</span>
+                      <span>Cost (₹)</span>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <label style={{ fontSize: '12px', color: '#065f46', textTransform: 'uppercase', fontWeight: '600' }}>Advance Paid</label>
-                      <p style={{ fontWeight: '700', marginTop: '4px', fontSize: '18px', color: '#065f46' }}>₹{order.advanceAmount || 0}</p>
+
+                    <div className="row">
+                      <span>Fabric Purchase</span>
+                      <span>{order.fabricPurchaseDays || 0}</span>
+                      <span>{order.fabricPurchasePrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Dyeing / Color Work</span>
+                      <span>{order.dyeingDays || 0}</span>
+                      <span>{order.dyeingPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Embroidery / Art Work</span>
+                      <span>{order.embroideryDays || 0}</span>
+                      <span>{order.embroideryPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Stitching</span>
+                      <span>{order.stitichingDays || 0}</span>
+                      <span>{order.stitichingPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Other / Finishing Work</span>
+                      <span>{order.otherWorkDays || 0}</span>
+                      <span>{order.otherWorkPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>QC + Packing</span>
+                      <span>{order.packingDays || 0}</span>
+                      <span>{order.packingPrice || 0}</span>
+                    </div>
+                  </div>
+
+                  <div className="total">
+                    <span>TOTAL</span>
+                    <div>
+                      <span>{order.totalDays || 0} days</span>
+                      <span className="price">₹{order.totalPrice || 0}</span>
                     </div>
                   </div>
                 </div>
-                
+
+                <div className="pricing">
+                  <h3>💰 Pricing & Delivery</h3>
+
+                  <div className="form-row">
+                    <div>
+                      <label>Total Cost (₹)</label>
+                      <div className="value-box">{order.totalPrice || 0}</div>
+                    </div>
+
+                    <div>
+                      <label>Advance (₹)</label>
+                      <div className="value-box">{order.advanceAmount || 0}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label>Delivery Date</label>
+                    <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
+                  </div>
+                </div>
+
                 {/* Special Instructions */}
                 {order.specialInstructions && (
-                  <div style={{ marginTop: '24px' }}>
-                    <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Special Instructions</h4>
-                    <p style={{ background: 'var(--background-light)', padding: '16px', borderRadius: '8px', lineHeight: '1.6' }}>
+                  <div style={{ marginTop: '20px' }}>
+                    <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>📝 Special Instructions</h4>
+                    <div className="value-box" style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', lineHeight: '1.6' }}>
                       {order.specialInstructions}
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
