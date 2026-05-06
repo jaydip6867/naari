@@ -5,6 +5,7 @@ import Settings from './components/Settings.js';
 import Dashboard from './components/Dashboard.js';
 import Customer from './components/Customer.js';
 import AddEditCustomer from './components/AddEditCustomer.js';
+import ViewCustomer from './components/ViewCustomer.js';
 import Order from './components/Order.js';
 import Team from './components/Team.js';
 import Tasks from './components/Tasks.js';
@@ -165,6 +166,14 @@ function App() {
               element={
                 isLoggedIn ? 
                   <AddEditCustomer onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/customers/view/:customerId" 
+              element={
+                isLoggedIn ? 
+                  <ViewCustomer onLogout={handleLogout} /> : 
                   <Navigate to="/" replace />
               } 
             />

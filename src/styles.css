@@ -538,7 +538,7 @@ body {
   position: sticky;
   top: 10px;
   z-index: 1;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
   min-width: 0;
   flex-grow: 1;
@@ -2790,7 +2790,6 @@ body {
 
 .detail-item.address {
   word-break: break-all;
-  align-items: flex-start;
 }
 
 .detail-item.address span {
@@ -3425,10 +3424,6 @@ textarea.input-field {
   align-items: start;
 }
 
-.detail-item {
-  display: contents;
-}
-
 .detail-item label {
   font-weight: 600;
   color: var(--text-primary);
@@ -3442,10 +3437,10 @@ textarea.input-field {
 }
 
 .detail-item span {
-  padding: 8px 12px;
-  background: white;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  /* background: white; */
+  /* border-radius: var(--radius-sm); */
+  /* border: 1px solid var(--border-color); */
   color: var(--text-secondary);
   font-size: 13px;
   word-break: break-word;
@@ -4069,4 +4064,295 @@ textarea.input-field {
     font-size: 12px;
     padding: 6px 8px;
   }
+}
+
+/* ========================================
+   VIEW CUSTOMER PAGE STYLES
+   ======================================== */
+
+.view-customer-layout {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.view-customer-left-column {
+  flex: 0 0 250px;
+}
+
+.view-customer-right-column {
+  flex: 1 1 auto;
+}
+
+.customer-details-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.customer-profile-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.customer-profile-image-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.customer-profile-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.customer-profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: var(--background-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.customer-profile-name {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-color);
+}
+
+.customer-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.customer-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.customer-info-item.address-item {
+  align-items: flex-start;
+}
+
+.customer-info-icon {
+  color: var(--primary-color);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.customer-info-icon.address-icon {
+  margin-top: 2px;
+}
+
+.customer-info-label {
+  font-size: 12px;
+  color: var(--gray-color);
+  display: block;
+}
+
+.customer-info-value {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.customer-tabs-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.customer-tabs-navigation {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.customer-tab-button {
+  padding: 16px 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 12px 12px 0 0;
+  transition: all 0.2s ease;
+}
+
+.customer-tab-button:first-child {
+  border-radius: 12px 12px 0 0;
+}
+
+.customer-tab-button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.customer-tab-button:hover:not(.active) {
+  background: var(--background-light);
+}
+
+.customer-tabs-content {
+  padding: 24px;
+}
+
+.orders-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.orders-section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.orders-search-container {
+  position: relative;
+  width: 250px;
+}
+
+.orders-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.orders-search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.orders-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-color);
+}
+
+.orders-table-container {
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: var(--background-light);
+}
+
+.orders-table td {
+  padding: 12px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.order-status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.order-status-badge.completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.order-status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.order-status-badge.cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.order-delivery-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.order-delivery-date-icon {
+  font-size: 14px;
+  color: var(--gray-color);
+}
+
+.order-due-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.order-action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.order-action-button:hover {
+  background-color: var(--background-light);
+}
+
+.order-action-button.edit {
+  color: var(--primary-color);
+}
+
+.order-action-button.delete {
+  color: var(--alert-color);
+}
+
+.order-action-button.view {
+  color: var(--gray-color);
+}
+
+.coming-soon-section {
+  text-align: center;
+  padding: 40px;
+}
+
+.coming-soon-icon {
+  font-size: 48px;
+  color: var(--gray-color);
+  margin-bottom: 16px;
+}
+
+.coming-soon-text {
+  color: var(--gray-color);
+  font-size: 16px;
+  margin: 0;
 }
