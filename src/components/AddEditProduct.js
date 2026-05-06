@@ -68,11 +68,11 @@ const AddEditProduct = ({ onLogout }) => {
     { id: 'measurements', label: 'Measurements' },
     { id: 'addons', label: 'Addons' },
     { id: 'fabric', label: 'Fabric' },
-    { id: 'fusing', label: 'Fusing' },
+    // { id: 'fusing', label: 'Fusing' },
     { id: 'worktype', label: 'Art Work' },
     { id: 'embroidery', label: 'Stitching' },
+    { id: 'other', label: 'Other Work' },
     { id: 'assignworker', label: 'Assign Worker' },
-    { id: 'other', label: 'Other' },
     { id: 'quantityprice', label: 'Quantity & Price' }
   ] : [
     { id: 'basic', label: 'Basic' },
@@ -872,11 +872,12 @@ const AddEditProduct = ({ onLogout }) => {
                         <label className="form-label">Meters Required</label>
                         <input
                           type="number"
-                          step="0.1"
+                          step="1"
+                          min={0}
                           className="input-field"
                           value={formData.metersRequired}
                           onChange={(e) => handleInputChange('metersRequired', e.target.value)}
-                          placeholder="e.g., 3.5"
+                          placeholder="e.g., 3"
                         />
                       </div>
                       <div className="form-group full-width">
@@ -918,12 +919,6 @@ const AddEditProduct = ({ onLogout }) => {
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Fusing Tab */}
-              {activeTab === 'fusing' && (
-                <div className="tab-content">
                   <div className="form-section">
                     <h3 className="section-title form-section-title">Fusing Details</h3>
                     <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -956,6 +951,13 @@ const AddEditProduct = ({ onLogout }) => {
                   </div>
                 </div>
               )}
+
+              {/* Fusing Tab */}
+              {/* {activeTab === 'fusing' && (
+                <div className="tab-content">
+                  
+                </div>
+              )} */}
 
               {/* Work Type Tab */}
               {activeTab === 'worktype' && (

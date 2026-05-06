@@ -179,7 +179,7 @@ const Order = ({ onLogout }) => {
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '12px' }}>{order._id?.slice(-6) || '-'}</td>
+                      <td style={{ padding: '12px' }}>{order.orderId || '-'}</td>
                       <td style={{ padding: '12px' }}>
                         {typeof order.customerId === 'object' && order.customerId !== null
                           ? (order.customerId.fullName || order.customerId.name || '-')

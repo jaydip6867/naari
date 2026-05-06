@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles.css';
-import { FiEye, FiEyeOff, FiUpload, FiX } from 'react-icons/fi';
+import { FiUpload, FiX } from 'react-icons/fi';
 import { uploadAPI, workTypeAPI, userRoleAPI, skillsAPI } from '../services/api';
 
 const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
@@ -17,8 +17,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
     identityProof: [],
     type: 'staff'
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [workTypesList, setWorkTypesList] = useState([]);
   const [rolesList, setRolesList] = useState([]);
@@ -38,7 +37,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
           fullName: editingStaff.fullName || editingStaff.name || '',
           roleid: editingStaff.roleid || editingStaff.roleId || '',
           userId: editingStaff.userId || editingStaff.userName || '',
-          password: '', // Don't populate password for security
+          password: editingStaff.password || '', // Show password when editing
           mobile: editingStaff.mobile || '',
           address: editingStaff.address || '',
           skills: editingStaff.skills || [],
@@ -374,41 +373,17 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
             <label htmlFor="password" className="form-label">
               Password {!editingStaff && '*'}
             </label>
-            <div className="password-input-wrapper" style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={staffData.password}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder={editingStaff ? "Leave blank to keep current password" : "Enter password"}
-                disabled={isSubmitting}
-                required={!editingStaff}
-                style={{ paddingRight: '40px' }}
-              />
-              <button
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isSubmitting}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-              </button>
-            </div>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={staffData.password}
+              onChange={handleInputChange}
+              className="form-input"
+              placeholder={editingStaff ? "Password displayed but disabled" : "Enter password"}
+              disabled={isSubmitting || editingStaff}
+              required={!editingStaff}
+            />
           </div>
 
           <div className="form-group">
