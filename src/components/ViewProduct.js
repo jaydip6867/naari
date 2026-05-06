@@ -309,6 +309,22 @@ const ViewProduct = ({ onLogout }) => {
                 <h3 className="section-title form-section-title">Measurements</h3>
                 {product.measurement && product.measurement.length > 0 ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  {product.measurement.map((measure, index) => (
+                    <div key={index} className="view-item" style={{ background: 'var(--background-light)', padding: '12px 16px', borderRadius: '8px' }}>
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)' }}>{measure.fieldLable}</label>
+                      <p style={{ fontWeight: '500', marginTop: '4px' }}>{measure.fieldValue} {measure.unit}</p>
+                    </div>
+                  ))}</div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)', backgroundColor: 'var(--background-light)', borderRadius: 'var(--radius-md)' }}>
+                    No measurements available
+                  </div>
+                )}
+              </div>
+              {/* <div className="form-section">
+                <h3 className="section-title form-section-title">Measurements</h3>
+                {product.measurement && product.measurement.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                     {product.measurement.map((measure, index) => (
                       <div key={index} style={{ 
                         padding: '12px', 
@@ -333,7 +349,7 @@ const ViewProduct = ({ onLogout }) => {
                     No measurements available
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
           )}
 
