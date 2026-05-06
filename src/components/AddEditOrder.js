@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
+import Loader from './Loader.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { orderAPI, productAPI, measurementsAPI, addonsAPI, customerAPI, uploadAPI, staffAPI } from '../services/api';
 import { FiPlus, FiTrash2, FiUpload, FiX, FiArrowLeft } from 'react-icons/fi';
+import { useLoading } from '../contexts/LoadingContext.js';
 
 const AddEditOrder = ({ onLogout }) => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const isEditMode = Boolean(orderId);
+  const { setLoading: setGlobalLoading, isLoading: isGloballyLoading, isAnyLoading } = useLoading();
 
   const [formData, setFormData] = useState({
     customerId: '',
@@ -73,6 +76,8 @@ const AddEditOrder = ({ onLogout }) => {
   const [imageFiles, setImageFiles] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('basic');
+  const [isDataLoading, setIsDataLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
 
   // Customer search state
   const [customerSearchInput, setCustomerSearchInput] = useState('');
@@ -112,7 +117,13 @@ const AddEditOrder = ({ onLogout }) => {
   }, [orderId]);
 
   const loadInitialData = async () => {
+    if (isDataLoading || isAnyLoading()) return; // Prevent multiple simultaneous calls
+    
     setInitialLoading(true);
+    setIsDataLoading(true);
+    setGlobalLoading('initialData', true);
+    setError('');
+    
     try {
       if (isEditMode) {
         // In edit mode, first fetch the order
@@ -143,6 +154,8 @@ const AddEditOrder = ({ onLogout }) => {
       setError('Failed to load data. Please refresh the page.');
     } finally {
       setInitialLoading(false);
+      setIsDataLoading(false);
+      setGlobalLoading('initialData', false);
     }
   };
 
@@ -152,6 +165,7 @@ const AddEditOrder = ({ onLogout }) => {
       setStaffList(data || []);
     } catch (err) {
       console.error('Error fetching staff:', err);
+      throw err;
     }
   };
 
@@ -391,6 +405,17 @@ const AddEditOrder = ({ onLogout }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleNumberInputWheel = (e) => {
+    e.preventDefault();
+  };
+
+  const handleNumberInputKeyDown = (e) => {
+    // Allow arrow keys for manual control but prevent scroll behavior
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+    }
+  };
+
   // Add work type
   const addWorkType = (workType) => {
     if (workType && !formData.workTypes.includes(workType)) {
@@ -516,46 +541,59 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleImageUpload = async (field, files) => {
     if (!files || files.length === 0) return;
+    
+    // Prevent upload if already uploading for this field or if any global loading is happening
+    if (uploadProgress[field] || isAnyLoading()) return;
 
     const newFiles = Array.from(files);
     
-    // Upload each image one by one for specific field
-    const uploadPromises = newFiles.map(async (file) => {
-      try {
-        // Pass file directly to uploadAPI.uploadImage (not FormData)
-        const response = await uploadAPI.uploadImage(file);
-        
-        // Handle response structure: response.data.Data contains the image data
-        const imageUrl = response?.url || response?.Data?.url || response;
-        
-        return {
-          url: imageUrl,
-          originalUrl: URL.createObjectURL(file),
-          isNew: true,
-          uploaded: true,
-          field: field // Track which field this image belongs to
-        };
-      } catch (error) {
-        console.error(`Error uploading image for field ${field}:`, error);
-        // Return blob URL as fallback
-        return {
-          url: URL.createObjectURL(file),
-          originalUrl: URL.createObjectURL(file),
-          isNew: true,
-          uploaded: false,
-          field: field
-        };
-      }
-    });
-
-    // Wait for all uploads to complete for this specific field
-    const uploadedImages = await Promise.all(uploadPromises);
+    // Set loading state for this field
+    setUploadProgress(prev => ({ ...prev, [field]: true }));
+    setGlobalLoading(`upload-${field}`, true);
     
-    // Update form data with uploaded images for this specific field only
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...prev[field], ...uploadedImages.map(img => img.url)]
-    }));
+    try {
+      // Upload each image one by one for specific field
+      const uploadPromises = newFiles.map(async (file) => {
+        try {
+          // Pass file directly to uploadAPI.uploadImage (not FormData)
+          const response = await uploadAPI.uploadImage(file);
+          
+          // Handle response structure: response.data.Data contains the image data
+          const imageUrl = response?.url || response?.Data?.url || response;
+          
+          return {
+            url: imageUrl,
+            originalUrl: URL.createObjectURL(file),
+            isNew: true,
+            uploaded: true,
+            field: field // Track which field this image belongs to
+          };
+        } catch (error) {
+          console.error(`Error uploading image for field ${field}:`, error);
+          // Return blob URL as fallback
+          return {
+            url: URL.createObjectURL(file),
+            originalUrl: URL.createObjectURL(file),
+            isNew: true,
+            uploaded: false,
+            field: field
+          };
+        }
+      });
+
+      // Wait for all uploads to complete for this specific field
+      const uploadedImages = await Promise.all(uploadPromises);
+      
+      // Update form data with uploaded images for this specific field only
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field], ...uploadedImages.map(img => img.url)]
+      }));
+    } finally {
+      // Clear loading state for this field
+      setUploadProgress(prev => ({ ...prev, [field]: false }));
+      setGlobalLoading(`upload-${field}`, false);
+    }
   };
 
   const removeImage = (field, index) => {
@@ -569,7 +607,12 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions and API calls during loading
+    if (saving || isDataLoading || isAnyLoading()) return;
+    
     setSaving(true);
+    setGlobalLoading('saving', true);
     setError('');
 
     try {
@@ -653,6 +696,7 @@ const AddEditOrder = ({ onLogout }) => {
       setError(err.message || 'Failed to save order');
     } finally {
       setSaving(false);
+      setGlobalLoading('saving', false);
     }
   };
 
@@ -991,7 +1035,10 @@ const AddEditOrder = ({ onLogout }) => {
         <Sidebar onLogout={handleLogout} />
         <div className="main-content">
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <div className="loading">Loading...</div>
+            <Loader 
+              size="large" 
+              text={isEditMode ? 'Loading order details...' : 'Loading form data...'} 
+            />
           </div>
         </div>
       </div>
@@ -1028,7 +1075,14 @@ const AddEditOrder = ({ onLogout }) => {
         )}
 
         {renderTabNavigation()}
-        <form onSubmit={handleSubmit} className="content-section product-form">
+        <div style={{ position: 'relative' }}>
+          <form onSubmit={handleSubmit} className="content-section product-form">
+            {(saving || Object.values(uploadProgress).some(Boolean)) && (
+              <Loader 
+                overlay={true} 
+                text={saving ? 'Saving order...' : 'Uploading images...'} 
+              />
+            )}
 
           {/* Basic Information Tab */}
           {activeTab === 'basic' && (
@@ -1685,167 +1739,182 @@ const AddEditOrder = ({ onLogout }) => {
                 <div className="tab-content">
                   <div className="form-section">
                     <h3 className="section-title form-section-title">Timeline & Pricing</h3>
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label className="form-label">Fabric Purchase Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.fabricPurchaseDays}
-                          onChange={(e) => handleInputChange('fabricPurchaseDays', e.target.value)}
-                          placeholder="Days"
-                        />
+                    
+                    {/* Timeline Table */}
+                    <div className="card">
+                      <div className="table">
+                        <div className="table-head">
+                          <span>Work Stage</span>
+                          <span>Days</span>
+                          <span>Cost (₹)</span>
+                        </div>
+
+                        <div className="row">
+                          <span>Fabric Purchase</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.fabricPurchaseDays}
+                            onChange={(e) => handleInputChange('fabricPurchaseDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.fabricPurchasePrice}
+                            onChange={(e) => handleInputChange('fabricPurchasePrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Dyeing / Color Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.dyeingDays}
+                            onChange={(e) => handleInputChange('dyeingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.dyeingPrice}
+                            onChange={(e) => handleInputChange('dyeingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Embroidery / Art Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.embroideryDays}
+                            onChange={(e) => handleInputChange('embroideryDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.embroideryPrice}
+                            onChange={(e) => handleInputChange('embroideryPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Stitching</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.stitichingDays}
+                            onChange={(e) => handleInputChange('stitichingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.stitichingPrice}
+                            onChange={(e) => handleInputChange('stitichingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Other / Finishing Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.otherWorkDays}
+                            onChange={(e) => handleInputChange('otherWorkDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.otherWorkPrice}
+                            onChange={(e) => handleInputChange('otherWorkPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>QC + Packing</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.packingDays}
+                            onChange={(e) => handleInputChange('packingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.packingPrice}
+                            onChange={(e) => handleInputChange('packingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Fabric Purchase Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.fabricPurchasePrice}
-                          onChange={(e) => handleInputChange('fabricPurchasePrice', e.target.value)}
-                          placeholder="Price"
-                        />
+
+                      <div className="total">
+                        <span>TOTAL</span>
+                        <div>
+                          <span>{formData.totalDays || 0} days</span>
+                          <span>₹{formData.totalPrice || 0}</span>
+                        </div>
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Dyeing Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.dyeingDays}
-                          onChange={(e) => handleInputChange('dyeingDays', e.target.value)}
-                          placeholder="Days"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Dyeing Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.dyeingPrice}
-                          onChange={(e) => handleInputChange('dyeingPrice', e.target.value)}
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Embroidery Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.embroideryDays}
-                          onChange={(e) => handleInputChange('embroideryDays', e.target.value)}
-                          placeholder="Days"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Embroidery Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.embroideryPrice}
-                          onChange={(e) => handleInputChange('embroideryPrice', e.target.value)}
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Stitching Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.stitichingDays}
-                          onChange={(e) => handleInputChange('stitichingDays', e.target.value)}
-                          placeholder="Days"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Stitching Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.stitichingPrice}
-                          onChange={(e) => handleInputChange('stitichingPrice', e.target.value)}
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Other Work Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.otherWorkDays}
-                          onChange={(e) => handleInputChange('otherWorkDays', e.target.value)}
-                          placeholder="Days"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Other Work Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.otherWorkPrice}
-                          onChange={(e) => handleInputChange('otherWorkPrice', e.target.value)}
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Packing Days</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.packingDays}
-                          onChange={(e) => handleInputChange('packingDays', e.target.value)}
-                          placeholder="Days"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Packing Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.packingPrice}
-                          onChange={(e) => handleInputChange('packingPrice', e.target.value)}
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Total Days (Auto-calculated)</label>
-                        <input
-                          type="number"
-                          className="input-field input-disabled"
-                          value={formData.totalDays}
-                          disabled
-                          placeholder="Auto-calculated"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Total Price (₹) (Auto-calculated)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field input-disabled"
-                          value={formData.totalPrice}
-                          disabled
-                          placeholder="Auto-calculated"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Advance Amount (₹)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.advanceAmount}
-                          onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
-                          placeholder="Advance Amount"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Delivery Date (Auto-calculated)</label>
+                    </div>
+
+                    {/* Pricing & Delivery Section */}
+                    <div className="pricing">
+                      <h3 className="section-title form-section-title">Pricing & Delivery</h3>
+
+                      <div className="form-row">
+                        <div>
+                          <label>Total Cost (₹)</label>
+                          <div className="value-box">{formData.totalPrice || 0}</div>
+                        </div>
+
+                        <div>
+                          <label>Advance (₹)</label>
+                          <input
+                            type="number"
+                            className="input-field"
+                            value={formData.advanceAmount}
+                            onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="Advance Amount"
+                          />
+                        </div>
+                      <div>
+                        <label>Delivery Date</label>
                         <input
                           type="date"
                           className="input-field"
@@ -1853,16 +1922,21 @@ const AddEditOrder = ({ onLogout }) => {
                           onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
                         />
                       </div>
-                      <div className="form-group full-width">
-                        <label className="form-label">Special Instructions</label>
-                        <textarea
-                          className="input-field"
-                          rows="2"
-                          value={formData.specialInstructions}
-                          onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
-                          placeholder="Enter special instructions..."
-                        />
                       </div>
+
+                    </div>
+
+                    {/* Special Instructions */}
+                    <div className='form-group full-width'>
+                      <label>Special Instructions</label>
+                      <textarea
+                        className="input-field"
+                        rows="2"
+                        value={formData.specialInstructions}
+                        onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
+                        placeholder="Enter special instructions..."
+                        style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', lineHeight: '1.6' }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1889,6 +1963,7 @@ const AddEditOrder = ({ onLogout }) => {
           </div>
         </form>
       </div>
+    </div>
     </div>
   );
 };

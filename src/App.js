@@ -15,6 +15,7 @@ import AddEditOrder from './components/AddEditOrder.js';
 import ViewOrder from './components/ViewOrder.js';
 import './styles.css';
 import { storage } from './utils/storage';
+import { LoadingProvider } from './contexts/LoadingContext.js';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -115,8 +116,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
-        <div className="App">
+      <LoadingProvider>
+        <Router>
+          <div className="App">
           <Routes>
             <Route 
               path="/" 
@@ -248,8 +250,9 @@ function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </div>
-      </Router>
+          </div>
+        </Router>
+      </LoadingProvider>
     </ErrorBoundary>
   );
 }

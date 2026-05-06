@@ -2467,6 +2467,227 @@ body {
   margin: 0 0 20px;
 }
 
+/* ========================================
+   LOADER COMPONENT STYLES
+   ======================================== */
+
+.loader-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--primary-color);
+}
+
+.loader-text {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.loader-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-backdrop {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-md);
+  padding: 24px 32px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.loader-fullscreen .loader-backdrop {
+  background: rgba(255, 255, 255, 0.95);
+  min-width: 200px;
+  min-height: 120px;
+}
+
+/* Size variations for loader */
+.loader-container.text-sm .loading-spinner {
+  font-size: 16px;
+}
+
+.loader-container.text-base .loading-spinner {
+  font-size: 24px;
+}
+
+.loader-container.text-lg .loading-spinner {
+  font-size: 32px;
+}
+
+.loader-container.text-xl .loading-spinner {
+  font-size: 48px;
+}
+
+/* Enhanced spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: var(--primary-color);
+  transition: color 0.3s ease;
+}
+
+.loader-container:hover .loading-spinner {
+  color: var(--primary-dark);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse animation for loader text */
+.loader-text {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ========================================
+   TABLE INPUT STYLES FOR TIMELINE
+   ======================================== */
+
+.table-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--background-light);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.table-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(234, 157, 129, 0.2);
+}
+
+.table-input:hover {
+  border-color: var(--primary-light);
+}
+
+/* Make table rows accommodate inputs */
+.table .row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table .row span {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.table .row .table-input {
+  font-size: 14px;
+}
+
+/* Ensure table inputs don't break layout */
+.table .row input.table-input {
+  min-width: 80px;
+}
+
+/* Total section styling */
+.total {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.total span {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.total div {
+  text-align: right;
+}
+
+.total div span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.total .price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+/* ========================================
+   WORKER SEARCH STYLES
+   ======================================== */
+
+.worker-search-container {
+  position: relative;
+}
+
+.worker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.worker-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.worker-option:hover {
+  background-color: var(--primary-light);
+}
+
 .customer-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -3637,10 +3858,10 @@ textarea.input-field {
 /* pricing & timeline css */
 
 .card {
-  background: #2f3c8f;
+  background: #f5f5f5;
   border-radius: 10px;
   overflow: hidden;
-  color: #fff;
+  color: #333;
 }
 
 .header {
@@ -3669,11 +3890,6 @@ textarea.input-field {
 
 .date-btn:hover {
   background: #2ea85a;
-}
-
-.table {
-  background: #f5f5f5;
-  color: #333;
 }
 
 .table-head,

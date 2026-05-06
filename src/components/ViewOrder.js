@@ -529,7 +529,7 @@ const ViewOrder = ({ onLogout }) => {
                     <span>TOTAL</span>
                     <div>
                       <span>{order.totalDays || 0} days</span>
-                      <span className="price">₹{order.totalPrice || 0}</span>
+                      <span>₹{order.totalPrice || 0}</span>
                     </div>
                   </div>
                 </div>
