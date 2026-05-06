@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
+import ImagePreview from './ImagePreview.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { orderAPI } from '../services/api';
@@ -13,6 +14,13 @@ const ViewOrder = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
+  
+  // Image preview state
+  const [imagePreview, setImagePreview] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0
+  });
 
   useEffect(() => {
     fetchOrder();
@@ -49,6 +57,68 @@ const ViewOrder = ({ onLogout }) => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
   };
+
+  // Image preview handlers
+  const openImagePreview = (images, startIndex = 0) => {
+    setImagePreview({
+      isOpen: true,
+      images: images,
+      currentIndex: startIndex
+    });
+  };
+
+  const closeImagePreview = () => {
+    setImagePreview({
+      isOpen: false,
+      images: [],
+      currentIndex: 0
+    });
+  };
+
+  const handlePreviousImage = () => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : prev.images.length - 1
+    }));
+  };
+
+  const handleNextImage = () => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex < prev.images.length - 1 ? prev.currentIndex + 1 : 0
+    }));
+  };
+
+  const handleThumbnailClick = (index) => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: index
+    }));
+  };
+
+  // Keyboard navigation for image preview
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!imagePreview.isOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          closeImagePreview();
+          break;
+        case 'ArrowLeft':
+          handlePreviousImage();
+          break;
+        case 'ArrowRight':
+          handleNextImage();
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [imagePreview.isOpen]);
 
   const handleLogout = () => {
     storage.clearAuthData();
@@ -230,8 +300,30 @@ const ViewOrder = ({ onLogout }) => {
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.outfitStyleRefImg.map((img, index) => (
-                        <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                          <img src={img} alt={`Reference ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div 
+                          key={index} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            borderRadius: '8px', 
+                            overflow: 'hidden', 
+                            border: '2px solid var(--border-color)',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, border-color 0.2s ease'
+                          }}
+                          onClick={() => openImagePreview(order.outfitStyleRefImg, index)}
+                          title={`Click to view image ${index + 1}`}
+                        >
+                          <img 
+                            src={img} 
+                            alt={`Reference ${index + 1}`} 
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover',
+                              transition: 'transform 0.2s ease'
+                            }} 
+                          />
                         </div>
                       ))}
                     </div>
@@ -307,8 +399,30 @@ const ViewOrder = ({ onLogout }) => {
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Fabric Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.fabricRefImg.map((img, index) => (
-                        <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                          <img src={img} alt={`Fabric ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div 
+                          key={index} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            borderRadius: '8px', 
+                            overflow: 'hidden', 
+                            border: '2px solid var(--border-color)',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, border-color 0.2s ease'
+                          }}
+                          onClick={() => openImagePreview(order.fabricRefImg, index)}
+                          title={`Click to view fabric image ${index + 1}`}
+                        >
+                          <img 
+                            src={img} 
+                            alt={`Fabric ${index + 1}`} 
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover',
+                              transition: 'transform 0.2s ease'
+                            }} 
+                          />
                         </div>
                       ))}
                     </div>
@@ -348,8 +462,30 @@ const ViewOrder = ({ onLogout }) => {
                         <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Work Type Reference Images</h4>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                           {order.workTypeRefImg.map((img, index) => (
-                            <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                              <img src={img} alt={`Work Type ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div 
+                              key={index} 
+                              style={{ 
+                                width: '100px', 
+                                height: '100px', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden', 
+                                border: '2px solid var(--border-color)',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s ease, border-color 0.2s ease'
+                              }}
+                              onClick={() => openImagePreview(order.workTypeRefImg, index)}
+                              title={`Click to view work type image ${index + 1}`}
+                            >
+                              <img 
+                                src={img} 
+                                alt={`Work Type ${index + 1}`} 
+                                style={{ 
+                                  width: '100%', 
+                                  height: '100%', 
+                                  objectFit: 'cover',
+                                  transition: 'transform 0.2s ease'
+                                }} 
+                              />
                             </div>
                           ))}
                         </div>
@@ -415,8 +551,30 @@ const ViewOrder = ({ onLogout }) => {
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Embroidery Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.embroideryRefImg.map((img, index) => (
-                        <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                          <img src={img} alt={`Embroidery ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div 
+                          key={index} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            borderRadius: '8px', 
+                            overflow: 'hidden', 
+                            border: '2px solid var(--border-color)',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, border-color 0.2s ease'
+                          }}
+                          onClick={() => openImagePreview(order.embroideryRefImg, index)}
+                          title={`Click to view embroidery image ${index + 1}`}
+                        >
+                          <img 
+                            src={img} 
+                            alt={`Embroidery ${index + 1}`} 
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover',
+                              transition: 'transform 0.2s ease'
+                            }} 
+                          />
                         </div>
                       ))}
                     </div>
@@ -429,8 +587,30 @@ const ViewOrder = ({ onLogout }) => {
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Stitching Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.stitichingRefImg.map((img, index) => (
-                        <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                          <img src={img} alt={`Stitching ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div 
+                          key={index} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            borderRadius: '8px', 
+                            overflow: 'hidden', 
+                            border: '2px solid var(--border-color)',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, border-color 0.2s ease'
+                          }}
+                          onClick={() => openImagePreview(order.stitichingRefImg, index)}
+                          title={`Click to view stitching image ${index + 1}`}
+                        >
+                          <img 
+                            src={img} 
+                            alt={`Stitching ${index + 1}`} 
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover',
+                              transition: 'transform 0.2s ease'
+                            }} 
+                          />
                         </div>
                       ))}
                     </div>
@@ -458,8 +638,30 @@ const ViewOrder = ({ onLogout }) => {
                         <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Other Work Reference Images</h4>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                           {order.otherWorkRefImg.map((img, index) => (
-                            <div key={index} style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-color)' }}>
-                              <img src={img} alt={`Other Work ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div 
+                              key={index} 
+                              style={{ 
+                                width: '100px', 
+                                height: '100px', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden', 
+                                border: '2px solid var(--border-color)',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s ease, border-color 0.2s ease'
+                              }}
+                              onClick={() => openImagePreview(order.otherWorkRefImg, index)}
+                              title={`Click to view other work image ${index + 1}`}
+                            >
+                              <img 
+                                src={img} 
+                                alt={`Other Work ${index + 1}`} 
+                                style={{ 
+                                  width: '100%', 
+                                  height: '100%', 
+                                  objectFit: 'cover',
+                                  transition: 'transform 0.2s ease'
+                                }} 
+                              />
                             </div>
                           ))}
                         </div>
@@ -569,6 +771,17 @@ const ViewOrder = ({ onLogout }) => {
           )}
         </div>
       </div>
+      
+      {/* Image Preview Modal */}
+      <ImagePreview
+        isOpen={imagePreview.isOpen}
+        images={imagePreview.images}
+        currentIndex={imagePreview.currentIndex}
+        onClose={closeImagePreview}
+        onPrevious={handlePreviousImage}
+        onNext={handleNextImage}
+        onThumbnailClick={handleThumbnailClick}
+      />
     </div>
   );
 };

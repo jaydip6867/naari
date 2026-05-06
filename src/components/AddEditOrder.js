@@ -459,7 +459,21 @@ const AddEditOrder = ({ onLogout }) => {
     });
   };
 
-  // Auto-calculate total days and total price
+  // Calculate timeline total (for display only)
+  const calculateTimelineTotal = () => {
+    const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
+    const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
+    const embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
+    const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
+    const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
+    const packingPrice = parseFloat(formData.packingPrice) || 0;
+    const fusingPrice = parseFloat(formData.fusingPrice) || 0;
+
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + fusingPrice;
+    return totalPrice.toFixed(2);
+  };
+
+  // Auto-calculate total days only (total price is now user-editable)
   useEffect(() => {
     const fabricPurchaseDays = parseInt(formData.fabricPurchaseDays) || 0;
     const dyeingDays = parseInt(formData.dyeingDays) || 0;
@@ -469,21 +483,11 @@ const AddEditOrder = ({ onLogout }) => {
     const packingDays = parseInt(formData.packingDays) || 0;
     const fusingDays = parseInt(formData.fusingDays) || 0;
 
-    const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
-    const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
-    const embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
-    const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
-    const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
-    const packingPrice = parseFloat(formData.packingPrice) || 0;
-    const fusingPrice = parseFloat(formData.fusingPrice) || 0;
-
     const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays + fusingDays;
-    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + fusingPrice;
 
     setFormData(prev => ({
       ...prev,
-      totalDays: totalDays.toString(),
-      totalPrice: totalPrice.toFixed(2)
+      totalDays: totalDays.toString()
     }));
   }, [
     formData.fabricPurchaseDays,
@@ -492,14 +496,7 @@ const AddEditOrder = ({ onLogout }) => {
     formData.stitichingDays,
     formData.otherWorkDays,
     formData.packingDays,
-    formData.fusingDays,
-    formData.fabricPurchasePrice,
-    formData.dyeingPrice,
-    formData.embroideryPrice,
-    formData.stitichingPrice,
-    formData.otherWorkPrice,
-    formData.packingPrice,
-    formData.fusingPrice
+    formData.fusingDays
   ]);
 
   // Auto-calculate delivery date: today + totalDays
@@ -1882,11 +1879,56 @@ const AddEditOrder = ({ onLogout }) => {
                         </div>
                       </div>
 
+                      {/* Individual Price Breakdown */}
+                      {/* <div style={{ 
+                        marginTop: '20px', 
+                        padding: '15px', 
+                        background: '#f8f9fa', 
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)'
+                      }}>
+                        <h4 style={{ 
+                          margin: '0 0 12px 0', 
+                          fontSize: '14px', 
+                          color: 'var(--gray-color)', 
+                          textTransform: 'uppercase',
+                          fontWeight: '600'
+                        }}>
+                          Price Breakdown
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Fabric Purchase:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.fabricPurchasePrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Dyeing / Color:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.dyeingPrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Embroidery / Art:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.embroideryPrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Stitching:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.stitichingPrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Other / Finishing:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.otherWorkPrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>QC + Packing:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.packingPrice) || 0}</span>
+                          </div>
+                        </div>
+                      </div> */}
+
                       <div className="total">
-                        <span>TOTAL</span>
+                        <span>TOTAL (Timeline)</span>
                         <div>
                           <span>{formData.totalDays || 0} days</span>
-                          <span>₹{formData.totalPrice || 0}</span>
+                          <span>₹{calculateTimelineTotal()}</span>
                         </div>
                       </div>
                     </div>
@@ -1898,7 +1940,52 @@ const AddEditOrder = ({ onLogout }) => {
                       <div className="form-row">
                         <div>
                           <label>Total Cost (₹)</label>
-                          <div className="value-box">{formData.totalPrice || 0}</div>
+                          <input
+                            type="number"
+                            className="input-field"
+                            value={formData.totalPrice}
+                            onChange={(e) => handleInputChange('totalPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="Enter total cost"
+                          />
+                          {/* <div style={{ 
+                            marginTop: '8px', 
+                            fontSize: '12px', 
+                            color: 'var(--gray-color)',
+                            background: '#f8f9fa',
+                            padding: '8px 12px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <span>
+                              Calculated from timeline: 
+                              <span style={{ fontWeight: '600', color: 'var(--primary-color)', marginLeft: '4px' }}>
+                                ₹{calculateTimelineTotal()}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange('totalPrice', calculateTimelineTotal())}
+                              style={{
+                                fontSize: '11px',
+                                padding: '4px 8px',
+                                background: 'var(--primary-color)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-color-dark)'}
+                              onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
+                            >
+                              Use This
+                            </button>
+                          </div> */}
                         </div>
 
                         <div>

@@ -304,8 +304,7 @@ const AddEditCustomer = ({ onLogout }) => {
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleInputChange}
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength="10"
+                  placeholder="Enter mobile number"
                   required
                 />
               </div>

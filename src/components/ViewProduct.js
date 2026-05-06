@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
+import ImagePreview from './ImagePreview.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { productAPI } from '../services/api';
@@ -14,6 +15,13 @@ const ViewProduct = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
+  
+  // Image preview state
+  const [imagePreview, setImagePreview] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0
+  });
 
   // Tab configuration matching AddEditProduct
   const tabs = [
@@ -52,6 +60,68 @@ const ViewProduct = ({ onLogout }) => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
   };
+
+  // Image preview handlers
+  const openImagePreview = (images, startIndex = 0) => {
+    setImagePreview({
+      isOpen: true,
+      images: images,
+      currentIndex: startIndex
+    });
+  };
+
+  const closeImagePreview = () => {
+    setImagePreview({
+      isOpen: false,
+      images: [],
+      currentIndex: 0
+    });
+  };
+
+  const handlePreviousImage = () => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : prev.images.length - 1
+    }));
+  };
+
+  const handleNextImage = () => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex < prev.images.length - 1 ? prev.currentIndex + 1 : 0
+    }));
+  };
+
+  const handleThumbnailClick = (index) => {
+    setImagePreview(prev => ({
+      ...prev,
+      currentIndex: index
+    }));
+  };
+
+  // Keyboard navigation for image preview
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!imagePreview.isOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          closeImagePreview();
+          break;
+        case 'ArrowLeft':
+          handlePreviousImage();
+          break;
+        case 'ArrowRight':
+          handleNextImage();
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [imagePreview.isOpen]);
 
   const handleLogout = () => {
     storage.clearAuthData();
@@ -192,11 +262,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Reference Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.outfitStyleRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.outfitStyleRefImg, index)}
+                        title={`Click to view reference image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Reference ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -350,11 +438,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Fabric Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.fabricRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.fabricRefImg, index)}
+                        title={`Click to view fabric image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Fabric ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -447,11 +553,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Work Type Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.workTypeRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.workTypeRefImg, index)}
+                        title={`Click to view work type image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Work Type ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -502,11 +626,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Embroidery Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.embroideryRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.embroideryRefImg, index)}
+                        title={`Click to view embroidery image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Embroidery ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -528,11 +670,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Stitching Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.stitichingRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.stitichingRefImg, index)}
+                        title={`Click to view stitching image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Stitching ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -575,11 +735,29 @@ const ViewProduct = ({ onLogout }) => {
                   <h3 className="section-title form-section-title">Other Work Images</h3>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {product.otherWorkRefImg.map((img, index) => (
-                      <div key={index} style={{ width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <div 
+                        key={index} 
+                        style={{ 
+                          width: '150px', 
+                          height: '150px', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease'
+                        }}
+                        onClick={() => openImagePreview(product.otherWorkRefImg, index)}
+                        title={`Click to view other work image ${index + 1}`}
+                      >
                         <img 
                           src={img} 
                           alt={`Other Work ${index + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.parentElement.style.display = 'flex';
@@ -674,6 +852,17 @@ const ViewProduct = ({ onLogout }) => {
           )}
         </div>
       </div>
+      
+      {/* Image Preview Modal */}
+      <ImagePreview
+        isOpen={imagePreview.isOpen}
+        images={imagePreview.images}
+        currentIndex={imagePreview.currentIndex}
+        onClose={closeImagePreview}
+        onPrevious={handlePreviousImage}
+        onNext={handleNextImage}
+        onThumbnailClick={handleThumbnailClick}
+      />
     </div>
   );
 };

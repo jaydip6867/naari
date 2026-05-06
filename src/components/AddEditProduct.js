@@ -872,7 +872,7 @@ const AddEditProduct = ({ onLogout }) => {
                         <label className="form-label">Meters Required</label>
                         <input
                           type="number"
-                          step="1"
+                          step="0.1"
                           min={0}
                           className="input-field"
                           value={formData.metersRequired}
