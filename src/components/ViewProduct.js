@@ -844,24 +844,120 @@ const ViewProduct = ({ onLogout }) => {
           {activeTab === 'quantityprice' && (
             <div className="tab-content">
               <div className="form-section">
-                <h3 className="section-title form-section-title">Quantity & Price</h3>
-                <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                  {product.quantity && (
-                    <div className="view-item">
-                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Quantity</label>
-                      <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
-                        {formatValue(product.quantity)}
-                      </p>
+                <h3 className="section-title form-section-title">Timeline & Pricing</h3>
+
+                {/* Timeline Table */}
+                <div className="card">
+                  <div className="table">
+                    <div className="table-head">
+                      <span>Work Stage</span>
+                      <span>Days</span>
+                      <span>Cost (₹)</span>
                     </div>
-                  )}
-                  {product.price && (
-                    <div className="view-item">
-                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Price</label>
-                      <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
-                        ₹{formatValue(product.price)}
-                      </p>
+
+                    <div className="row">
+                      <span>Fabric Purchase</span>
+                      <span>{product.fabricPurchaseDays || 0}</span>
+                      <span>{product.fabricPurchasePrice || 0}</span>
                     </div>
-                  )}
+
+                    <div className="row">
+                      <span>Dyeing Work</span>
+                      <span>{product.dyeingDays || 0}</span>
+                      <span>{product.dyeingPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Embroidery Work</span>
+                      <span>{product.embroideryDays || 0}</span>
+                      <span>{product.embroideryPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Stitching Work</span>
+                      <span>{product.stitichingDays || 0}</span>
+                      <span>{product.stitichingPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Other Work</span>
+                      <span>{product.otherWorkDays || 0}</span>
+                      <span>{product.otherWorkPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>QC + Packing</span>
+                      <span>{product.packingDays || 0}</span>
+                      <span>{product.packingPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Khakha Work</span>
+                      <span>{product.khakhaDays || 0}</span>
+                      <span>{product.khakhaPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Art Work</span>
+                      <span>{product.artWorkDays || 0}</span>
+                      <span>{product.artWorkPrice || 0}</span>
+                    </div>
+
+                    <div className="total">
+                      <span>TOTAL</span>
+                      <div>
+                        <span>{product.totalDays || 0} days</span>
+                        <span>₹{product.totalPrice || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing Section */}
+                <div className="pricing">
+                  <h3 className="section-title form-section-title">Pricing</h3>
+
+                  <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                    {product.sellingPrice && (
+                      <div className="view-item">
+                        <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Selling Price</label>
+                        <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
+                          ₹{formatValue(product.sellingPrice)}
+                        </p>
+                      </div>
+                    )}
+                    {product.diffPercentage && (
+                      <div className="view-item">
+                        <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Diff Percentage</label>
+                        <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
+                          {product.diffPercentage}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Original Quantity & Price Section */}
+                <div className="form-section">
+                  <h3 className="section-title form-section-title">Quantity & Price</h3>
+                  <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                    {product.quantity && (
+                      <div className="view-item">
+                        <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Quantity</label>
+                        <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
+                          {formatValue(product.quantity)}
+                        </p>
+                      </div>
+                    )}
+                    {product.price && (
+                      <div className="view-item">
+                        <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Price</label>
+                        <p style={{ fontSize: '24px', fontWeight: '600', marginTop: '4px', color: 'var(--primary-color)' }}>
+                          ₹{formatValue(product.price)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
