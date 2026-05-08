@@ -725,6 +725,18 @@ const ViewOrder = ({ onLogout }) => {
                       <span>{order.packingDays || 0}</span>
                       <span>{order.packingPrice || 0}</span>
                     </div>
+
+                    <div className="row">
+                      <span>Khakha Work</span>
+                      <span>{order.khakhaDays || 0}</span>
+                      <span>{order.khakhaPrice || 0}</span>
+                    </div>
+
+                    <div className="row">
+                      <span>Art Work</span>
+                      <span>{order.artWorkDays || 0}</span>
+                      <span>{order.artWorkPrice || 0}</span>
+                    </div>
                   </div>
 
                   <div className="total">
@@ -751,9 +763,19 @@ const ViewOrder = ({ onLogout }) => {
                     </div>
                   </div>
 
-                  <div>
-                    <label>Delivery Date</label>
-                    <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
+                  <div className="form-row">
+                    <div>
+                      <label>Delivery Date</label>
+                      <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
+                    </div>
+                    <div>
+                      <label>Selling Price (₹)</label>
+                      <div className="value-box">{order.sellingPrice || 0}</div>
+                    </div>
+                    <div>
+                      <label>Diff Percentage (%)</label>
+                      <div className="value-box">{order.diffPercentage || 0}</div>
+                    </div>
                   </div>
                 </div>
 

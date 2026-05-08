@@ -56,6 +56,13 @@ const AddEditOrder = ({ onLogout }) => {
     otherWorkPrice: '',
     packingDays: '',
     packingPrice: '',
+    // Additional pricing fields
+    khakhaDays: '',
+    khakhaPrice: '',
+    artWorkDays: '',
+    artWorkPrice: '',
+    sellingPrice: '',
+    diffPercentage: '',
     totalDays: '',
     totalPrice: '',
     advanceAmount: '',
@@ -118,12 +125,12 @@ const AddEditOrder = ({ onLogout }) => {
 
   const loadInitialData = async () => {
     if (isDataLoading || isAnyLoading()) return; // Prevent multiple simultaneous calls
-    
+
     setInitialLoading(true);
     setIsDataLoading(true);
     setGlobalLoading('initialData', true);
     setError('');
-    
+
     try {
       if (isEditMode) {
         // In edit mode, first fetch the order
@@ -350,6 +357,13 @@ const AddEditOrder = ({ onLogout }) => {
           otherWorkPrice: order.otherWorkPrice || '',
           packingDays: order.packingDays || '',
           packingPrice: order.packingPrice || '',
+          // Additional pricing fields
+          khakhaDays: order.khakhaDays || '',
+          khakhaPrice: order.khakhaPrice || '',
+          artWorkDays: order.artWorkDays || '',
+          artWorkPrice: order.artWorkPrice || '',
+          sellingPrice: order.sellingPrice || '',
+          diffPercentage: order.diffPercentage || '',
           totalDays: order.totalDays || '',
           totalPrice: order.totalPrice || '',
           advanceAmount: order.advanceAmount || '',
@@ -467,9 +481,11 @@ const AddEditOrder = ({ onLogout }) => {
     const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
     const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
     const packingPrice = parseFloat(formData.packingPrice) || 0;
+    const khakhaPrice = parseFloat(formData.khakhaPrice) || 0;
+    const artWorkPrice = parseFloat(formData.artWorkPrice) || 0;
     const fusingPrice = parseFloat(formData.fusingPrice) || 0;
 
-    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + fusingPrice;
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + khakhaPrice + artWorkPrice + fusingPrice;
     return totalPrice.toFixed(2);
   };
 
@@ -481,9 +497,11 @@ const AddEditOrder = ({ onLogout }) => {
     const stitichingDays = parseInt(formData.stitichingDays) || 0;
     const otherWorkDays = parseInt(formData.otherWorkDays) || 0;
     const packingDays = parseInt(formData.packingDays) || 0;
+    const khakhaDays = parseInt(formData.khakhaDays) || 0;
+    const artWorkDays = parseInt(formData.artWorkDays) || 0;
     const fusingDays = parseInt(formData.fusingDays) || 0;
 
-    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays + fusingDays;
+    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays + khakhaDays + artWorkDays + fusingDays;
 
     setFormData(prev => ({
       ...prev,
@@ -496,8 +514,62 @@ const AddEditOrder = ({ onLogout }) => {
     formData.stitichingDays,
     formData.otherWorkDays,
     formData.packingDays,
+    formData.khakhaDays,
+    formData.artWorkDays,
     formData.fusingDays
   ]);
+
+  // Auto-calculate total price from all work stage prices
+  useEffect(() => {
+    const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
+    const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
+    const embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
+    const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
+    const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
+    const packingPrice = parseFloat(formData.packingPrice) || 0;
+    const khakhaPrice = parseFloat(formData.khakhaPrice) || 0;
+    const artWorkPrice = parseFloat(formData.artWorkPrice) || 0;
+    const fusingPrice = parseFloat(formData.fusingPrice) || 0;
+
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + khakhaPrice + artWorkPrice + fusingPrice;
+
+    setFormData(prev => ({
+      ...prev,
+      totalPrice: totalPrice.toFixed(2)
+    }));
+  }, [
+    formData.fabricPurchasePrice,
+    formData.dyeingPrice,
+    formData.embroideryPrice,
+    formData.stitichingPrice,
+    formData.otherWorkPrice,
+    formData.packingPrice,
+    formData.khakhaPrice,
+    formData.artWorkPrice,
+    formData.fusingPrice
+  ]);
+
+  // Auto-calculate diff percentage from selling price
+  useEffect(() => {
+    const totalCost = parseFloat(formData.totalPrice) || 0;
+    const sellingPrice = parseFloat(formData.sellingPrice) || 0;
+
+    // Only calculate if total cost and selling price are greater than 0
+    if (totalCost > 0 && sellingPrice > 0) {
+      const calculatedDiffPercentage = ((sellingPrice - totalCost) / 100).toFixed(1);
+      setFormData(prev => ({
+        ...prev,
+        diffPercentage: calculatedDiffPercentage
+      }));
+    }
+    // Reset diff percentage if selling price is 0 or empty
+    else if (sellingPrice === 0) {
+      setFormData(prev => ({
+        ...prev,
+        diffPercentage: '0.0'
+      }));
+    }
+  }, [formData.totalPrice, formData.sellingPrice]);
 
   // Auto-calculate delivery date: today + totalDays
   useEffect(() => {
@@ -538,26 +610,26 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleImageUpload = async (field, files) => {
     if (!files || files.length === 0) return;
-    
+
     // Prevent upload if already uploading for this field or if any global loading is happening
     if (uploadProgress[field] || isAnyLoading()) return;
 
     const newFiles = Array.from(files);
-    
+
     // Set loading state for this field
     setUploadProgress(prev => ({ ...prev, [field]: true }));
     setGlobalLoading(`upload-${field}`, true);
-    
+
     try {
       // Upload each image one by one for specific field
       const uploadPromises = newFiles.map(async (file) => {
         try {
           // Pass file directly to uploadAPI.uploadImage (not FormData)
           const response = await uploadAPI.uploadImage(file);
-          
+
           // Handle response structure: response.data.Data contains the image data
           const imageUrl = response?.url || response?.Data?.url || response;
-          
+
           return {
             url: imageUrl,
             originalUrl: URL.createObjectURL(file),
@@ -580,7 +652,7 @@ const AddEditOrder = ({ onLogout }) => {
 
       // Wait for all uploads to complete for this specific field
       const uploadedImages = await Promise.all(uploadPromises);
-      
+
       // Update form data with uploaded images for this specific field only
       setFormData(prev => ({
         ...prev,
@@ -604,10 +676,10 @@ const AddEditOrder = ({ onLogout }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Prevent multiple submissions and API calls during loading
     if (saving || isDataLoading || isAnyLoading()) return;
-    
+
     setSaving(true);
     setGlobalLoading('saving', true);
     setError('');
@@ -1032,9 +1104,9 @@ const AddEditOrder = ({ onLogout }) => {
         <Sidebar onLogout={handleLogout} />
         <div className="main-content">
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Loader 
-              size="large" 
-              text={isEditMode ? 'Loading order details...' : 'Loading form data...'} 
+            <Loader
+              size="large"
+              text={isEditMode ? 'Loading order details...' : 'Loading form data...'}
             />
           </div>
         </div>
@@ -1075,812 +1147,856 @@ const AddEditOrder = ({ onLogout }) => {
         <div style={{ position: 'relative' }}>
           <form onSubmit={handleSubmit} className="content-section product-form">
             {(saving || Object.values(uploadProgress).some(Boolean)) && (
-              <Loader 
-                overlay={true} 
-                text={saving ? 'Saving order...' : 'Uploading images...'} 
+              <Loader
+                overlay={true}
+                text={saving ? 'Saving order...' : 'Uploading images...'}
               />
             )}
 
-          {/* Basic Information Tab */}
-          {activeTab === 'basic' && (
-            <div className="tab-content">
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Basic Information</h3>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label">Customer <span className="required">*</span></label>
-                    {renderCustomerSearchInput()}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Order Type <span className="required">*</span></label>
-                    <div className="radio-group">
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          name="orderType"
-                          value="product"
-                          checked={formData.orderType === 'product'}
-                          onChange={(e) => handleInputChange('orderType', e.target.value)}
-                          required
-                        />
-                        <span>Product</span>
-                      </label>
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          name="orderType"
-                          value="customized"
-                          checked={formData.orderType === 'customized'}
-                          onChange={(e) => handleInputChange('orderType', e.target.value)}
-                          required
-                        />
-                        <span>Customized</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {formData.orderType === 'product' && (
+            {/* Basic Information Tab */}
+            {activeTab === 'basic' && (
+              <div className="tab-content">
+                <div className="form-section">
+                  <h3 className="section-title form-section-title">Basic Information</h3>
+                  <div className="form-grid">
                     <div className="form-group">
-                      <label className="form-label">Product <span className="required">*</span></label>
-                      {renderProductSearchInput()}
+                      <label className="form-label">Customer <span className="required">*</span></label>
+                      {renderCustomerSearchInput()}
                     </div>
-                  )}
 
-                  {formData.orderType === 'customized' && (
-                    <>
-                      <div className="form-group">
-                        <label className="form-label">Outfit Type <span className="required">*</span></label>
-                        <select
-                          className="input-field"
-                          value={formData.outfitTypeId}
-                          onChange={(e) => handleInputChange('outfitTypeId', e.target.value)}
-                          required={formData.orderType === 'customized'}
-                        >
-                          <option value="">Select Outfit Type</option>
-                          {outfitTypes.map(outfit => (
-                            <option key={outfit._id} value={outfit._id}>{outfit.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {selectedOutfit?.hasSubCategories && (
-                        <div className="form-group">
-                          <label className="form-label">Subcategory <span className="required">*</span></label>
-                          <select
-                            className="input-field"
-                            value={formData.subCategoryName}
-                            onChange={(e) => handleInputChange('subCategoryName', e.target.value)}
-                            required={selectedOutfit?.hasSubCategories}
-                          >
-                            <option value="">Select Subcategory</option>
-                            {selectedOutfit?.subCategories?.map(sub => (
-                              <option key={sub.name} value={sub.name}>{sub.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Outfit Style Reference Images */}
-                <div className="form-group full-width" style={{ marginTop: '24px' }}>
-                  <label className="form-label">Outfit Style Reference Images</label>
-                  <div className="image-upload-container">
-                    {formData.outfitStyleRefImg.map((img, index) => (
-                      <div key={index} className="image-preview">
-                        <img src={img} alt={`Style ${index + 1}`} />
-                        <button
-                          type="button"
-                          className="image-remove-btn"
-                          onClick={() => removeImage('outfitStyleRefImg', index)}
-                        >
-                          <FiX size={14} />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="image-upload-btn">
-                      <FiUpload size={24} />
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload('outfitStyleRefImg', e.target.files)}
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Measurements Tab */}
-          {activeTab === 'measurements' && (formData.orderType === 'customized' || formData.orderType === 'product') && (
-            <div className="tab-content">
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Measurements</h3>
-                {formData.measurement.length > 0 ? (
-                  <div className="measurements-grid">
-                    {formData.measurement.map((measure, index) => (
-                      <div key={index} className="measurement-item">
-                        <div className="form-group" style={{ flex: 1 }}>
-                          <label className="form-label">{measure.fieldLable} ({measure.unit})</label>
+                    <div className="form-group">
+                      <label className="form-label">Order Type <span className="required">*</span></label>
+                      <div className="radio-group">
+                        <label className="radio-label">
                           <input
-                            type="text"
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={measure.fieldValue}
-                            onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
-                            placeholder={`Enter value in ${measure.unit}`}
-                            disabled={formData.orderType === 'product'}
+                            type="radio"
+                            name="orderType"
+                            value="product"
+                            checked={formData.orderType === 'product'}
+                            onChange={(e) => handleInputChange('orderType', e.target.value)}
+                            required
                           />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
-                    {formData.orderType === 'product'
-                      ? (formData.productId ? 'No measurements available for this product.' : 'Select a product to see measurements.')
-                      : (formData.outfitTypeId ? 'No measurements available for this outfit type.' : 'Select an outfit type to see measurements.')
-                    }
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Add Ons Tab */}
-          {activeTab === 'addons' && availableAddons.length > 0 && (
-            <div className="tab-content">
-              <div className="form-section">
-                <h3 className="section-title form-section-title">Addons</h3>
-                <div className="addons-grid">
-                  {formData.addons.map((addon, index) => (
-                    <div key={index} className={`addon-card ${addon.isSelected ? 'selected' : ''}`}>
-                      <div className="addon-header">
-                        <input
-                          type="checkbox"
-                          id={`addon-${index}`}
-                          className="addon-checkbox"
-                          checked={addon.isSelected}
-                          onChange={(e) => handleAddonChange(index, 'isSelected', e.target.checked)}
-                          disabled={formData.orderType === 'product'}
-                        />
-                        <label htmlFor={`addon-${index}`} className="addon-title">{addon.title}</label>
-                        <span className="addon-type">({addon.fieldType})</span>
-                      </div>
-
-                      {addon.isSelected && (
-                        <div className="addon-content">
-                          {addon.fieldType === 'text' && (
-                            <input
-                              type="text"
-                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                              placeholder="Enter value"
-                              value={addon.value}
-                              onChange={(e) => handleAddonChange(index, 'value', e.target.value)}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          )}
-                          {addon.fieldType === 'radio' && (
-                            <div className="radio-group">
-                              {addon.options.map((option, optIndex) => (
-                                <label key={optIndex} className={`radio-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                                  <input
-                                    type="radio"
-                                    name={`addon-${index}-option`}
-                                    checked={addon.value === option}
-                                    onChange={() => handleAddonChange(index, 'value', option)}
-                                    disabled={formData.orderType === 'product'}
-                                  />
-                                  <span>{option}</span>
-                                </label>
-                              ))}
-                            </div>
-                          )}
-                          {addon.fieldType === 'checkbox' && (
-                            <div className="checkbox-group">
-                              {addon.options.map((option, optIndex) => (
-                                <label key={optIndex} className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                                  <input
-                                    type="checkbox"
-                                    checked={addon.value?.includes(option)}
-                                    onChange={(e) => {
-                                      const currentValues = addon.value ? addon.value.split(',') : [];
-                                      const newValues = e.target.checked
-                                        ? [...currentValues, option]
-                                        : currentValues.filter(v => v !== option);
-                                      handleAddonChange(index, 'value', newValues.join(','));
-                                    }}
-                                    disabled={formData.orderType === 'product'}
-                                  />
-                                  <span>{option}</span>
-                                </label>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Mode Only Tabs */}
-          {isEditMode && (
-            <>
-              {/* Fabric Tab */}
-              {activeTab === 'fabric' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Fabric Details</h3>
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label className="form-label">Fabric Type</label>
-                        <input
-                          type="text"
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          value={formData.fabricType}
-                          onChange={(e) => handleInputChange('fabricType', e.target.value)}
-                          placeholder="e.g., Cotton"
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Fabric Color</label>
-                        <input
-                          type="text"
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          value={formData.fabricColor}
-                          onChange={(e) => handleInputChange('fabricColor', e.target.value)}
-                          placeholder="e.g., Maroon"
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Meters Required</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          value={formData.metersRequired}
-                          onChange={(e) => handleInputChange('metersRequired', e.target.value)}
-                          placeholder="e.g., 3.5"
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label className="form-label">Fabric Notes</label>
-                        <textarea
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          rows="2"
-                          value={formData.fabricNotes}
-                          onChange={(e) => handleInputChange('fabricNotes', e.target.value)}
-                          placeholder="Enter fabric notes..."
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      {/* Fabric Reference Images */}
-                      <div className="form-group full-width" style={{ marginTop: '16px' }}>
-                        <label className="form-label">Fabric Reference Images</label>
-                        <div className="image-upload-container">
-                          {formData.fabricRefImg.map((img, index) => (
-                            <div key={index} className="image-preview">
-                              <img src={img} alt={`Fabric ${index + 1}`} />
-                              <button
-                                type="button"
-                                className="image-remove-btn"
-                                onClick={() => removeImage('fabricRefImg', index)}
-                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                                disabled={formData.orderType === 'product'}
-                              >
-                                <FiX size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
-                            <FiUpload size={24} />
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload('fabricRefImg', e.target.files)}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Fusing Details</h3>
-                    <div className="form-group" style={{ marginBottom: '16px' }}>
-                      <label className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={formData.fusingRequired}
-                          onChange={(e) => handleInputChange('fusingRequired', e.target.checked)}
-                          disabled={formData.orderType === 'product'}
-                        />
-                        <span>Fusing Required</span>
-                      </label>
-                    </div>
-                    {formData.fusingRequired && (
-                      <div className="form-grid">
-                        <div className="form-group">
-                          <label className="form-label">Fusing Color</label>
-                          <select
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            value={formData.fusingColor}
-                            onChange={(e) => handleInputChange('fusingColor', e.target.value)}
-                            disabled={formData.orderType === 'product'}
-                            style={{ maxWidth: '200px' }}
-                          >
-                            <option value="">Select Color</option>
-                            <option value="Black">Black</option>
-                            <option value="White">White</option>
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-
-              {/* Work Type Tab */}
-              {activeTab === 'worktype' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Art Work</h3>
-                    <div className="form-group full-width">
-                      <label className="form-label">Art Work</label>
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                        <input
-                          type="text"
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          id="workTypeInput"
-                          placeholder="e.g., HANDWORK"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addWorkType(e.target.value.trim());
-                              e.target.value = '';
-                            }
-                          }}
-                          disabled={formData.orderType === 'product'}
-                        />
-                        <button
-                          type="button"
-                          className="add-btn"
-                          onClick={() => {
-                            const input = document.getElementById('workTypeInput');
-                            addWorkType(input.value.trim());
-                            input.value = '';
-                          }}
-                          disabled={formData.orderType === 'product'}
-                        >
-                          <FiPlus size={16} /> Add
-                        </button>
-                      </div>
-
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {formData.workTypes.map((workType, index) => (
-                          <span
-                            key={index}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '6px 12px',
-                              background: 'var(--primary-light)',
-                              borderRadius: 'var(--radius-md)',
-                              fontSize: '14px',
-                              color: 'var(--primary-color)'
-                            }}
-                          >
-                            {workType}
-                            <button
-                              type="button"
-                              onClick={() => removeWorkType(workType)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: formData.orderType === 'product' ? 'not-allowed' : 'pointer',
-                                padding: '2px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: 'var(--primary-color)',
-                                opacity: formData.orderType === 'product' ? 0.5 : 1
-                              }}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <FiX size={14} />
-                            </button>
-                          </span>
-                        ))}
-                        {formData.workTypes.length === 0 && (
-                          <span style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
-                            No Art work types added. Enter a work type and click Add.
-                          </span>
-                        )}
-                      </div>
-                      <div className="form-group full-width">
-                        <label className="form-label">Art Work Notes</label>
-                        <textarea
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          rows="2"
-                          value={formData.embroideryWorkNotes}
-                          onChange={(e) => handleInputChange('embroideryWorkNotes', e.target.value)}
-                          placeholder="Enter Art Work notes..."
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      {/* Work Type Reference Images */}
-                      <div className="form-group full-width" style={{ marginTop: '16px' }}>
-                        <label className="form-label">Art Work Reference Images</label>
-                        <div className="image-upload-container">
-                          {formData.workTypeRefImg.map((img, index) => (
-                            <div key={index} className="image-preview">
-                              <img src={img} alt={`Work Type ${index + 1}`} />
-                              <button
-                                type="button"
-                                className="image-remove-btn"
-                                onClick={() => removeImage('workTypeRefImg', index)}
-                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                                disabled={formData.orderType === 'product'}
-                              >
-                                <FiX size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
-                            <FiUpload size={24} />
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload('workTypeRefImg', e.target.files)}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Embroidery & Stitching Tab */}
-              {activeTab === 'embroidery' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Stitching</h3>
-                    <div className="form-grid">
-
-                      {/* Embroidery Reference Images */}
-
-                      <div className="form-group">
-                        <label className="form-label">Stitching Style</label>
-                        <input
-                          type="text"
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          value={formData.stitichingStyle}
-                          onChange={(e) => handleInputChange('stitichingStyle', e.target.value)}
-                          placeholder="e.g., Regular"
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label className="form-label">Stitching Notes</label>
-                        <textarea
-                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                          rows="2"
-                          value={formData.stitichingNotes}
-                          onChange={(e) => handleInputChange('stitichingNotes', e.target.value)}
-                          placeholder="Enter stitching notes..."
-                          disabled={formData.orderType === 'product'}
-                        />
-                      </div>
-                      {/* Stitching Reference Images */}
-                      <div className="form-group full-width">
-                        <label className="form-label">Stitching Reference Images</label>
-                        <div className="image-upload-container">
-                          {formData.stitichingRefImg.map((img, index) => (
-                            <div key={index} className="image-preview">
-                              <img src={img} alt={`Stitching ${index + 1}`} />
-                              <button
-                                type="button"
-                                className="image-remove-btn"
-                                onClick={() => removeImage('stitichingRefImg', index)}
-                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                                disabled={formData.orderType === 'product'}
-                              >
-                                <FiX size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
-                            <FiUpload size={24} />
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload('stitichingRefImg', e.target.files)}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Other Work Tab */}
-              {activeTab === 'otherwork' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Other Work</h3>
-                    <div className="form-group full-width">
-                      <label className="form-label">Other Work Details</label>
-                      <textarea
-                        className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                        rows="2"
-                        value={formData.otherWork}
-                        onChange={(e) => handleInputChange('otherWork', e.target.value)}
-                        placeholder="Enter other work details..."
-                        disabled={formData.orderType === 'product'}
-                      />
-                    </div>
-                    {/* Other Work Reference Images */}
-                    <div className="form-group full-width">
-                      <label className="form-label">Other Work Reference Images</label>
-                      <div className="image-upload-container">
-                        {formData.otherWorkRefImg.map((img, index) => (
-                          <div key={index} className="image-preview">
-                            <img src={img} alt={`Other Work ${index + 1}`} />
-                            <button
-                              type="button"
-                              className="image-remove-btn"
-                              onClick={() => removeImage('otherWorkRefImg', index)}
-                              style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <FiX size={14} />
-                            </button>
-                          </div>
-                        ))}
-                        <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
-                          <FiUpload size={24} />
+                          <span>Product</span>
+                        </label>
+                        <label className="radio-label">
                           <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload('otherWorkRefImg', e.target.files)}
-                            disabled={formData.orderType === 'product'}
+                            type="radio"
+                            name="orderType"
+                            value="customized"
+                            checked={formData.orderType === 'customized'}
+                            onChange={(e) => handleInputChange('orderType', e.target.value)}
+                            required
                           />
+                          <span>Customized</span>
                         </label>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Assign Worker Tab */}
-              {activeTab === 'assignworker' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <div className='heading_button'>
-                      <h3 className="section-title form-section-title">Assign Worker </h3>
-                      <button
-                        type="button"
-                        className="add-btn"
-                        onClick={addWorkerAssignment}
-                        style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                        disabled={formData.orderType === 'product'}
-                      >
-                        <FiPlus size={16} /> Add Worker
-                      </button>
-                    </div>
-                    <div className="form-group full-width">
-                      <label className="form-label">Assign Workers</label>
-                      {formData.assignWorker.map((assignment, index) => (
-                        <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                          {renderWorkerSearchInput(index)}
+                    {formData.orderType === 'product' && (
+                      <div className="form-group">
+                        <label className="form-label">Product <span className="required">*</span></label>
+                        {renderProductSearchInput()}
+                      </div>
+                    )}
+
+                    {formData.orderType === 'customized' && (
+                      <>
+                        <div className="form-group">
+                          <label className="form-label">Outfit Type <span className="required">*</span></label>
                           <select
-                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                            
-                            value={assignment.status}
-                            onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
-                            disabled={formData.orderType === 'product'}
+                            className="input-field"
+                            value={formData.outfitTypeId}
+                            onChange={(e) => handleInputChange('outfitTypeId', e.target.value)}
+                            required={formData.orderType === 'customized'}
                           >
-                            <option value="order_overview">Order Overview</option>
-                            <option value="fabric_purchase">Fabric Purchase</option>
-                            <option value="dying">Dying</option>
-                            <option value="fusing">Fusing</option>
-                            <option value="khakha">Khakha</option>
-                            <option value="art_work">Art Work</option>
-                            <option value="add_ons">Add Ons</option>
-                            <option value="cutting">Cutting</option>
-                            <option value="stitching">Stitching</option>
-                            <option value="qc">QC</option>
-                            <option value="other_work">Other Work</option>
-                            <option value="packing">Packing</option>
-                            <option value="ready_to_delivery">Ready to Delivery</option>
-                            <option value="delivery_complete">Delivery Complete</option>
-                            <option value="repairing">Repairing</option>
+                            <option value="">Select Outfit Type</option>
+                            {outfitTypes.map(outfit => (
+                              <option key={outfit._id} value={outfit._id}>{outfit.name}</option>
+                            ))}
                           </select>
+                        </div>
+
+                        {selectedOutfit?.hasSubCategories && (
+                          <div className="form-group">
+                            <label className="form-label">Subcategory <span className="required">*</span></label>
+                            <select
+                              className="input-field"
+                              value={formData.subCategoryName}
+                              onChange={(e) => handleInputChange('subCategoryName', e.target.value)}
+                              required={selectedOutfit?.hasSubCategories}
+                            >
+                              <option value="">Select Subcategory</option>
+                              {selectedOutfit?.subCategories?.map(sub => (
+                                <option key={sub.name} value={sub.name}>{sub.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Outfit Style Reference Images */}
+                  <div className="form-group full-width" style={{ marginTop: '24px' }}>
+                    <label className="form-label">Outfit Style Reference Images</label>
+                    <div className="image-upload-container">
+                      {formData.outfitStyleRefImg.map((img, index) => (
+                        <div key={index} className="image-preview">
+                          <img src={img} alt={`Style ${index + 1}`} />
                           <button
                             type="button"
-                            className="btn-icon btn"
-                            onClick={() => removeWorkerAssignment(index)}
-                            style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                            disabled={formData.orderType === 'product'}
+                            className="image-remove-btn"
+                            onClick={() => removeImage('outfitStyleRefImg', index)}
                           >
-                            <FiTrash2 size={16} className='delete-icon' />
+                            <FiX size={14} />
                           </button>
                         </div>
                       ))}
-
+                      <label className="image-upload-btn">
+                        <FiUpload size={24} />
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload('outfitStyleRefImg', e.target.files)}
+                        />
+                      </label>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Timeline & Pricing Tab */}
-              {activeTab === 'timeline' && (
-                <div className="tab-content">
-                  <div className="form-section">
-                    <h3 className="section-title form-section-title">Timeline & Pricing</h3>
-                    
-                    {/* Timeline Table */}
-                    <div className="card">
-                      <div className="table">
-                        <div className="table-head">
-                          <span>Work Stage</span>
-                          <span>Days</span>
-                          <span>Cost (₹)</span>
+            {/* Measurements Tab */}
+            {activeTab === 'measurements' && (formData.orderType === 'customized' || formData.orderType === 'product') && (
+              <div className="tab-content">
+                <div className="form-section">
+                  <h3 className="section-title form-section-title">Measurements</h3>
+                  {formData.measurement.length > 0 ? (
+                    <div className="measurements-grid">
+                      {formData.measurement.map((measure, index) => (
+                        <div key={index} className="measurement-item">
+                          <div className="form-group" style={{ flex: 1 }}>
+                            <label className="form-label">{measure.fieldLable} ({measure.unit})</label>
+                            <input
+                              type="text"
+                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                              value={measure.fieldValue}
+                              onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
+                              placeholder={`Enter value in ${measure.unit}`}
+                              disabled={formData.orderType === 'product'}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
+                      {formData.orderType === 'product'
+                        ? (formData.productId ? 'No measurements available for this product.' : 'Select a product to see measurements.')
+                        : (formData.outfitTypeId ? 'No measurements available for this outfit type.' : 'Select an outfit type to see measurements.')
+                      }
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Add Ons Tab */}
+            {activeTab === 'addons' && availableAddons.length > 0 && (
+              <div className="tab-content">
+                <div className="form-section">
+                  <h3 className="section-title form-section-title">Addons</h3>
+                  <div className="addons-grid">
+                    {formData.addons.map((addon, index) => (
+                      <div key={index} className={`addon-card ${addon.isSelected ? 'selected' : ''}`}>
+                        <div className="addon-header">
+                          <input
+                            type="checkbox"
+                            id={`addon-${index}`}
+                            className="addon-checkbox"
+                            checked={addon.isSelected}
+                            onChange={(e) => handleAddonChange(index, 'isSelected', e.target.checked)}
+                            disabled={formData.orderType === 'product'}
+                          />
+                          <label htmlFor={`addon-${index}`} className="addon-title">{addon.title}</label>
+                          <span className="addon-type">({addon.fieldType})</span>
                         </div>
 
-                        <div className="row">
-                          <span>Fabric Purchase</span>
+                        {addon.isSelected && (
+                          <div className="addon-content">
+                            {addon.fieldType === 'text' && (
+                              <input
+                                type="text"
+                                className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                                placeholder="Enter value"
+                                value={addon.value}
+                                onChange={(e) => handleAddonChange(index, 'value', e.target.value)}
+                                disabled={formData.orderType === 'product'}
+                              />
+                            )}
+                            {addon.fieldType === 'radio' && (
+                              <div className="radio-group">
+                                {addon.options.map((option, optIndex) => (
+                                  <label key={optIndex} className={`radio-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
+                                    <input
+                                      type="radio"
+                                      name={`addon-${index}-option`}
+                                      checked={addon.value === option}
+                                      onChange={() => handleAddonChange(index, 'value', option)}
+                                      disabled={formData.orderType === 'product'}
+                                    />
+                                    <span>{option}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                            {addon.fieldType === 'checkbox' && (
+                              <div className="checkbox-group">
+                                {addon.options.map((option, optIndex) => (
+                                  <label key={optIndex} className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
+                                    <input
+                                      type="checkbox"
+                                      checked={addon.value?.includes(option)}
+                                      onChange={(e) => {
+                                        const currentValues = addon.value ? addon.value.split(',') : [];
+                                        const newValues = e.target.checked
+                                          ? [...currentValues, option]
+                                          : currentValues.filter(v => v !== option);
+                                        handleAddonChange(index, 'value', newValues.join(','));
+                                      }}
+                                      disabled={formData.orderType === 'product'}
+                                    />
+                                    <span>{option}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Mode Only Tabs */}
+            {isEditMode && (
+              <>
+                {/* Fabric Tab */}
+                {activeTab === 'fabric' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Fabric Details</h3>
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label className="form-label">Fabric Type</label>
                           <input
-                            type="number"
-                            className="table-input"
-                            value={formData.fabricPurchaseDays}
-                            onChange={(e) => handleInputChange('fabricPurchaseDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.fabricPurchasePrice}
-                            onChange={(e) => handleInputChange('fabricPurchasePrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
+                            type="text"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.fabricType}
+                            onChange={(e) => handleInputChange('fabricType', e.target.value)}
+                            placeholder="e.g., Cotton"
+                            disabled={formData.orderType === 'product'}
                           />
                         </div>
-
-                        <div className="row">
-                          <span>Dyeing / Color Work</span>
+                        <div className="form-group">
+                          <label className="form-label">Fabric Color</label>
                           <input
-                            type="number"
-                            className="table-input"
-                            value={formData.dyeingDays}
-                            onChange={(e) => handleInputChange('dyeingDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.dyeingPrice}
-                            onChange={(e) => handleInputChange('dyeingPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
+                            type="text"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.fabricColor}
+                            onChange={(e) => handleInputChange('fabricColor', e.target.value)}
+                            placeholder="e.g., Maroon"
+                            disabled={formData.orderType === 'product'}
                           />
                         </div>
-
-                        <div className="row">
-                          <span>Embroidery / Art Work</span>
+                        <div className="form-group">
+                          <label className="form-label">Meters Required</label>
                           <input
                             type="number"
-                            className="table-input"
-                            value={formData.embroideryDays}
-                            onChange={(e) => handleInputChange('embroideryDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.embroideryPrice}
-                            onChange={(e) => handleInputChange('embroideryPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
+                            step="0.1"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.metersRequired}
+                            onChange={(e) => handleInputChange('metersRequired', e.target.value)}
+                            placeholder="e.g., 3.5"
+                            disabled={formData.orderType === 'product'}
                           />
                         </div>
-
-                        <div className="row">
-                          <span>Stitching</span>
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.stitichingDays}
-                            onChange={(e) => handleInputChange('stitichingDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.stitichingPrice}
-                            onChange={(e) => handleInputChange('stitichingPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
+                        <div className="form-group full-width">
+                          <label className="form-label">Fabric Notes</label>
+                          <textarea
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            rows="2"
+                            value={formData.fabricNotes}
+                            onChange={(e) => handleInputChange('fabricNotes', e.target.value)}
+                            placeholder="Enter fabric notes..."
+                            disabled={formData.orderType === 'product'}
                           />
                         </div>
-
-                        <div className="row">
-                          <span>Other / Finishing Work</span>
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.otherWorkDays}
-                            onChange={(e) => handleInputChange('otherWorkDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.otherWorkPrice}
-                            onChange={(e) => handleInputChange('otherWorkPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                        </div>
-
-                        <div className="row">
-                          <span>QC + Packing</span>
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.packingDays}
-                            onChange={(e) => handleInputChange('packingDays', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
-                          <input
-                            type="number"
-                            className="table-input"
-                            value={formData.packingPrice}
-                            onChange={(e) => handleInputChange('packingPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="0"
-                          />
+                        {/* Fabric Reference Images */}
+                        <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                          <label className="form-label">Fabric Reference Images</label>
+                          <div className="image-upload-container">
+                            {formData.fabricRefImg.map((img, index) => (
+                              <div key={index} className="image-preview">
+                                <img src={img} alt={`Fabric ${index + 1}`} />
+                                <button
+                                  type="button"
+                                  className="image-remove-btn"
+                                  onClick={() => removeImage('fabricRefImg', index)}
+                                  style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                  disabled={formData.orderType === 'product'}
+                                >
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                              <FiUpload size={24} />
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload('fabricRefImg', e.target.files)}
+                                disabled={formData.orderType === 'product'}
+                              />
+                            </label>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Fusing Details</h3>
+                      <div className="form-group" style={{ marginBottom: '16px' }}>
+                        <label className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={formData.fusingRequired}
+                            onChange={(e) => handleInputChange('fusingRequired', e.target.checked)}
+                            disabled={formData.orderType === 'product'}
+                          />
+                          <span>Fusing Required</span>
+                        </label>
+                      </div>
+                      {formData.fusingRequired && (
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label className="form-label">Fusing Color</label>
+                            <select
+                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                              value={formData.fusingColor}
+                              onChange={(e) => handleInputChange('fusingColor', e.target.value)}
+                              disabled={formData.orderType === 'product'}
+                              style={{ maxWidth: '200px' }}
+                            >
+                              <option value="">Select Color</option>
+                              <option value="Black">Black</option>
+                              <option value="White">White</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                      {/* Individual Price Breakdown */}
-                      {/* <div style={{ 
+
+                {/* Work Type Tab */}
+                {activeTab === 'worktype' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Art Work</h3>
+                      <div className="form-group full-width">
+                        <label className="form-label">Art Work</label>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                          <input
+                            type="text"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            id="workTypeInput"
+                            placeholder="e.g., HANDWORK"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addWorkType(e.target.value.trim());
+                                e.target.value = '';
+                              }
+                            }}
+                            disabled={formData.orderType === 'product'}
+                          />
+                          <button
+                            type="button"
+                            className="add-btn"
+                            onClick={() => {
+                              const input = document.getElementById('workTypeInput');
+                              addWorkType(input.value.trim());
+                              input.value = '';
+                            }}
+                            disabled={formData.orderType === 'product'}
+                          >
+                            <FiPlus size={16} /> Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {formData.workTypes.map((workType, index) => (
+                            <span
+                              key={index}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 12px',
+                                background: 'var(--primary-light)',
+                                borderRadius: 'var(--radius-md)',
+                                fontSize: '14px',
+                                color: 'var(--primary-color)'
+                              }}
+                            >
+                              {workType}
+                              <button
+                                type="button"
+                                onClick={() => removeWorkType(workType)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: formData.orderType === 'product' ? 'not-allowed' : 'pointer',
+                                  padding: '2px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: 'var(--primary-color)',
+                                  opacity: formData.orderType === 'product' ? 0.5 : 1
+                                }}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </span>
+                          ))}
+                          {formData.workTypes.length === 0 && (
+                            <span style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
+                              No Art work types added. Enter a work type and click Add.
+                            </span>
+                          )}
+                        </div>
+                        <div className="form-group full-width">
+                          <label className="form-label">Art Work Notes</label>
+                          <textarea
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            rows="2"
+                            value={formData.embroideryWorkNotes}
+                            onChange={(e) => handleInputChange('embroideryWorkNotes', e.target.value)}
+                            placeholder="Enter Art Work notes..."
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </div>
+                        {/* Work Type Reference Images */}
+                        <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                          <label className="form-label">Art Work Reference Images</label>
+                          <div className="image-upload-container">
+                            {formData.workTypeRefImg.map((img, index) => (
+                              <div key={index} className="image-preview">
+                                <img src={img} alt={`Work Type ${index + 1}`} />
+                                <button
+                                  type="button"
+                                  className="image-remove-btn"
+                                  onClick={() => removeImage('workTypeRefImg', index)}
+                                  style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                  disabled={formData.orderType === 'product'}
+                                >
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                              <FiUpload size={24} />
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload('workTypeRefImg', e.target.files)}
+                                disabled={formData.orderType === 'product'}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Embroidery & Stitching Tab */}
+                {activeTab === 'embroidery' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Stitching</h3>
+                      <div className="form-grid">
+
+                        {/* Embroidery Reference Images */}
+
+                        <div className="form-group">
+                          <label className="form-label">Stitching Style</label>
+                          <input
+                            type="text"
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            value={formData.stitichingStyle}
+                            onChange={(e) => handleInputChange('stitichingStyle', e.target.value)}
+                            placeholder="e.g., Regular"
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </div>
+                        <div className="form-group full-width">
+                          <label className="form-label">Stitching Notes</label>
+                          <textarea
+                            className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                            rows="2"
+                            value={formData.stitichingNotes}
+                            onChange={(e) => handleInputChange('stitichingNotes', e.target.value)}
+                            placeholder="Enter stitching notes..."
+                            disabled={formData.orderType === 'product'}
+                          />
+                        </div>
+                        {/* Stitching Reference Images */}
+                        <div className="form-group full-width">
+                          <label className="form-label">Stitching Reference Images</label>
+                          <div className="image-upload-container">
+                            {formData.stitichingRefImg.map((img, index) => (
+                              <div key={index} className="image-preview">
+                                <img src={img} alt={`Stitching ${index + 1}`} />
+                                <button
+                                  type="button"
+                                  className="image-remove-btn"
+                                  onClick={() => removeImage('stitichingRefImg', index)}
+                                  style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                  disabled={formData.orderType === 'product'}
+                                >
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                              <FiUpload size={24} />
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload('stitichingRefImg', e.target.files)}
+                                disabled={formData.orderType === 'product'}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Other Work Tab */}
+                {activeTab === 'otherwork' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Other Work</h3>
+                      <div className="form-group full-width">
+                        <label className="form-label">Other Work Details</label>
+                        <textarea
+                          className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                          rows="2"
+                          value={formData.otherWork}
+                          onChange={(e) => handleInputChange('otherWork', e.target.value)}
+                          placeholder="Enter other work details..."
+                          disabled={formData.orderType === 'product'}
+                        />
+                      </div>
+                      {/* Other Work Reference Images */}
+                      <div className="form-group full-width">
+                        <label className="form-label">Other Work Reference Images</label>
+                        <div className="image-upload-container">
+                          {formData.otherWorkRefImg.map((img, index) => (
+                            <div key={index} className="image-preview">
+                              <img src={img} alt={`Other Work ${index + 1}`} />
+                              <button
+                                type="button"
+                                className="image-remove-btn"
+                                onClick={() => removeImage('otherWorkRefImg', index)}
+                                style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <label className={`image-upload-btn ${formData.orderType === 'product' ? 'disabled' : ''}`} style={{ opacity: formData.orderType === 'product' ? 0.5 : 1 }}>
+                            <FiUpload size={24} />
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload('otherWorkRefImg', e.target.files)}
+                              disabled={formData.orderType === 'product'}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Assign Worker Tab */}
+                {activeTab === 'assignworker' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <div className='heading_button'>
+                        <h3 className="section-title form-section-title">Assign Worker </h3>
+                        <button
+                          type="button"
+                          className="add-btn"
+                          onClick={addWorkerAssignment}
+                          style={{ marginTop: '8px', justifyContent: 'center', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                          disabled={formData.orderType === 'product'}
+                        >
+                          <FiPlus size={16} /> Add Worker
+                        </button>
+                      </div>
+                      <div className="form-group full-width">
+                        <label className="form-label">Assign Workers</label>
+                        {formData.assignWorker.map((assignment, index) => (
+                          <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                            {renderWorkerSearchInput(index)}
+                            <select
+                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+
+                              value={assignment.status}
+                              onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                              disabled={formData.orderType === 'product'}
+                            >
+                              <option value="order_overview">Order Overview</option>
+                              <option value="fabric_purchase">Fabric Purchase</option>
+                              <option value="dying">Dying</option>
+                              <option value="fusing">Fusing</option>
+                              <option value="khakha">Khakha</option>
+                              <option value="art_work">Art Work</option>
+                              <option value="add_ons">Add Ons</option>
+                              <option value="cutting">Cutting</option>
+                              <option value="stitching">Stitching</option>
+                              <option value="qc">QC</option>
+                              <option value="other_work">Other Work</option>
+                              <option value="packing">Packing</option>
+                              <option value="ready_to_delivery">Ready to Delivery</option>
+                              <option value="delivery_complete">Delivery Complete</option>
+                              <option value="repairing">Repairing</option>
+                            </select>
+                            <button
+                              type="button"
+                              className="btn-icon btn"
+                              onClick={() => removeWorkerAssignment(index)}
+                              style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                              disabled={formData.orderType === 'product'}
+                            >
+                              <FiTrash2 size={16} className='delete-icon' />
+                            </button>
+                          </div>
+                        ))}
+
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Timeline & Pricing Tab */}
+                {activeTab === 'timeline' && (
+                  <div className="tab-content">
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Timeline & Pricing</h3>
+
+                      {/* Timeline Table */}
+                      <div className="card">
+                        <div className="table">
+                          <div className="table-head">
+                            <span>Work Stage</span>
+                            <span>Days</span>
+                            <span>Cost (₹)</span>
+                          </div>
+
+                          <div className="row">
+                            <span>Fabric Purchase</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.fabricPurchaseDays}
+                              onChange={(e) => handleInputChange('fabricPurchaseDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.fabricPurchasePrice}
+                              onChange={(e) => handleInputChange('fabricPurchasePrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Dyeing Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.dyeingDays}
+                              onChange={(e) => handleInputChange('dyeingDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.dyeingPrice}
+                              onChange={(e) => handleInputChange('dyeingPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Embroidery Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.embroideryDays}
+                              onChange={(e) => handleInputChange('embroideryDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.embroideryPrice}
+                              onChange={(e) => handleInputChange('embroideryPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Stitching Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.stitichingDays}
+                              onChange={(e) => handleInputChange('stitichingDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.stitichingPrice}
+                              onChange={(e) => handleInputChange('stitichingPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Other Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.otherWorkDays}
+                              onChange={(e) => handleInputChange('otherWorkDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.otherWorkPrice}
+                              onChange={(e) => handleInputChange('otherWorkPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>QC + Packing</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.packingDays}
+                              onChange={(e) => handleInputChange('packingDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.packingPrice}
+                              onChange={(e) => handleInputChange('packingPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Khakha Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.khakhaDays}
+                              onChange={(e) => handleInputChange('khakhaDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.khakhaPrice}
+                              onChange={(e) => handleInputChange('khakhaPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="row">
+                            <span>Art Work</span>
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.artWorkDays}
+                              onChange={(e) => handleInputChange('artWorkDays', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                            <input
+                              type="number"
+                              className="table-input"
+                              value={formData.artWorkPrice}
+                              onChange={(e) => handleInputChange('artWorkPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Individual Price Breakdown */}
+                        {/* <div style={{ 
                         marginTop: '20px', 
                         padding: '15px', 
                         background: '#f8f9fa', 
@@ -1921,35 +2037,45 @@ const AddEditOrder = ({ onLogout }) => {
                             <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>QC + Packing:</span>
                             <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.packingPrice) || 0}</span>
                           </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Khakha:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.khakhaPrice) || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Art Work:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.artWorkPrice) || 0}</span>
+                          </div>
                         </div>
                       </div> */}
 
-                      <div className="total">
-                        <span>TOTAL (Timeline)</span>
-                        <div>
-                          <span>{formData.totalDays || 0} days</span>
-                          <span>₹{calculateTimelineTotal()}</span>
+                        <div className="total">
+                          <span>TOTAL (Timeline)</span>
+                          <div>
+                            <span>{formData.totalDays || 0} days</span>
+                            <span>₹{calculateTimelineTotal()}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Pricing & Delivery Section */}
-                    <div className="pricing">
-                      <h3 className="section-title form-section-title">Pricing & Delivery</h3>
+                      {/* Pricing & Delivery Section */}
+                      <div className="pricing">
+                        <h3 className="section-title form-section-title">Pricing & Delivery</h3>
 
-                      <div className="form-row">
-                        <div>
-                          <label>Total Cost (₹)</label>
-                          <input
-                            type="number"
-                            className="input-field"
-                            value={formData.totalPrice}
-                            onChange={(e) => handleInputChange('totalPrice', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="Enter total cost"
-                          />
-                          {/* <div style={{ 
+                        <div className="form-row">
+                          <div>
+                            <label>Total Cost (₹)</label>
+                            <input
+                              type="number"
+                              className="input-field input-disabled"
+                              value={formData.totalPrice}
+                              disabled
+                              placeholder="Auto-calculated"
+                              style={{ 
+                                background: '#f8f9fa',
+                                cursor: 'not-allowed'
+                              }}
+                            />
+                            {/* <div style={{ 
                             marginTop: '8px', 
                             fontSize: '12px', 
                             color: 'var(--gray-color)',
@@ -1986,71 +2112,100 @@ const AddEditOrder = ({ onLogout }) => {
                               Use This
                             </button>
                           </div> */}
-                        </div>
+                          </div>
 
-                        <div>
-                          <label>Advance (₹)</label>
-                          <input
-                            type="number"
-                            className="input-field"
-                            value={formData.advanceAmount}
-                            onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
-                            onWheel={handleNumberInputWheel}
-                            onKeyDown={handleNumberInputKeyDown}
-                            placeholder="Advance Amount"
-                          />
+                          <div>
+                            <label>Advance (₹)</label>
+                            <input
+                              type="number"
+                              className="input-field"
+                              value={formData.advanceAmount}
+                              onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="Advance Amount"
+                            />
+                          </div>
+                          <div>
+                            <label>Delivery Date</label>
+                            <input
+                              type="date"
+                              className="input-field"
+                              value={formData.deliveryDate}
+                              onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                            />
+                          </div>
+
                         </div>
-                      <div>
-                        <label>Delivery Date</label>
-                        <input
-                          type="date"
+                        <div className='form-row'>
+                          <div>
+                            <label>Selling Price (₹)</label>
+                            <input
+                              type="number"
+                              className="input-field"
+                              value={formData.sellingPrice}
+                              onChange={(e) => handleInputChange('sellingPrice', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="Enter selling price"
+                            />
+                          </div>
+                          <div>
+                            <label>Diff Percentage (%)</label>
+                            <input
+                              type="number"
+                              className="input-field input-disabled"
+                              value={formData.diffPercentage}
+                              disabled
+                              placeholder="Auto-calculated"
+                              step="0.1"
+                              style={{ 
+                                background: '#f8f9fa',
+                                cursor: 'not-allowed'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Special Instructions */}
+                      <div className='form-group full-width'>
+                        <label>Special Instructions</label>
+                        <textarea
                           className="input-field"
-                          value={formData.deliveryDate}
-                          onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                          rows="2"
+                          value={formData.specialInstructions}
+                          onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
+                          placeholder="Enter special instructions..."
+                          style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', lineHeight: '1.6' }}
                         />
                       </div>
-                      </div>
-
-                    </div>
-
-                    {/* Special Instructions */}
-                    <div className='form-group full-width'>
-                      <label>Special Instructions</label>
-                      <textarea
-                        className="input-field"
-                        rows="2"
-                        value={formData.specialInstructions}
-                        onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
-                        placeholder="Enter special instructions..."
-                        style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', lineHeight: '1.6' }}
-                      />
                     </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
 
-          {/* Action Buttons */}
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-cancel"
-              onClick={() => navigate('/orders')}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-save"
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : (isEditMode ? 'Update Order' : 'Create Order')}
-            </button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn btn-cancel"
+                onClick={() => navigate('/orders')}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-save"
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : (isEditMode ? 'Update Order' : 'Create Order')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
     </div>
   );
 };

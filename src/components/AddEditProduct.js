@@ -49,6 +49,29 @@ const AddEditProduct = ({ onLogout }) => {
     stitichingRefImg: [],
     otherWork: '',
     otherWorkRefImg: [],
+    // Timeline and pricing fields
+    fabricPurchaseDays: '',
+    fabricPurchasePrice: '',
+    dyeingDays: '',
+    dyeingPrice: '',
+    embroideryDays: '',
+    embroideryPrice: '',
+    stitichingDays: '',
+    stitichingPrice: '',
+    otherWorkDays: '',
+    otherWorkPrice: '',
+    packingDays: '',
+    packingPrice: '',
+    fusingDays: '',
+    fusingPrice: '',
+    khakhaDays: '',
+    khakhaPrice: '',
+    artWorkDays: '',
+    artWorkPrice: '',
+    sellingPrice: '',
+    diffPercentage: '',
+    totalDays: '',
+    totalPrice: '',
     quantity: '',
     price: ''
   });
@@ -100,6 +123,88 @@ const AddEditProduct = ({ onLogout }) => {
       }
     }
   }, [formData.outfitTypeId, formData.subCategoryName, isEditMode]);
+
+  // Auto-calculate total days from all work stage days
+  useEffect(() => {
+    const fabricPurchaseDays = parseInt(formData.fabricPurchaseDays) || 0;
+    const dyeingDays = parseInt(formData.dyeingDays) || 0;
+    const embroideryDays = parseInt(formData.embroideryDays) || 0;
+    const stitichingDays = parseInt(formData.stitichingDays) || 0;
+    const otherWorkDays = parseInt(formData.otherWorkDays) || 0;
+    const packingDays = parseInt(formData.packingDays) || 0;
+    const khakhaDays = parseInt(formData.khakhaDays) || 0;
+    const artWorkDays = parseInt(formData.artWorkDays) || 0;
+    const fusingDays = parseInt(formData.fusingDays) || 0;
+
+    const totalDays = fabricPurchaseDays + dyeingDays + embroideryDays + stitichingDays + otherWorkDays + packingDays + khakhaDays + artWorkDays + fusingDays;
+
+    setFormData(prev => ({
+      ...prev,
+      totalDays: totalDays.toString()
+    }));
+  }, [
+    formData.fabricPurchaseDays,
+    formData.dyeingDays,
+    formData.embroideryDays,
+    formData.stitichingDays,
+    formData.otherWorkDays,
+    formData.packingDays,
+    formData.khakhaDays,
+    formData.artWorkDays,
+    formData.fusingDays
+  ]);
+
+  // Auto-calculate total cost from all work stage prices
+  useEffect(() => {
+    const fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
+    const dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
+    const embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
+    const stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
+    const otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
+    const packingPrice = parseFloat(formData.packingPrice) || 0;
+    const khakhaPrice = parseFloat(formData.khakhaPrice) || 0;
+    const artWorkPrice = parseFloat(formData.artWorkPrice) || 0;
+    const fusingPrice = parseFloat(formData.fusingPrice) || 0;
+
+    const totalPrice = fabricPurchasePrice + dyeingPrice + embroideryPrice + stitichingPrice + otherWorkPrice + packingPrice + khakhaPrice + artWorkPrice + fusingPrice;
+
+    setFormData(prev => ({
+      ...prev,
+      totalPrice: totalPrice.toFixed(2)
+    }));
+  }, [
+    formData.fabricPurchasePrice,
+    formData.dyeingPrice,
+    formData.embroideryPrice,
+    formData.stitichingPrice,
+    formData.otherWorkPrice,
+    formData.packingPrice,
+    formData.khakhaPrice,
+    formData.artWorkPrice,
+    formData.fusingPrice
+  ]);
+
+  // Auto-calculate diff percentage from selling price
+  useEffect(() => {
+    const totalCost = parseFloat(formData.totalPrice) || 0;
+    const sellingPrice = parseFloat(formData.sellingPrice) || 0;
+
+    // Only calculate if total cost and selling price are greater than 0
+    if (totalCost > 0 && sellingPrice > 0) {
+      const calculatedDiffPercentage = ((sellingPrice - totalCost) / 100).toFixed(1);
+      setFormData(prev => ({
+        ...prev,
+        diffPercentage: calculatedDiffPercentage
+      }));
+    }
+    // Reset diff percentage if selling price is 0 or empty
+    else if (sellingPrice === 0) {
+      setFormData(prev => ({
+        ...prev,
+        diffPercentage: '0.0'
+      }));
+    }
+  }, [formData.totalPrice, formData.sellingPrice]);
 
   const fetchOutfitTypes = async () => {
     try {
@@ -191,6 +296,29 @@ const AddEditProduct = ({ onLogout }) => {
           stitichingRefImg: data.stitichingRefImg || [],
           otherWork: data.otherWork || '',
           otherWorkRefImg: data.otherWorkRefImg || [],
+          // Timeline and pricing fields
+          fabricPurchaseDays: data.fabricPurchaseDays || '',
+          fabricPurchasePrice: data.fabricPurchasePrice || '',
+          dyeingDays: data.dyeingDays || '',
+          dyeingPrice: data.dyeingPrice || '',
+          embroideryDays: data.embroideryDays || '',
+          embroideryPrice: data.embroideryPrice || '',
+          stitichingDays: data.stitichingDays || '',
+          stitichingPrice: data.stitichingPrice || '',
+          otherWorkDays: data.otherWorkDays || '',
+          otherWorkPrice: data.otherWorkPrice || '',
+          packingDays: data.packingDays || '',
+          packingPrice: data.packingPrice || '',
+          fusingDays: data.fusingDays || '',
+          fusingPrice: data.fusingPrice || '',
+          khakhaDays: data.khakhaDays || '',
+          khakhaPrice: data.khakhaPrice || '',
+          artWorkDays: data.artWorkDays || '',
+          artWorkPrice: data.artWorkPrice || '',
+          sellingPrice: data.sellingPrice || '',
+          diffPercentage: data.diffPercentage || '',
+          totalDays: data.totalDays || '',
+          totalPrice: data.totalPrice || '',
           quantity: data.quantity || '',
           price: data.price || ''
         });
@@ -292,6 +420,17 @@ const AddEditProduct = ({ onLogout }) => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleNumberInputWheel = (e) => {
+    e.preventDefault();
+  };
+
+  const handleNumberInputKeyDown = (e) => {
+    // Allow arrow keys for manual control but prevent scroll behavior
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+    }
   };
 
   // Add work type
@@ -540,6 +679,29 @@ const AddEditProduct = ({ onLogout }) => {
           stitichingRefImg: finalStitichingUrls,
           otherWork: formData.otherWork,
           otherWorkRefImg: finalOtherWorkUrls,
+          // Timeline and pricing fields
+          fabricPurchaseDays: parseInt(formData.fabricPurchaseDays) || 0,
+          fabricPurchasePrice: parseFloat(formData.fabricPurchasePrice) || 0,
+          dyeingDays: parseInt(formData.dyeingDays) || 0,
+          dyeingPrice: parseFloat(formData.dyeingPrice) || 0,
+          embroideryDays: parseInt(formData.embroideryDays) || 0,
+          embroideryPrice: parseFloat(formData.embroideryPrice) || 0,
+          stitichingDays: parseInt(formData.stitichingDays) || 0,
+          stitichingPrice: parseFloat(formData.stitichingPrice) || 0,
+          otherWorkDays: parseInt(formData.otherWorkDays) || 0,
+          otherWorkPrice: parseFloat(formData.otherWorkPrice) || 0,
+          packingDays: parseInt(formData.packingDays) || 0,
+          packingPrice: parseFloat(formData.packingPrice) || 0,
+          fusingDays: parseInt(formData.fusingDays) || 0,
+          fusingPrice: parseFloat(formData.fusingPrice) || 0,
+          khakhaDays: parseInt(formData.khakhaDays) || 0,
+          khakhaPrice: parseFloat(formData.khakhaPrice) || 0,
+          artWorkDays: parseInt(formData.artWorkDays) || 0,
+          artWorkPrice: parseFloat(formData.artWorkPrice) || 0,
+          sellingPrice: parseFloat(formData.sellingPrice) || 0,
+          diffPercentage: parseFloat(formData.diffPercentage) || 0,
+          totalDays: parseInt(formData.totalDays) || 0,
+          totalPrice: parseFloat(formData.totalPrice) || 0,
           quantity: parseInt(formData.quantity) || 0,
           price: parseFloat(formData.price) || 0
         };
@@ -1248,28 +1410,263 @@ const AddEditProduct = ({ onLogout }) => {
               {activeTab === 'quantityprice' && (
                 <div className="tab-content">
                   <div className="form-section">
-                    <h3 className="section-title form-section-title">Quantity & Price</h3>
-                    <div className="form-grid">
-                      <div className="form-group">
-                        <label className="form-label">Quantity</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          value={formData.quantity}
-                          onChange={(e) => handleInputChange('quantity', e.target.value)}
-                          placeholder="e.g., 50"
-                        />
+                    <h3 className="section-title form-section-title">Timeline & Pricing</h3>
+
+                    {/* Timeline Table */}
+                    <div className="card">
+                      <div className="table">
+                        <div className="table-head">
+                          <span>Work Stage</span>
+                          <span>Days</span>
+                          <span>Cost (₹)</span>
+                        </div>
+
+                        <div className="row">
+                          <span>Fabric Purchase</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.fabricPurchaseDays}
+                            onChange={(e) => handleInputChange('fabricPurchaseDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.fabricPurchasePrice}
+                            onChange={(e) => handleInputChange('fabricPurchasePrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Dyeing Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.dyeingDays}
+                            onChange={(e) => handleInputChange('dyeingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.dyeingPrice}
+                            onChange={(e) => handleInputChange('dyeingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Embroidery Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.embroideryDays}
+                            onChange={(e) => handleInputChange('embroideryDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.embroideryPrice}
+                            onChange={(e) => handleInputChange('embroideryPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Stitching Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.stitichingDays}
+                            onChange={(e) => handleInputChange('stitichingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.stitichingPrice}
+                            onChange={(e) => handleInputChange('stitichingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Other Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.otherWorkDays}
+                            onChange={(e) => handleInputChange('otherWorkDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.otherWorkPrice}
+                            onChange={(e) => handleInputChange('otherWorkPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>QC + Packing</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.packingDays}
+                            onChange={(e) => handleInputChange('packingDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.packingPrice}
+                            onChange={(e) => handleInputChange('packingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Khakha Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.khakhaDays}
+                            onChange={(e) => handleInputChange('khakhaDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.khakhaPrice}
+                            onChange={(e) => handleInputChange('khakhaPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="row">
+                          <span>Art Work</span>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.artWorkDays}
+                            onChange={(e) => handleInputChange('artWorkDays', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={formData.artWorkPrice}
+                            onChange={(e) => handleInputChange('artWorkPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="total">
+                          <span>TOTAL</span>
+                          <div>
+                            <span>{formData.totalDays || 0} days</span>
+                            <span>₹{formData.totalPrice || 0}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Price (₹)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="input-field"
-                          value={formData.price}
-                          onChange={(e) => handleInputChange('price', e.target.value)}
-                          placeholder="e.g., 1000"
-                        />
+                    </div>
+
+                    {/* Pricing Section */}
+                    <div className="pricing">
+                      <h3 className="section-title form-section-title">Pricing</h3>
+
+                      <div className="form-row">
+                        <div>
+                          <label>Selling Price (₹)</label>
+                          <input
+                            type="number"
+                            className="input-field"
+                            value={formData.sellingPrice}
+                            onChange={(e) => handleInputChange('sellingPrice', e.target.value)}
+                            onWheel={handleNumberInputWheel}
+                            onKeyDown={handleNumberInputKeyDown}
+                            placeholder="Enter selling price"
+                          />
+                        </div>
+                        <div>
+                          <label>Diff Percentage (%)</label>
+                          <input
+                            type="number"
+                            className="input-field input-disabled"
+                            value={formData.diffPercentage}
+                            disabled
+                            placeholder="Auto-calculated"
+                            step="0.1"
+                            style={{ 
+                              background: '#f8f9fa',
+                              cursor: 'not-allowed'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quantity & Price Section */}
+                    <div className="form-section">
+                      <h3 className="section-title form-section-title">Quantity & Price</h3>
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label className="form-label">Quantity</label>
+                          <input
+                            type="number"
+                            className="input-field"
+                            value={formData.quantity}
+                            onChange={(e) => handleInputChange('quantity', e.target.value)}
+                            placeholder="e.g., 50"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Price (₹)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="input-field"
+                            value={formData.price}
+                            onChange={(e) => handleInputChange('price', e.target.value)}
+                            placeholder="e.g., 1000"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
