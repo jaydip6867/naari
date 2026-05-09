@@ -37,7 +37,7 @@ const AddEditOrder = ({ onLogout }) => {
     workTypeRefImg: [],
     embroideryWorkNotes: '',
     embroideryRefImg: [],
-    assignWorker: [], // Array of {workerId, status} objects
+    assignWorker: [], // Array of {workerId, status, description} objects
     stitichingStyle: '',
     stitichingNotes: '',
     stitichingRefImg: [],
@@ -337,7 +337,7 @@ const AddEditOrder = ({ onLogout }) => {
           assignWorker: Array.isArray(order.assignWorker)
             ? order.assignWorker.map(w => {
               const workerId = w.workerId?._id || w.workerId || '';
-              return { workerId, status: w.status || 'order_overview' };
+              return { workerId, status: w.status || 'order_overview', description: w.description || '' };
             })
             : [],
           stitichingStyle: order.stitichingStyle || '',
@@ -452,7 +452,7 @@ const AddEditOrder = ({ onLogout }) => {
   const addWorkerAssignment = () => {
     setFormData(prev => ({
       ...prev,
-      assignWorker: [...prev.assignWorker, { workerId: '', status: 'order_overview' }]
+      assignWorker: [...prev.assignWorker, { workerId: '', status: 'order_overview', description: '' }]
     }));
   };
 
@@ -556,7 +556,7 @@ const AddEditOrder = ({ onLogout }) => {
 
     // Only calculate if total cost and selling price are greater than 0
     if (totalCost > 0 && sellingPrice > 0) {
-      const calculatedDiffPercentage = ((sellingPrice - totalCost) / 100).toFixed(1);
+      const calculatedDiffPercentage = (((sellingPrice - totalCost) / totalCost) * 100).toFixed(1);
       setFormData(prev => ({
         ...prev,
         diffPercentage: calculatedDiffPercentage
@@ -717,7 +717,32 @@ const AddEditOrder = ({ onLogout }) => {
           options: a.options,
           isSelected: a.isSelected,
           value: a.value
-        }))
+        })),
+
+        // Timeline and pricing fields
+        fabricPurchaseDays: parseInt(formData.fabricPurchaseDays) || 0,
+        fabricPurchasePrice: parseFloat(formData.fabricPurchasePrice) || 0,
+        dyeingDays: parseInt(formData.dyeingDays) || 0,
+        dyeingPrice: parseFloat(formData.dyeingPrice) || 0,
+        embroideryDays: parseInt(formData.embroideryDays) || 0,
+        embroideryPrice: parseFloat(formData.embroideryPrice) || 0,
+        stitichingDays: parseInt(formData.stitichingDays) || 0,
+        stitichingPrice: parseFloat(formData.stitichingPrice) || 0,
+        otherWorkDays: parseInt(formData.otherWorkDays) || 0,
+        otherWorkPrice: parseFloat(formData.otherWorkPrice) || 0,
+        packingDays: parseInt(formData.packingDays) || 0,
+        packingPrice: parseFloat(formData.packingPrice) || 0,
+        khakhaDays: parseInt(formData.khakhaDays) || 0,
+        khakhaPrice: parseFloat(formData.khakhaPrice) || 0,
+        artWorkDays: parseInt(formData.artWorkDays) || 0,
+        artWorkPrice: parseFloat(formData.artWorkPrice) || 0,
+        totalDays: parseInt(formData.totalDays) || 0,
+        totalPrice: parseFloat(formData.totalPrice) || 0,
+        sellingPrice: parseFloat(formData.sellingPrice) || 0,
+        diffPercentage: parseFloat(formData.diffPercentage) || 0,
+        advanceAmount: parseFloat(formData.advanceAmount) || 0,
+        deliveryDate: formData.deliveryDate,
+        specialInstructions: formData.specialInstructions
       };
 
       if (isEditMode) {
@@ -736,23 +761,6 @@ const AddEditOrder = ({ onLogout }) => {
         payload.stitichingStyle = formData.stitichingStyle;
         payload.stitichingNotes = formData.stitichingNotes;
         payload.otherWork = formData.otherWork;
-        payload.fabricPurchaseDays = parseInt(formData.fabricPurchaseDays) || 0;
-        payload.fabricPurchasePrice = parseFloat(formData.fabricPurchasePrice) || 0;
-        payload.dyeingDays = parseInt(formData.dyeingDays) || 0;
-        payload.dyeingPrice = parseFloat(formData.dyeingPrice) || 0;
-        payload.embroideryDays = parseInt(formData.embroideryDays) || 0;
-        payload.embroideryPrice = parseFloat(formData.embroideryPrice) || 0;
-        payload.stitichingDays = parseInt(formData.stitichingDays) || 0;
-        payload.stitichingPrice = parseFloat(formData.stitichingPrice) || 0;
-        payload.otherWorkDays = parseInt(formData.otherWorkDays) || 0;
-        payload.otherWorkPrice = parseFloat(formData.otherWorkPrice) || 0;
-        payload.packingDays = parseInt(formData.packingDays) || 0;
-        payload.packingPrice = parseFloat(formData.packingPrice) || 0;
-        payload.totalDays = parseInt(formData.totalDays) || 0;
-        payload.totalPrice = parseFloat(formData.totalPrice) || 0;
-        payload.advanceAmount = parseFloat(formData.advanceAmount) || 0;
-        payload.deliveryDate = formData.deliveryDate;
-        payload.specialInstructions = formData.specialInstructions;
 
         await orderAPI.updateOrder(payload);
         navigate('/orders');
@@ -1761,40 +1769,53 @@ const AddEditOrder = ({ onLogout }) => {
                       <div className="form-group full-width">
                         <label className="form-label">Assign Workers</label>
                         {formData.assignWorker.map((assignment, index) => (
-                          <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                            {renderWorkerSearchInput(index)}
-                            <select
-                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
+                          <div key={index} className="worker-assignment-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px', alignItems: 'stretch' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              {renderWorkerSearchInput(index)}
+                              <select
+                                className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
 
-                              value={assignment.status}
-                              onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <option value="order_overview">Order Overview</option>
-                              <option value="fabric_purchase">Fabric Purchase</option>
-                              <option value="dying">Dying</option>
-                              <option value="fusing">Fusing</option>
-                              <option value="khakha">Khakha</option>
-                              <option value="art_work">Art Work</option>
-                              <option value="add_ons">Add Ons</option>
-                              <option value="cutting">Cutting</option>
-                              <option value="stitching">Stitching</option>
-                              <option value="qc">QC</option>
-                              <option value="other_work">Other Work</option>
-                              <option value="packing">Packing</option>
-                              <option value="ready_to_delivery">Ready to Delivery</option>
-                              <option value="delivery_complete">Delivery Complete</option>
-                              <option value="repairing">Repairing</option>
-                            </select>
-                            <button
-                              type="button"
-                              className="btn-icon btn"
-                              onClick={() => removeWorkerAssignment(index)}
-                              style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
-                              disabled={formData.orderType === 'product'}
-                            >
-                              <FiTrash2 size={16} className='delete-icon' />
-                            </button>
+                                value={assignment.status}
+                                onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <option value="order_overview">Order Overview</option>
+                                <option value="fabric_purchase">Fabric Purchase</option>
+                                <option value="dying">Dying</option>
+                                <option value="fusing">Fusing</option>
+                                <option value="khakha">Khakha</option>
+                                <option value="art_work">Art Work</option>
+                                <option value="add_ons">Add Ons</option>
+                                <option value="cutting">Cutting</option>
+                                <option value="stitching">Stitching</option>
+                                <option value="qc">QC</option>
+                                <option value="other_work">Other Work</option>
+                                <option value="packing">Packing</option>
+                                <option value="ready_to_delivery">Ready to Delivery</option>
+                                <option value="delivery_complete">Delivery Complete</option>
+                                <option value="repairing">Repairing</option>
+                              </select>
+                              <button
+                                type="button"
+                                className="btn-icon btn"
+                                onClick={() => removeWorkerAssignment(index)}
+                                style={{ padding: '8px', opacity: formData.orderType === 'product' ? 0.5 : 1 }}
+                                disabled={formData.orderType === 'product'}
+                              >
+                                <FiTrash2 size={16} className='delete-icon' />
+                              </button>
+                            </div>
+                            <div className="form-group full-width">
+                              <label className="form-label">Description</label>
+                              <textarea
+                                className="input-field"
+                                rows="2"
+                                value={assignment.description || ''}
+                                onChange={(e) => handleWorkerAssignmentChange(index, 'description', e.target.value)}
+                                placeholder="Enter worker assignment description..."
+                                disabled={formData.orderType === 'product'}
+                              />
+                            </div>
                           </div>
                         ))}
 

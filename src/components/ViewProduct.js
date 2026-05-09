@@ -803,6 +803,7 @@ const ViewProduct = ({ onLogout }) => {
                         <tr style={{ backgroundColor: 'var(--background-light)' }}>
                           <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Worker Name</th>
                           <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Status</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Description</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -825,6 +826,9 @@ const ViewProduct = ({ onLogout }) => {
                               }}>
                                 {formatValue(assignment.status)}
                               </span>
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
+                              {assignment.description || '-'}
                             </td>
                           </tr>
                         ))}

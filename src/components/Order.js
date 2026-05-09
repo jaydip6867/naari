@@ -111,7 +111,7 @@ const Order = ({ onLogout }) => {
                 <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-color)' }} />
                 <input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder="Search orders..."
                   value={searchQuery}
                   onChange={handleSearch}
                   style={{
@@ -156,6 +156,7 @@ const Order = ({ onLogout }) => {
                   <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Image</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order Date</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order Type</th>
                     <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
@@ -180,6 +181,13 @@ const Order = ({ onLogout }) => {
                         </div>
                       </td>
                       <td style={{ padding: '12px' }}>{order.orderId || '-'}</td>
+                      <td style={{ padding: '12px' }}>
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        }) : '-'}
+                      </td>
                       <td style={{ padding: '12px' }}>
                         {typeof order.customerId === 'object' && order.customerId !== null
                           ? (order.customerId.fullName || order.customerId.name || '-')

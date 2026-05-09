@@ -16,13 +16,6 @@ const ViewCustomer = ({ onLogout }) => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState('orders');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Mock orders data - replace with actual API call
-  const [orders] = useState([
-    { id: 1, orderId: 'ORD001', orderType: 'Stitching', status: 'pending', deliveryDate: '2024-01-15', dueAmount: 1500 },
-    { id: 2, orderId: 'ORD002', orderType: 'Design', status: 'completed', deliveryDate: '2024-01-10', dueAmount: 800 },
-    { id: 3, orderId: 'ORD003', orderType: 'Alteration', status: 'cancelled', deliveryDate: '2024-01-20', dueAmount: 300 },
-  ]);
 
   useEffect(() => {
     if (customerId) {
@@ -34,8 +27,10 @@ const ViewCustomer = ({ onLogout }) => {
     try {
       setLoading(true);
       setError('');
-      const data = await customerAPI.getCustomerById(customerId);
-      setCustomer(data);
+      const response = await customerAPI.getCustomerById(customerId);
+      // Handle API response structure where actual data is in response.Data
+      const customerData = response.Data || response;
+      setCustomer(customerData);
     } catch (err) {
       console.error('Error fetching customer:', err);
       setError(err.message || 'Failed to fetch customer');
@@ -196,6 +191,16 @@ const ViewCustomer = ({ onLogout }) => {
                     </div>
                   </div>
                 )}
+
+                {customer.notes && (
+                  <div className="customer-info-item">
+                    <FiFileText className="customer-info-icon" />
+                    <div>
+                      <label className="customer-info-label">Notes</label>
+                      <p className="customer-info-value">{formatValue(customer.notes)}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -259,10 +264,10 @@ const ViewCustomer = ({ onLogout }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {orders.filter(order => 
+                          {customer && customer.orders && customer.orders.filter(order => 
                             searchQuery === '' || order.orderId.toLowerCase().includes(searchQuery.toLowerCase())
                           ).map((order, index) => (
-                            <tr key={order.id}>
+                            <tr key={order._id}>
                               <td>{index + 1}</td>
                               <td>{order.orderId}</td>
                               <td>{order.orderType}</td>
@@ -274,12 +279,12 @@ const ViewCustomer = ({ onLogout }) => {
                               <td>
                                 <div className="order-delivery-date">
                                   <FiCalendarIcon className="order-delivery-date-icon" />
-                                  {order.deliveryDate}
+                                  {order.deliveryDate || '-'}
                                 </div>
                               </td>
                               <td>
                                 <div className="order-due-amount">
-                                  ₹{order.dueAmount}
+                                  ₹{(order.totalPrice - (order.advanceAmount || 0)).toFixed(2)}
                                 </div>
                               </td>
                               <td>
@@ -304,9 +309,26 @@ const ViewCustomer = ({ onLogout }) => {
                 )}
 
                 {activeTab === 'measurement' && (
-                  <div className="coming-soon-section">
-                    <FiUser className="coming-soon-icon" />
-                    <p className="coming-soon-text">Measurement details coming soon</p>
+                  <div className="measurement-section">
+                    <h3 className="measurement-section-title">Customer Measurements</h3>
+                    {customer && customer.measurement && customer.measurement.length > 0 ? (
+                      <div className="measurement-grid">
+                        {customer.measurement.map((measurement, index) => (
+                          <div key={index} className="measurement-item">
+                            <label className="measurement-label">{measurement.fieldLable}</label>
+                            <div className="measurement-value">
+                              <span className="measurement-number">{measurement.fieldValue}</span>
+                              <span className="measurement-unit">{measurement.unit}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="no-measurements-section">
+                        <FiUser className="no-measurements-icon" />
+                        <p className="no-measurements-text">No measurements available for this customer</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

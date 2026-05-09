@@ -15,6 +15,14 @@ const ViewOrder = ({ onLogout }) => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
   
+  // Helper functions
+  const formatValue = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+    return value;
+  };
+
   // Image preview state
   const [imagePreview, setImagePreview] = useState({
     isOpen: false,
@@ -49,6 +57,7 @@ const ViewOrder = ({ onLogout }) => {
     // { id: 'fusing', label: 'Fusing' },
     { id: 'worktype', label: 'Art Work' },
     { id: 'embroidery', label: 'Stitching' },
+    { id: 'assignworker', label: 'Assign Worker' },
     { id: 'otherwork', label: 'Other Work' },
     { id: 'timeline', label: 'Time & Pricing' }
   ];
@@ -245,6 +254,16 @@ const ViewOrder = ({ onLogout }) => {
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Order ID</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order._id}</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Order Date</label>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }) : '-'}
+                    </p>
                   </div>
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Customer</label>
@@ -524,26 +543,6 @@ const ViewOrder = ({ onLogout }) => {
                   )}
                 </div>
                 
-                {/* Worker Assignments */}
-                {order.assignWorker && Array.isArray(order.assignWorker) && order.assignWorker.length > 0 && (
-                  <div style={{ marginTop: '24px' }}>
-                    <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Worker Assignments</h4>
-                    <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                      {order.assignWorker.map((assignment, index) => (
-                        <div key={index} className="view-item" style={{ background: 'var(--background-light)', padding: '12px 16px', borderRadius: '8px' }}>
-                          <label style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Worker</label>
-                          <p style={{ fontWeight: '500', marginTop: '4px' }}>
-                            {typeof assignment.workerId === 'object' && assignment.workerId !== null
-                              ? (assignment.workerId.fullName || '-')
-                              : (assignment.workerId || '-')}
-                          </p>
-                          <label style={{ fontSize: '12px', color: 'var(--gray-color)', marginTop: '8px' }}>Status</label>
-                          <p style={{ fontWeight: '500', marginTop: '4px', textTransform: 'capitalize' }}>{assignment.status || '-'}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 
                 {/* Embroidery Reference Images */}
                 {order.embroideryRefImg && order.embroideryRefImg.length > 0 && (
@@ -614,6 +613,61 @@ const ViewOrder = ({ onLogout }) => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Assign Worker Tab */}
+          {activeTab === 'assignworker' && (
+            <div className="tab-content">
+              <div className="form-section">
+                <h3 className="section-title form-section-title">Assign Worker</h3>
+                {order.assignWorker && Array.isArray(order.assignWorker) && order.assignWorker.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'var(--background-light)' }}>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Worker Name</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Status</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.assignWorker.map((assignment, index) => (
+                          <tr key={index}>
+                            <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
+                              {typeof assignment.workerId === 'object' && assignment.workerId !== null
+                                ? (assignment.workerId.fullName || '-')
+                                : (assignment.workerId || '-')}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
+                              <span style={{ 
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                backgroundColor: assignment.status === 'completed' ? 'var(--success-color)' : 
+                                                assignment.status === 'in-progress' ? 'var(--warning-color)' : 
+                                                assignment.status === 'dying' ? '#ff9800' :
+                                                assignment.status === 'packing' ? '#2196f3' : 'var(--gray-color)',
+                                color: 'white',
+                                textTransform: 'capitalize'
+                              }}>
+                                {formatValue(assignment.status)}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
+                              {assignment.description || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)', backgroundColor: 'var(--background-light)', borderRadius: 'var(--radius-md)' }}>
+                    No workers assigned
                   </div>
                 )}
               </div>

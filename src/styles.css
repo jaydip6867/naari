@@ -3962,6 +3962,34 @@ textarea.input-field {
   align-items: center;
 }
 
+.table-container th{
+  font-size: 14px;
+}
+
+.table-container td{
+  font-size: 13px;
+}
+
+/* Notes field word-wrap */
+.view-item p,
+.view-grid p,
+.measurement-section p,
+.order-actions p,
+.customer-info-value {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
+}
+
+/* Specific notes styling */
+.view-item p[style*="font-weight: 500"],
+.view-grid p[style*="font-weight: 500"] {
+  line-height: 1.4;
+  word-break: break-word;
+  hyphens: auto;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .search-form {

@@ -43,7 +43,7 @@ const AddEditProduct = ({ onLogout }) => {
     workTypeRefImg: [],
     embroideryWorkNotes: '',
     embroideryRefImg: [],
-    assignWorker: [], // Array of {workerId, status} objects
+    assignWorker: [], // Array of {workerId, status, description} objects
     stitichingStyle: '',
     stitichingNotes: '',
     stitichingRefImg: [],
@@ -191,7 +191,7 @@ const AddEditProduct = ({ onLogout }) => {
 
     // Only calculate if total cost and selling price are greater than 0
     if (totalCost > 0 && sellingPrice > 0) {
-      const calculatedDiffPercentage = ((sellingPrice - totalCost) / 100).toFixed(1);
+      const calculatedDiffPercentage = (((sellingPrice - totalCost) / totalCost) * 100).toFixed(1);
       setFormData(prev => ({
         ...prev,
         diffPercentage: calculatedDiffPercentage
@@ -205,6 +205,29 @@ const AddEditProduct = ({ onLogout }) => {
       }));
     }
   }, [formData.totalPrice, formData.sellingPrice]);
+
+  // Initialize worker search inputs when editing existing product
+  useEffect(() => {
+    if (isEditMode && formData.assignWorker && staffList.length > 0) {
+      const searchInputs = {};
+      formData.assignWorker.forEach((assignment, index) => {
+        if (assignment.workerId) {
+          // Handle both object and string workerId formats
+          if (typeof assignment.workerId === 'object' && assignment.workerId !== null) {
+            // From API response - direct fullName access
+            searchInputs[index] = assignment.workerId.fullName || '';
+          } else {
+            // From form state - find in staffList
+            const staff = staffList.find(s => s._id === assignment.workerId);
+            if (staff) {
+              searchInputs[index] = staff.fullName;
+            }
+          }
+        }
+      });
+      setWorkerSearchInputs(searchInputs);
+    }
+  }, [isEditMode, formData.assignWorker, staffList]);
 
   const fetchOutfitTypes = async () => {
     try {
@@ -288,7 +311,7 @@ const AddEditProduct = ({ onLogout }) => {
             ? data.assignWorker.map(w => {
               // Handle case where workerId is an object with _id
               const workerId = w.workerId?._id || w.workerId || '';
-              return { workerId, status: w.status || 'order_overview' };
+              return { workerId, status: w.status || 'order_overview', description: w.description || '' };
             })
             : [],
           stitichingStyle: data.stitichingStyle || '',
@@ -455,7 +478,7 @@ const AddEditProduct = ({ onLogout }) => {
   const addWorkerAssignment = () => {
     setFormData(prev => ({
       ...prev,
-      assignWorker: [...prev.assignWorker, { workerId: '', status: 'order_overview' }]
+      assignWorker: [...prev.assignWorker, { workerId: '', status: 'order_overview', description: '' }]
     }));
   };
 
@@ -1359,38 +1382,50 @@ const AddEditProduct = ({ onLogout }) => {
                     <div className="form-group full-width">
                       <label className="form-label">Assign Workers</label>
                       {formData.assignWorker.map((assignment, index) => (
-                        <div key={index} className="worker-assignment-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                          {renderWorkerSearchInput(index)}
-                          <select
-                            className="input-field"
-                            style={{ flex: 1 }}
-                            value={assignment.status}
-                            onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
-                          >
-                            <option value="order_overview">Order Overview</option>
-                            <option value="fabric_purchase">Fabric Purchase</option>
-                            <option value="dying">Dying</option>
-                            <option value="fusing">Fusing</option>
-                            <option value="khakha">Khakha</option>
-                            <option value="art_work">Art Work</option>
-                            <option value="add_ons">Add Ons</option>
-                            <option value="cutting">Cutting</option>
-                            <option value="stitching">Stitching</option>
-                            <option value="qc">QC</option>
-                            <option value="other_work">Other Work</option>
-                            <option value="packing">Packing</option>
-                            <option value="ready_to_delivery">Ready to Delivery</option>
-                            <option value="delivery_complete">Delivery Complete</option>
-                            <option value="repairing">Repairing</option>
-                          </select>
-                          <button
-                            type="button"
-                            className="btn-icon btn"
-                            onClick={() => removeWorkerAssignment(index)}
-                            style={{ padding: '8px' }}
-                          >
-                            <FiTrash2 size={16} className='delete-icon' />
-                          </button>
+                        <div key={index} className="worker-assignment-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px', alignItems: 'stretch' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {renderWorkerSearchInput(index)}
+                            <select
+                              className="input-field"
+                              style={{ flex: 1 }}
+                              value={assignment.status}
+                              onChange={(e) => handleWorkerAssignmentChange(index, 'status', e.target.value)}
+                            >
+                              <option value="order_overview">Order Overview</option>
+                              <option value="fabric_purchase">Fabric Purchase</option>
+                              <option value="dying">Dying</option>
+                              <option value="fusing">Fusing</option>
+                              <option value="khakha">Khakha</option>
+                              <option value="art_work">Art Work</option>
+                              <option value="add_ons">Add Ons</option>
+                              <option value="cutting">Cutting</option>
+                              <option value="stitching">Stitching</option>
+                              <option value="qc">QC</option>
+                              <option value="other_work">Other Work</option>
+                              <option value="packing">Packing</option>
+                              <option value="ready_to_delivery">Ready to Delivery</option>
+                              <option value="delivery_complete">Delivery Complete</option>
+                              <option value="repairing">Repairing</option>
+                            </select>
+                            <button
+                              type="button"
+                              className="btn-icon btn"
+                              onClick={() => removeWorkerAssignment(index)}
+                              style={{ padding: '8px' }}
+                            >
+                              <FiTrash2 size={16} className='delete-icon' />
+                            </button>
+                          </div>
+                          <div className="form-group full-width">
+                            <label className="form-label">Description</label>
+                            <textarea
+                              className="input-field"
+                              rows="2"
+                              value={assignment.description || ''}
+                              onChange={(e) => handleWorkerAssignmentChange(index, 'description', e.target.value)}
+                              placeholder="Enter worker assignment description..."
+                            />
+                          </div>
                         </div>
                       ))}
                       {/* <button
