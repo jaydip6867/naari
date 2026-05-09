@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiEdit2, FiArrowLeft, FiUser, FiPhone, FiMapPin, FiCalendar, FiFileText, FiSearch, FiEdit, FiTrash2, FiEye, FiCalendar as FiCalendarIcon } from 'react-icons/fi';
+import { FiEdit2, FiArrowLeft, FiUser, FiPhone, FiMapPin, FiCalendar, FiFileText, FiSearch, FiEdit, FiTrash2, FiEye, FiCalendar as FiCalendarIcon, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
@@ -16,12 +16,20 @@ const ViewCustomer = ({ onLogout }) => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState('orders');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedOrders, setExpandedOrders] = useState({});
 
   useEffect(() => {
     if (customerId) {
       fetchCustomer();
     }
   }, [customerId]);
+
+  const toggleOrderAccordion = (orderId) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
+  };
 
   const fetchCustomer = async () => {
     try {
@@ -84,8 +92,8 @@ const ViewCustomer = ({ onLogout }) => {
             border: '1px solid rgba(255, 0, 0, 0.2)'
           }}>
             {error}
-            <button 
-              className="add-btn" 
+            <button
+              className="add-btn"
               onClick={() => navigate('/customers')}
               style={{ marginLeft: '12px' }}
             >
@@ -120,7 +128,7 @@ const ViewCustomer = ({ onLogout }) => {
       <div className="main-content">
         <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button 
+            <button
               className="btn btn-secondary"
               onClick={() => navigate('/customers')}
               style={{ padding: '8px 12px' }}
@@ -264,7 +272,7 @@ const ViewCustomer = ({ onLogout }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {customer && customer.orders && customer.orders.filter(order => 
+                          {customer && customer.orders && customer.orders.filter(order =>
                             searchQuery === '' || order.orderId.toLowerCase().includes(searchQuery.toLowerCase())
                           ).map((order, index) => (
                             <tr key={order._id}>
@@ -310,23 +318,77 @@ const ViewCustomer = ({ onLogout }) => {
 
                 {activeTab === 'measurement' && (
                   <div className="measurement-section">
-                    <h3 className="measurement-section-title">Customer Measurements</h3>
-                    {customer && customer.measurement && customer.measurement.length > 0 ? (
-                      <div className="measurement-grid">
-                        {customer.measurement.map((measurement, index) => (
-                          <div key={index} className="measurement-item">
-                            <label className="measurement-label">{measurement.fieldLable}</label>
-                            <div className="measurement-value">
-                              <span className="measurement-number">{measurement.fieldValue}</span>
-                              <span className="measurement-unit">{measurement.unit}</span>
+                    {customer && customer.orders && customer.orders.length > 0 ? (
+                      <div className="orders-accordion">
+                        {customer.orders.map((order, orderIndex) => (
+                          <div key={order._id} className="order-accordion-item">
+                            <div
+                              className="order-accordion-header"
+                              onClick={() => toggleOrderAccordion(order._id)}
+                            >
+                              <div className="order-accordion-title">
+                                {/* <span className="order-id">{order.orderId}</span> */}
+                                <span className="order-name">{order.outfitTypeName || order.productName || 'Order'}</span>
+                                {/* <span className={`order-status-badge ${order.status}`}>
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </span> */}
+                              </div>
+                              <span className="accordion-icon">
+                                {expandedOrders[order._id] ? <FiChevronUp /> : <FiChevronDown />}
+                              </span>
                             </div>
+
+                            {expandedOrders[order._id] && (
+                              <div className="order-accordion-content">
+                                {/* <h4 className="order-measurements-title">Order Measurements</h4> */}
+                                {order.measurement && order.measurement.length > 0 ? (
+                                  <div className="measurement-grid">
+                                    {order.measurement.map((measurement, index) => (
+                                      <div key={index} className="measurement-item">
+                                        <div className="form-group">
+                                          <label className="form-label">{measurement.fieldLable} ({measurement.unit})</label>
+                                          <input
+                                            type="text"
+                                            className="input-field"
+                                            value={measurement.fieldValue}
+                                            placeholder={`Enter value in ${measurement.unit}`}
+                                            disabled
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="no-measurements-section">
+                                    <FiUser className="no-measurements-icon" />
+                                    <p className="no-measurements-text">No measurements available for this order</p>
+                                  </div>
+                                )}
+
+                                {/* {order.addons && order.addons.length > 0 && (
+                                  <div className="order-addons-section">
+                                    <h4 className="order-addons-title">Order Addons</h4>
+                                    <div className="addons-grid">
+                                      {order.addons.map((addon, index) => (
+                                        <div key={index} className="addon-item">
+                                          <label className="measurement-label">{addon.title}</label>
+                                          <div className="measurement-value">
+                                            <span className="measurement-number">{addon.value || 'Not Selected'}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )} */}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="no-measurements-section">
                         <FiUser className="no-measurements-icon" />
-                        <p className="no-measurements-text">No measurements available for this customer</p>
+                        <p className="no-measurements-text">No orders available for this customer</p>
                       </div>
                     )}
                   </div>

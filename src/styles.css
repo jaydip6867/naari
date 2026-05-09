@@ -3990,6 +3990,149 @@ textarea.input-field {
   hyphens: auto;
 }
 
+/* Accordion Styles */
+.orders-accordion {
+  margin-top: 20px;
+}
+
+.order-accordion-item {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.order-accordion-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.order-accordion-header {
+  background: linear-gradient(135deg, var(--background-light) 0%, var(--background) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-accordion-header:active {
+  transform: scale(0.98);
+}
+
+.order-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-name {
+  font-size: 14px;
+  color: var(--gray-color);
+  font-weight: 500;
+}
+
+.order-id {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.accordion-icon {
+  font-size: 12px;
+  color: var(--gray-color);
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.order-accordion-content {
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 0 0 12px 12px;
+  animation: slideDown 0.3s ease;
+  padding: 16px;
+}
+
+.order-measurements-title {
+  font-size: 14px;
+  color: var(--primary-color);
+  margin-bottom: 12px;
+}
+
+.order-addons-section {
+  margin-top: 20px;
+}
+
+.order-addons-title {
+  font-size: 14px;
+  color: var(--primary-color);
+  margin-bottom: 12px;
+}
+
+.no-measurements-section {
+  text-align: center;
+  padding: 20px;
+}
+
+.measurement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+  /* margin-bottom: 16px; */
+}
+
+.measurement-item {
+  background: var(--background-light);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.measurement-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.addon-item {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.addon-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+/* Animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .search-form {
