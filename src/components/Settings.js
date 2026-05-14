@@ -60,13 +60,13 @@ const Settings = ({ onLogout }) => {
   // Fetch data only when a tab becomes active for the first time
   const handleTabChange = (tabId) => {
     if (tabId === activeTab) return; // Don't do anything if clicking the same tab
-    
+
     setActiveTab(tabId);
-    
+
     // Only fetch data if this tab hasn't been visited before
     if (!visitedTabs.has(tabId)) {
       setVisitedTabs(prev => new Set(prev).add(tabId));
-      
+
       // Fetch data based on the tab
       switch (tabId) {
         case 'measurements':
@@ -86,6 +86,9 @@ const Settings = ({ onLogout }) => {
           fetchRoles();
           break;
         case 'addons':
+          fetchAddons();
+          break;
+        case 'finance':
           fetchAddons();
           break;
         default:
@@ -226,7 +229,7 @@ const Settings = ({ onLogout }) => {
       setAddonsError('');
       const addonsData = await addonsAPI.getAddons();
       setAddons(addonsData || []);
-      
+
       // Sync selectedAddonType with fresh data if it exists
       if (selectedAddonType && addonsData) {
         const updatedAddon = addonsData.find(a => a._id === selectedAddonType._id);
@@ -258,7 +261,7 @@ const Settings = ({ onLogout }) => {
   const saveQuickAddAddon = async () => {
     try {
       if (!newAddonTypeName.trim()) return;
-      
+
       const addonData = {
         addonsId: '',
         title: newAddonTypeName.trim(),
@@ -272,7 +275,7 @@ const Settings = ({ onLogout }) => {
       setNewAddonTypeName('');
       setSelectedOutfitsForAddon([]);
       setIsQuickAddOutfitModalOpen(false);
-      
+
       // Auto-select the newly created addon
       if (savedAddon && savedAddon._id) {
         setSelectedAddonType(savedAddon);
@@ -316,15 +319,15 @@ const Settings = ({ onLogout }) => {
   const saveAddonType = async () => {
     try {
       // if (!modalAddonTitle.trim()) return;
-      
+
       // Get existing addon data if editing
       const existingAddon = editingAddonId ? addons.find(a => a._id === editingAddonId) : null;
-      
+
       // Filter out empty options
       const filteredOptions = (selectedFieldType === 'radio' || selectedFieldType === 'checkbox')
         ? newAddonOptions.filter(opt => opt.trim() !== '')
         : [];
-      
+
       const addonData = {
         addonsId: editingAddonId || '',
         title: modalAddonTitle.trim(),
@@ -336,7 +339,7 @@ const Settings = ({ onLogout }) => {
       const savedAddon = await addonsAPI.saveAddon(addonData);
       await fetchAddons();
       closeAddonTypeModal();
-      
+
       // Auto-select the newly created/updated addon
       if (savedAddon && savedAddon._id) {
         setSelectedAddonType(savedAddon);
@@ -351,9 +354,9 @@ const Settings = ({ onLogout }) => {
   const addOptionToAddon = async () => {
     try {
       if (!selectedAddonType || !newOptionInput.trim()) return;
-      
+
       const updatedOptions = [...(selectedAddonType.options || []), newOptionInput.trim()];
-      
+
       const addonData = {
         addonsId: selectedAddonType._id,
         title: selectedAddonType.title,
@@ -375,9 +378,9 @@ const Settings = ({ onLogout }) => {
   const removeOptionFromAddon = async (optionIndex) => {
     try {
       if (!selectedAddonType) return;
-      
+
       const updatedOptions = selectedAddonType.options.filter((_, index) => index !== optionIndex);
-      
+
       const addonData = {
         addonsId: selectedAddonType._id,
         title: selectedAddonType.title,
@@ -388,7 +391,7 @@ const Settings = ({ onLogout }) => {
 
       await addonsAPI.saveAddon(addonData);
       await fetchAddons();
-      
+
       // Find and update the selected addon from the fresh list
       const updatedAddon = addons.find(a => a._id === selectedAddonType._id);
       if (updatedAddon) {
@@ -455,7 +458,7 @@ const Settings = ({ onLogout }) => {
   const saveAddonOutfits = async () => {
     try {
       if (!selectedAddonType) return;
-      
+
       const addonData = {
         addonsId: selectedAddonType._id,
         title: selectedAddonType.title,
@@ -491,7 +494,7 @@ const Settings = ({ onLogout }) => {
       setStaffLoading(true);
       setStaffError('');
       const staffData = await staffAPI.getStaffList();
-      
+
       // Handle different API response structures
       let staffList = [];
       if (Array.isArray(staffData)) {
@@ -504,10 +507,10 @@ const Settings = ({ onLogout }) => {
         // Try to find array in the response object
         staffList = Object.values(staffData).find(Array.isArray) || [];
       }
-      
+
       // console.log('Staff data received:', staffData);
       // console.log('Staff list extracted:', staffList);
-      
+
       setStaff(staffList);
     } catch (err) {
       console.error('Error fetching staff:', err);
@@ -521,13 +524,13 @@ const Settings = ({ onLogout }) => {
     try {
       // console.log('Settings - Received staff data:', staffData);
       // console.log('Settings - staffId in received data:', staffData.staffId);
-      
+
       const savedStaff = await staffAPI.saveStaff(staffData);
       // console.log('Staff saved:', savedStaff);
-      
+
       // Refresh the staff list
       await fetchStaff();
-      
+
       return savedStaff;
     } catch (err) {
       console.error('Error saving staff:', err);
@@ -538,13 +541,13 @@ const Settings = ({ onLogout }) => {
   const deleteStaff = async (staffId) => {
     try {
       // console.log('Settings - Deleting staff with ID:', staffId);
-      
+
       const deletedStaff = await staffAPI.deleteStaff(staffId);
       // console.log('Staff deleted:', deletedStaff);
-      
+
       // Refresh the staff list
       await fetchStaff();
-      
+
       return deletedStaff;
     } catch (err) {
       console.error('Error deleting staff:', err);
@@ -705,6 +708,7 @@ const Settings = ({ onLogout }) => {
     { id: 'skills', label: 'Skills' },
     { id: 'worktype', label: 'Work Type' },
     { id: 'staff', label: 'Staff Account' },
+    { id: 'finance', label: 'Finance' },
   ];
 
 
@@ -926,13 +930,13 @@ const Settings = ({ onLogout }) => {
       const outfit = outfitTypes.find(o => o.name === outfitName);
       if (outfit && outfit.subCategories && outfit.subCategories[subcategoryIndex]) {
         const subcategoryToDelete = outfit.subCategories[subcategoryIndex].name;
-        
+
         // Call API to delete subcategory
         await measurementsAPI.deleteSubcategory(outfit._id, subcategoryToDelete);
-        
+
         // Refresh data from API
         await fetchOutfitTypes();
-        
+
         // If the deleted subcategory was selected, clear selection
         if (selectedSubcategory === subcategoryToDelete) {
           setSelectedSubcategory(null);
@@ -947,10 +951,10 @@ const Settings = ({ onLogout }) => {
   const saveSubcategory = async (subcategoryName, outfitTypeId) => {
     try {
       // Use passed outfitTypeId or fall back to current outfit
-      const currentOutfit = outfitTypeId 
+      const currentOutfit = outfitTypeId
         ? outfitTypes.find(o => o._id === outfitTypeId)
         : getCurrentOutfit();
-        
+
       if (!currentOutfit) {
         console.error('No outfit selected');
         return;
@@ -1043,7 +1047,7 @@ const Settings = ({ onLogout }) => {
 
           // Call API to save updated field unit
           await measurementsAPI.saveOutfitTypeField(fieldData);
-          
+
           // Refresh data from API
           await fetchOutfitTypes();
         }
@@ -1070,7 +1074,7 @@ const Settings = ({ onLogout }) => {
 
           // Call API to save updated field unit
           await measurementsAPI.saveOutfitTypeField(fieldData);
-          
+
           // Refresh data from API
           await fetchOutfitTypes();
         }
@@ -1226,26 +1230,26 @@ const Settings = ({ onLogout }) => {
 
   const handleOptionDrop = (e, targetIndex) => {
     e.preventDefault();
-    
+
     if (draggedOptionIndex !== null && draggedOptionIndex !== targetIndex) {
       // Reorder options
       const newOptions = [...selectedAddonType.options];
       const [removed] = newOptions.splice(draggedOptionIndex, 1);
       newOptions.splice(targetIndex, 0, removed);
-      
+
       // Update local state immediately for UI feedback
       const updatedAddon = {
         ...selectedAddonType,
         options: newOptions
       };
       setSelectedAddonType(updatedAddon);
-      
+
       // Clear any pending save
       if (pendingOptionSaveRef.current) {
         clearTimeout(pendingOptionSaveRef.current);
       }
     }
-    
+
     setDraggedOptionIndex(null);
   };
 
@@ -1458,8 +1462,8 @@ const Settings = ({ onLogout }) => {
                         />
                         <label className="checkbox-label">Required</label>
                       </div>
-                      <FiX className="delete-field-icon" onClick={() => deleteMeasurementField(field.id)}/>
-                      
+                      <FiX className="delete-field-icon" onClick={() => deleteMeasurementField(field.id)} />
+
                     </div>
                   ))}
 
@@ -1539,7 +1543,7 @@ const Settings = ({ onLogout }) => {
           <div className="content-section">
             <div className="section-header">
               <h2 className="section-title">Staff Account</h2>
-              <div style={{display:'flex' , gap: '12px'}}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 {/* <button className="add-btn" onClick={fetchStaff}><FiRefreshCw /> Refresh</button> */}
                 <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
               </div>
@@ -1573,15 +1577,15 @@ const Settings = ({ onLogout }) => {
                       </div>
                     </div>
                     <div className="roll-actions">
-                      <button 
-                        className="edit-btn" 
+                      <button
+                        className="edit-btn"
                         onClick={() => openEditStaffModal(staffMember)}
                         title="Edit Staff"
                       >
                         <FiEdit />
                       </button>
                       {/* <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)} title="Delete Staff"> */}
-                        <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)}/>
+                      <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)} />
                       {/* </button> */}
                     </div>
                   </div>
@@ -1747,8 +1751,8 @@ const Settings = ({ onLogout }) => {
                   onChange={(e) => setNewAddonTypeName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && quickAddAddon()}
                 />
-                <button 
-                  className="add-btn measurements_add_btn" 
+                <button
+                  className="add-btn measurements_add_btn"
                   onClick={quickAddAddon}
                   disabled={!newAddonTypeName.trim()}
                 >
@@ -1773,12 +1777,12 @@ const Settings = ({ onLogout }) => {
                         <span className="outfit-fields-tag" style={{ textTransform: 'capitalize' }}>
                           {addon.fieldType === 'text' ? 'Input' : addon.fieldType}
                         </span>
-                        <FiTrash2 
-                          className='delete-icon' 
+                        <FiTrash2
+                          className='delete-icon'
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteAddon(addon._id);
-                          }} 
+                          }}
                         />
                       </div>
                     </div>
@@ -1794,15 +1798,15 @@ const Settings = ({ onLogout }) => {
                   {selectedAddonType?.title || 'Select an Addon Type'}
                 </h2>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    className="add-btn" 
+                  <button
+                    className="add-btn"
                     onClick={openOutfitSelector}
                     disabled={!selectedAddonType}
                   >
                     Select Outfit Type
                   </button>
-                  <button 
-                    className="add-btn" 
+                  <button
+                    className="add-btn"
                     onClick={() => openAddonTypeModal(selectedAddonType)}
                     disabled={!selectedAddonType}
                   >
@@ -1834,8 +1838,8 @@ const Settings = ({ onLogout }) => {
                       <div className="field-list">
                         {selectedAddonType.options && selectedAddonType.options.length > 0 ? (
                           selectedAddonType.options.map((option, index) => (
-                            <div 
-                              key={index} 
+                            <div
+                              key={index}
                               className="field-item addons-field"
                               draggable
                               onDragStart={(e) => handleOptionDragStart(e, index)}
@@ -1845,8 +1849,8 @@ const Settings = ({ onLogout }) => {
                             >
                               <RxDragHandleDots2 className="drag-handle" style={{ cursor: 'grab' }} />
                               <div className="field-name">{option}</div>
-                              <FiX 
-                                className='delete-field-icon' 
+                              <FiX
+                                className='delete-field-icon'
                                 onClick={() => removeOptionFromAddon(index)}
                                 style={{ cursor: 'pointer' }}
                               />
@@ -1898,7 +1902,7 @@ const Settings = ({ onLogout }) => {
                         style={{ width: '100%', marginBottom: '16px' }}
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label>Field Type</label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: newAddonOptions.some(opt => opt.trim() !== '') ? 'not-allowed' : 'pointer', opacity: newAddonOptions.some(opt => opt.trim() !== '') ? 0.5 : 1 }}>
@@ -1910,10 +1914,10 @@ const Settings = ({ onLogout }) => {
                           onChange={(e) => setSelectedFieldType(e.target.value)}
                           disabled={newAddonOptions.some(opt => opt.trim() !== '')}
                         />
-                        <span style={{ 
-                          width: '8px', 
-                          height: '8px', 
-                          borderRadius: '50%', 
+                        <span style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
                           background: '#e07b54',
                           display: 'inline-block'
                         }}></span>
@@ -1927,10 +1931,10 @@ const Settings = ({ onLogout }) => {
                           checked={selectedFieldType === 'radio'}
                           onChange={(e) => setSelectedFieldType(e.target.value)}
                         />
-                        <span style={{ 
-                          width: '8px', 
-                          height: '8px', 
-                          borderRadius: '50%', 
+                        <span style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
                           background: '#6b7280',
                           display: 'inline-block'
                         }}></span>
@@ -1944,10 +1948,10 @@ const Settings = ({ onLogout }) => {
                           checked={selectedFieldType === 'checkbox'}
                           onChange={(e) => setSelectedFieldType(e.target.value)}
                         />
-                        <span style={{ 
-                          width: '8px', 
-                          height: '8px', 
-                          borderRadius: '50%', 
+                        <span style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
                           background: '#6b7280',
                           display: 'inline-block'
                         }}></span>
@@ -1986,8 +1990,8 @@ const Settings = ({ onLogout }) => {
                   </div>
                   <div className="modal-footer">
                     <button className="btn btn-cancel" onClick={closeAddonTypeModal}>Cancel</button>
-                    <button 
-                      className="btn btn-save" 
+                    <button
+                      className="btn btn-save"
                       onClick={saveAddonType}
                     >
                       Save
@@ -2034,8 +2038,8 @@ const Settings = ({ onLogout }) => {
                   </div>
                   <div className="modal-footer">
                     <button className="btn btn-cancel" onClick={closeOutfitSelector}>Cancel</button>
-                    <button 
-                      className="btn btn-save" 
+                    <button
+                      className="btn btn-save"
                       onClick={saveAddonOutfits}
                     >
                       Save
@@ -2085,8 +2089,8 @@ const Settings = ({ onLogout }) => {
                   </div>
                   <div className="modal-footer">
                     <button className="btn btn-cancel" onClick={closeQuickAddOutfitModal}>Cancel</button>
-                    <button 
-                      className="btn btn-save" 
+                    <button
+                      className="btn btn-save"
                       onClick={saveQuickAddAddon}
                     >
                       Save
@@ -2095,6 +2099,18 @@ const Settings = ({ onLogout }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Finance Tab */}
+        {activeTab === 'finance' && (
+          <div className="content-sections-wrapper">
+            {/* Addons Type Section (Left) */}
+            <div className="content-section">
+              <div className="section-header">
+                <h2 className="section-title">Finance</h2>
+              </div>
+            </div>
           </div>
         )}
 
