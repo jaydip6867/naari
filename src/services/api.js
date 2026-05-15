@@ -586,6 +586,97 @@ export const taskAPI = {
   }
 };
 
+// Income Type API calls
+export const incomeTypeAPI = {
+  getIncomeTypes: async () => {
+    const response = await api.get('/user/incometype');
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch income types');
+    }
+  },
+
+  saveIncomeType: async (incomeTypeData) => {
+    const response = await api.post('/user/incometype/save', incomeTypeData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save income type');
+    }
+  },
+};
+
+// Expense Type API calls
+export const expenseTypeAPI = {
+  getExpenseTypes: async () => {
+    const response = await api.get('/user/expensetype');
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch expense types');
+    }
+  },
+
+  saveExpenseType: async (expenseTypeData) => {
+    const response = await api.post('/user/expensetype/save', expenseTypeData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save expense type');
+    }
+  },
+};
+
+// Accounting API calls
+export const accountingAPI = {
+  saveAccounting: async (accountingData) => {
+    const response = await api.post('/user/accounting/save', accountingData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save accounting entry');
+    }
+  },
+
+  getAccountingList: async (filters = {}) => {
+    const { type = '', typeName = '', orderId = '' } = filters;
+    const response = await api.post('/user/accounting', { type, typeName, orderId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting list');
+    }
+  },
+
+  getAccountingListWithPagination: async (page = 1, limit = 10, filters = {}) => {
+    const { type = '', typeName = '', orderId = '' } = filters;
+    const response = await api.post('/user/accounting/list', { page, limit, type, typeName, orderId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting list');
+    }
+  },
+
+  getAccountingById: async (id) => {
+    const response = await api.post('/user/accounting/getone', { id });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting entry');
+    }
+  },
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,
