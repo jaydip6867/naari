@@ -802,6 +802,7 @@ body {
 .skills-list {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .roll-item {

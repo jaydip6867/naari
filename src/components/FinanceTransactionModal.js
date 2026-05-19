@@ -200,7 +200,7 @@ const FinanceTransactionModal = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Order ID</label>
+              <label className="form-label">Order</label>
               <select
                 className="form-input"
                 value={orderId}
