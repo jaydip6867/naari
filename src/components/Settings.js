@@ -4,11 +4,22 @@ import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
 import SkillModal from './SkillModal.js';
 import WorkTypeModal from './WorkTypeModal.js';
-import StaffModal from './StaffModal.js';
+import FinanceTypeModal from './FinanceTypeModal.js';
+import FinanceTransactionModal from './FinanceTransactionModal.js';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { userRoleAPI, skillsAPI, workTypeAPI, measurementsAPI, staffAPI, addonsAPI } from '../services/api';
+import {
+  userRoleAPI,
+  skillsAPI,
+  workTypeAPI,
+  measurementsAPI,
+  addonsAPI,
+  incomeTypeAPI,
+  expenseTypeAPI,
+  accountingAPI,
+  orderAPI,
+} from '../services/api';
 import { FiEdit, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
 
@@ -81,15 +92,11 @@ const Settings = ({ onLogout }) => {
         case 'worktype':
           fetchWorkTypes();
           break;
-        case 'staff':
-          fetchStaff();
-          fetchRoles();
-          break;
         case 'addons':
           fetchAddons();
           break;
         case 'finance':
-          fetchAddons();
+          fetchFinanceData();
           break;
         default:
           break;
@@ -477,99 +484,6 @@ const Settings = ({ onLogout }) => {
   };
 
   // Measurements API functions
-  // Staff API functions
-  const fetchRoles = async () => {
-    try {
-      const roles = await userRoleAPI.listRoles();
-      // console.log('Roles fetched:', roles);
-      return roles;
-    } catch (err) {
-      console.error('Error fetching roles:', err);
-      return [];
-    }
-  };
-
-  const fetchStaff = async () => {
-    try {
-      setStaffLoading(true);
-      setStaffError('');
-      const staffData = await staffAPI.getStaffList();
-
-      // Handle different API response structures
-      let staffList = [];
-      if (Array.isArray(staffData)) {
-        staffList = staffData;
-      } else if (staffData && Array.isArray(staffData.data)) {
-        staffList = staffData.data;
-      } else if (staffData && Array.isArray(staffData.staffList)) {
-        staffList = staffData.staffList;
-      } else if (staffData && typeof staffData === 'object') {
-        // Try to find array in the response object
-        staffList = Object.values(staffData).find(Array.isArray) || [];
-      }
-
-      // console.log('Staff data received:', staffData);
-      // console.log('Staff list extracted:', staffList);
-
-      setStaff(staffList);
-    } catch (err) {
-      console.error('Error fetching staff:', err);
-      setStaffError(err.message || 'Failed to fetch staff');
-    } finally {
-      setStaffLoading(false);
-    }
-  };
-
-  const saveStaff = async (staffData) => {
-    try {
-      // console.log('Settings - Received staff data:', staffData);
-      // console.log('Settings - staffId in received data:', staffData.staffId);
-
-      const savedStaff = await staffAPI.saveStaff(staffData);
-      // console.log('Staff saved:', savedStaff);
-
-      // Refresh the staff list
-      await fetchStaff();
-
-      return savedStaff;
-    } catch (err) {
-      console.error('Error saving staff:', err);
-      throw err;
-    }
-  };
-
-  const deleteStaff = async (staffId) => {
-    try {
-      // console.log('Settings - Deleting staff with ID:', staffId);
-
-      const deletedStaff = await staffAPI.deleteStaff(staffId);
-      // console.log('Staff deleted:', deletedStaff);
-
-      // Refresh the staff list
-      await fetchStaff();
-
-      return deletedStaff;
-    } catch (err) {
-      console.error('Error deleting staff:', err);
-      throw err;
-    }
-  };
-
-  // Staff modal functions
-  const openStaffModal = () => {
-    setIsStaffModalOpen(true);
-  };
-
-  const openEditStaffModal = (staffMember) => {
-    setEditingStaff(staffMember);
-    setIsStaffModalOpen(true);
-  };
-
-  const closeStaffModal = () => {
-    setIsStaffModalOpen(false);
-    setEditingStaff(null);
-  };
-
   const addOutfitTypeAPI = async () => {
     if (!newOutfitType.trim()) return;
 
@@ -676,13 +590,6 @@ const Settings = ({ onLogout }) => {
     }
   }, [selectedOutfit, selectedSubcategory, outfitTypes, activeTab]);
 
-  // Staff state
-  const [staff, setStaff] = useState([]);
-  const [staffLoading, setStaffLoading] = useState(false);
-  const [staffError, setStaffError] = useState('');
-  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState(null);
-
   // Addons state
   const [addons, setAddons] = useState([]);
   const [addonsLoading, setAddonsLoading] = useState(false);
@@ -701,13 +608,130 @@ const Settings = ({ onLogout }) => {
   const [draggedOptionIndex, setDraggedOptionIndex] = useState(null);
   const pendingOptionSaveRef = useRef(null);
 
+  // Finance state
+  const [incomeTypes, setIncomeTypes] = useState([]);
+  const [expenseTypes, setExpenseTypes] = useState([]);
+  const [financeOrders, setFinanceOrders] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeError, setFinanceError] = useState('');
+  const [isFinanceTypeModalOpen, setIsFinanceTypeModalOpen] = useState(false);
+  const [isFinanceTransactionModalOpen, setIsFinanceTransactionModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+
+  const parseFinanceTypeList = (data) => {
+    if (!data) return [];
+    let list = Array.isArray(data) ? data : [];
+    if (!Array.isArray(data) && typeof data === 'object') {
+      list = Object.values(data).find(Array.isArray) || [];
+    }
+    return list
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        return item.name || item.title || item.typeName || '';
+      })
+      .filter(Boolean);
+  };
+
+  const parseTransactionList = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.list)) return data.list;
+    if (Array.isArray(data.accountingList)) return data.accountingList;
+    if (typeof data === 'object') {
+      return Object.values(data).find(Array.isArray) || [];
+    }
+    return [];
+  };
+
+  const getTransactionOrderLabel = (transaction, orders) => {
+    const orderRef = transaction.orderId;
+    if (typeof orderRef === 'object' && orderRef !== null) {
+      return orderRef.orderId || orderRef.orderName || orderRef._id || '-';
+    }
+    const matched = orders.find((o) => o._id === orderRef);
+    if (matched) {
+      return matched.orderId || matched.orderName || matched._id;
+    }
+    return orderRef || '-';
+  };
+
+  const fetchFinanceData = async () => {
+    try {
+      setFinanceLoading(true);
+      setFinanceError('');
+      const [incomeData, expenseData, ordersData, accountingData] = await Promise.all([
+        incomeTypeAPI.getIncomeTypes(),
+        expenseTypeAPI.getExpenseTypes(),
+        orderAPI.getOrders(),
+        accountingAPI.getAccountingList(),
+      ]);
+      setIncomeTypes(parseFinanceTypeList(incomeData));
+      setExpenseTypes(parseFinanceTypeList(expenseData));
+      const ordersList = Array.isArray(ordersData) ? ordersData : (ordersData?.data || []);
+      setFinanceOrders(ordersList);
+      setTransactions(parseTransactionList(accountingData));
+    } catch (err) {
+      console.error('Error fetching finance data:', err);
+      setFinanceError(err.message || 'Failed to fetch finance data');
+    } finally {
+      setFinanceLoading(false);
+    }
+  };
+
+  const saveFinanceType = async ({ name, type, categoryKind }) => {
+    const payload = { name, type };
+    if (categoryKind === 'income') {
+      await incomeTypeAPI.saveIncomeType(payload);
+    } else {
+      await expenseTypeAPI.saveExpenseType(payload);
+    }
+    await fetchFinanceData();
+  };
+
+  const deleteFinanceType = async (name, categoryKind) => {
+    try {
+      setFinanceError('');
+      const payload = { name, type: 'Remove' };
+      if (categoryKind === 'income') {
+        await incomeTypeAPI.saveIncomeType(payload);
+      } else {
+        await expenseTypeAPI.saveExpenseType(payload);
+      }
+      await fetchFinanceData();
+    } catch (err) {
+      console.error('Error deleting finance type:', err);
+      setFinanceError(err.message || 'Failed to delete type');
+    }
+  };
+
+  const saveFinanceTransaction = async (transactionData) => {
+    await accountingAPI.saveAccounting(transactionData);
+    await fetchFinanceData();
+  };
+
+  const openFinanceTransactionModal = () => {
+    setEditingTransaction(null);
+    setIsFinanceTransactionModalOpen(true);
+  };
+
+  const openEditFinanceTransactionModal = (transaction) => {
+    setEditingTransaction(transaction);
+    setIsFinanceTransactionModalOpen(true);
+  };
+
+  const closeFinanceTransactionModal = () => {
+    setIsFinanceTransactionModalOpen(false);
+    setEditingTransaction(null);
+  };
+
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
     { id: 'addons', label: 'Addons' },
     { id: 'rolls', label: 'Rolls' },
     { id: 'skills', label: 'Skills' },
     { id: 'worktype', label: 'Work Type' },
-    { id: 'staff', label: 'Staff Account' },
     { id: 'finance', label: 'Finance' },
   ];
 
@@ -1538,69 +1562,6 @@ const Settings = ({ onLogout }) => {
           </div>
         )}
 
-        {/* Staff Account Tab */}
-        {activeTab === 'staff' && (
-          <div className="content-section">
-            <div className="section-header">
-              <h2 className="section-title">Staff Account</h2>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {/* <button className="add-btn" onClick={fetchStaff}><FiRefreshCw /> Refresh</button> */}
-                <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
-              </div>
-            </div>
-
-            {staffError && (
-              <div style={{
-                color: 'var(--alert-color)',
-                background: 'rgba(255, 0, 0, 0.1)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: '16px',
-                border: '1px solid rgba(255, 0, 0, 0.2)'
-              }}>
-                {staffError}
-              </div>
-            )}
-
-            {staffLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
-                Loading staff...
-              </div>
-            ) : Array.isArray(staff) && staff.length > 0 ? (
-              <div className="roll-list">
-                {staff.map((staffMember, index) => (
-                  <div key={staffMember._id || index} className="roll-item">
-                    <div className="roll-info">
-                      <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
-                      <div className="roll-details">
-                        <span className="roll-role theme-color">- {staffMember.roleid?.name || ''}</span>
-                      </div>
-                    </div>
-                    <div className="roll-actions">
-                      <button
-                        className="edit-btn"
-                        onClick={() => openEditStaffModal(staffMember)}
-                        title="Edit Staff"
-                      >
-                        <FiEdit />
-                      </button>
-                      {/* <button className="delete-btn skills-delete" onClick={() => deleteStaff(staffMember._id)} title="Delete Staff"> */}
-                      <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)} />
-                      {/* </button> */}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                <div style={{ marginBottom: '16px' }}>
-                  <p>No staff members found.</p>
-                  <button className="add-btn" onClick={openStaffModal}>+ Add Your First Staff Member</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Skills Tab */}
         {activeTab === 'skills' && (
@@ -2104,13 +2065,148 @@ const Settings = ({ onLogout }) => {
 
         {/* Finance Tab */}
         {activeTab === 'finance' && (
-          <div className="content-sections-wrapper">
-            {/* Addons Type Section (Left) */}
-            <div className="content-section">
-              <div className="section-header">
-                <h2 className="section-title">Finance</h2>
+          <div className="content-section">
+            <div className="section-header">
+              <h2 className="section-title">Finance</h2>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  className="add-btn"
+                  onClick={() => setIsFinanceTypeModalOpen(true)}
+                >
+                  + Add Type
+                </button>
+                <button
+                  className="add-btn"
+                  onClick={openFinanceTransactionModal}
+                >
+                  + Add Transaction
+                </button>
               </div>
             </div>
+
+            {financeError && (
+              <div style={{
+                color: 'var(--alert-color)',
+                background: 'rgba(255, 0, 0, 0.1)',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '16px',
+                border: '1px solid rgba(255, 0, 0, 0.2)',
+              }}>
+                {financeError}
+              </div>
+            )}
+
+            {financeLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                Loading finance data...
+              </div>
+            ) : (
+              <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Income Types</h3>
+                  {incomeTypes.length > 0 ? (
+                    <div className="skills-list">
+                      {incomeTypes.map((type, index) => (
+                        <div key={`${type}-${index}`} className="roll-item">
+                          <div className="roll-info">
+                            <div className="roll-name">{type}</div>
+                          </div>
+                          <div className="roll-actions">
+                            <button
+                              className="delete-btn skills-delete"
+                              onClick={() => deleteFinanceType(type, 'income')}
+                              title="Delete income type"
+                            >
+                              <FiX />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No income types yet.</p>
+                  )}
+                </div>
+                <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Expense Types</h3>
+                  {expenseTypes.length > 0 ? (
+                    <div className="skills-list">
+                      {expenseTypes.map((type, index) => (
+                        <div key={`${type}-${index}`} className="roll-item">
+                          <div className="roll-info">
+                            <div className="roll-name">{type}</div>
+                          </div>
+                          <div className="roll-actions">
+                            <button
+                              className="delete-btn skills-delete"
+                              onClick={() => deleteFinanceType(type, 'expense')}
+                              title="Delete expense type"
+                            >
+                              <FiX />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No expense types yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginTop: '8px' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Transactions</h3>
+                {transactions.length > 0 ? (
+                  <div className="table-container" style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Name</th>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type</th>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type Name</th>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order</th>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Date</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Amount</th>
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((transaction, index) => (
+                          <tr key={transaction._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '12px' }}>{transaction.name || '-'}</td>
+                            <td style={{ padding: '12px', textTransform: 'capitalize' }}>{transaction.type || '-'}</td>
+                            <td style={{ padding: '12px' }}>{transaction.typeName || '-'}</td>
+                            <td style={{ padding: '12px' }}>{getTransactionOrderLabel(transaction, financeOrders)}</td>
+                            <td style={{ padding: '12px' }}>{transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('en-IN', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            }) : '-'}</td>
+                            <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
+                              {transaction.amount != null ? Number(transaction.amount).toLocaleString('en-IN') : '-'}
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                              <button
+                                className="edit-btn"
+                                onClick={() => openEditFinanceTransactionModal(transaction)}
+                                title="Edit transaction"
+                              >
+                                <FiEdit />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No transactions yet.</p>
+                )}
+              </div>
+              </>
+            )}
           </div>
         )}
 
@@ -2145,16 +2241,23 @@ const Settings = ({ onLogout }) => {
           onSave={saveWorkType}
           editingWorkType={editingWorkType}
         />
-      </div>
 
-      {/* Staff Modal */}
-      <StaffModal
-        isOpen={isStaffModalOpen}
-        onClose={closeStaffModal}
-        onSave={saveStaff}
-        editingStaff={editingStaff}
-        userRoles={userRoles}
-      />
+        <FinanceTypeModal
+          isOpen={isFinanceTypeModalOpen}
+          onClose={() => setIsFinanceTypeModalOpen(false)}
+          onSave={saveFinanceType}
+        />
+
+        <FinanceTransactionModal
+          isOpen={isFinanceTransactionModalOpen}
+          onClose={closeFinanceTransactionModal}
+          onSave={saveFinanceTransaction}
+          editingTransaction={editingTransaction}
+          incomeTypes={incomeTypes}
+          expenseTypes={expenseTypes}
+          orders={financeOrders}
+        />
+      </div>
     </div>
   );
 };
