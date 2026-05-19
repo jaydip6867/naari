@@ -26,6 +26,16 @@ const FinanceTransactionModal = ({
   const [error, setError] = useState('');
   const prevTransactionTypeRef = useRef(null);
 
+  // Type Name search state
+  const [typeNameSearchInput, setTypeNameSearchInput] = useState('');
+  const [showTypeNameDropdown, setShowTypeNameDropdown] = useState(false);
+  const [filteredTypeNames, setFilteredTypeNames] = useState([]);
+
+  // Order search state
+  const [orderSearchInput, setOrderSearchInput] = useState('');
+  const [showOrderDropdown, setShowOrderDropdown] = useState(false);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+
   const isEditMode = Boolean(editingTransaction);
   const typeOptions = transactionType === 'income' ? incomeTypes : expenseTypes;
 
@@ -37,6 +47,7 @@ const FinanceTransactionModal = ({
         const type = (editingTransaction.type || 'income').toLowerCase();
         setTransactionType(type === 'expense' ? 'expense' : 'income');
         setTypeName(editingTransaction.typeName || '');
+        setTypeNameSearchInput(editingTransaction.typeName || '');
         setName(editingTransaction.name || '');
         setOrderId(resolveOrderId(editingTransaction.orderId));
         setAmount(
@@ -46,8 +57,10 @@ const FinanceTransactionModal = ({
       } else {
         setTransactionType('income');
         setTypeName('');
+        setTypeNameSearchInput('');
         setName('');
         setOrderId('');
+        setOrderSearchInput('');
         setAmount('');
         prevTransactionTypeRef.current = 'income';
       }
@@ -59,9 +72,20 @@ const FinanceTransactionModal = ({
     if (!isOpen || prevTransactionTypeRef.current === null) return;
     if (prevTransactionTypeRef.current !== transactionType) {
       setTypeName('');
+      setTypeNameSearchInput('');
     }
     prevTransactionTypeRef.current = transactionType;
   }, [transactionType, isOpen]);
+
+  // Initialize order search input when editing existing transaction
+  useEffect(() => {
+    if (isOpen && orderId && orders.length > 0) {
+      const order = orders.find(o => o._id === orderId);
+      if (order) {
+        setOrderSearchInput(getOrderLabel(order));
+      }
+    }
+  }, [isOpen, orderId, orders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,6 +145,76 @@ const FinanceTransactionModal = ({
     return `Order ${order._id?.slice(-6) || ''}`;
   };
 
+  // Type Name search handlers
+  const handleTypeNameSearch = (e) => {
+    const value = e.target.value;
+    setTypeNameSearchInput(value);
+
+    if (value.trim() === '') {
+      setFilteredTypeNames(typeOptions);
+      setShowTypeNameDropdown(true);
+    } else {
+      const filtered = typeOptions.filter(option =>
+        option.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredTypeNames(filtered);
+      setShowTypeNameDropdown(true);
+    }
+  };
+
+  const handleTypeNameFocus = () => {
+    setFilteredTypeNames(typeOptions);
+    setShowTypeNameDropdown(true);
+  };
+
+  const handleTypeNameSelect = (typeNameValue) => {
+    setTypeNameSearchInput(typeNameValue);
+    setTypeName(typeNameValue);
+    setShowTypeNameDropdown(false);
+    setFilteredTypeNames([]);
+  };
+
+  const handleTypeNameInputBlur = () => {
+    setTimeout(() => {
+      setShowTypeNameDropdown(false);
+    }, 200);
+  };
+
+  // Order search handlers
+  const handleOrderSearch = (e) => {
+    const value = e.target.value;
+    setOrderSearchInput(value);
+
+    if (value.trim() === '') {
+      setFilteredOrders(orders);
+      setShowOrderDropdown(true);
+    } else {
+      const filtered = orders.filter(order =>
+        getOrderLabel(order).toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredOrders(filtered);
+      setShowOrderDropdown(true);
+    }
+  };
+
+  const handleOrderFocus = () => {
+    setFilteredOrders(orders);
+    setShowOrderDropdown(true);
+  };
+
+  const handleOrderSelect = (order) => {
+    setOrderSearchInput(getOrderLabel(order));
+    setOrderId(order._id);
+    setShowOrderDropdown(false);
+    setFilteredOrders([]);
+  };
+
+  const handleOrderInputBlur = () => {
+    setTimeout(() => {
+      setShowOrderDropdown(false);
+    }, 200);
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -150,36 +244,88 @@ const FinanceTransactionModal = ({
 
             <div className="form-group">
               <label className="form-label">Type</label>
-              <select
-                className="form-input"
-                value={transactionType}
-                onChange={(e) => setTransactionType(e.target.value)}
-                disabled={isSubmitting}
-              >
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
+              <div style={{ display: 'flex', gap: '20px'}}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="transactionType"
+                    value="income"
+                    checked={transactionType === 'income'}
+                    onChange={(e) => setTransactionType(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <span>Income</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="transactionType"
+                    value="expense"
+                    checked={transactionType === 'expense'}
+                    onChange={(e) => setTransactionType(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <span>Expense</span>
+                </label>
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Type Name</label>
-              <select
-                className="form-input"
-                value={typeName}
-                onChange={(e) => setTypeName(e.target.value)}
-                disabled={isSubmitting || typeOptions.length === 0}
-                required
-              >
-                <option value="">Select type name</option>
-                {typeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-                {typeName && !typeOptions.includes(typeName) && (
-                  <option value={typeName}>{typeName}</option>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={typeNameSearchInput}
+                  onChange={handleTypeNameSearch}
+                  onFocus={handleTypeNameFocus}
+                  onBlur={handleTypeNameInputBlur}
+                  placeholder="Click to see all types or type to search..."
+                  disabled={isSubmitting || typeOptions.length === 0}
+                  required
+                  style={{ width: '100%' }}
+                />
+                {showTypeNameDropdown && filteredTypeNames.length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'var(--background-light)',
+                      border: '1px solid var(--border-color)',
+                      borderTop: 'none',
+                      borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      padding: '8px'
+                    }}
+                  >
+                    {filteredTypeNames.map((typeNameValue) => (
+                      <div
+                        key={typeNameValue}
+                        onClick={() => handleTypeNameSelect(typeNameValue)}
+                        style={{
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-color)',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = 'var(--primary-light)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <div style={{ fontWeight: '500' }}>{typeNameValue}</div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </select>
+              </div>
               {typeOptions.length === 0 && !typeName && (
                 <p style={{ fontSize: '12px', color: 'var(--gray-color)', marginTop: '6px' }}>
                   No {transactionType} types found. Add a type first.
@@ -201,23 +347,60 @@ const FinanceTransactionModal = ({
 
             <div className="form-group">
               <label className="form-label">Order</label>
-              <select
-                className="form-input"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                disabled={isSubmitting || orders.length === 0}
-                required
-              >
-                <option value="">Select order</option>
-                {orders.map((order) => (
-                  <option key={order._id} value={order._id}>
-                    {getOrderLabel(order)}
-                  </option>
-                ))}
-                {orderId && !orders.some((o) => o._id === orderId) && (
-                  <option value={orderId}>Selected order</option>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={orderSearchInput}
+                  onChange={handleOrderSearch}
+                  onFocus={handleOrderFocus}
+                  onBlur={handleOrderInputBlur}
+                  placeholder="Click to see all orders or type to search..."
+                  disabled={isSubmitting || orders.length === 0}
+                  required
+                  style={{ width: '100%' }}
+                />
+                {showOrderDropdown && filteredOrders.length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'var(--background-light)',
+                      border: '1px solid var(--border-color)',
+                      borderTop: 'none',
+                      borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      padding: '8px'
+                    }}
+                  >
+                    {filteredOrders.map((order) => (
+                      <div
+                        key={order._id}
+                        onClick={() => handleOrderSelect(order)}
+                        style={{
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-color)',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = 'var(--primary-light)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <div style={{ fontWeight: '500' }}>{getOrderLabel(order)}</div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </select>
+              </div>
               {orders.length === 0 && (
                 <p style={{ fontSize: '12px', color: 'var(--gray-color)', marginTop: '6px' }}>
                   No orders available.
