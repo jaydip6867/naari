@@ -5,6 +5,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { customerAPI } from '../services/api';
+import { orderAPI } from '../services/api';
 
 const ViewCustomer = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -51,6 +52,23 @@ const ViewCustomer = ({ onLogout }) => {
     storage.clearAuthData();
     onLogout();
     navigate('/');
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await orderAPI.cancelOrder(orderId);
+      fetchCustomer(); // Refresh orders after deletion
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      alert(err.message || 'Failed to delete order');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatValue = (value) => {
@@ -201,7 +219,7 @@ const ViewCustomer = ({ onLogout }) => {
                 )}
 
                 {customer.notes && (
-                  <div className="customer-info-item">
+                  <div className="customer-info-item address-item">
                     <FiFileText className="customer-info-icon" />
                     <div>
                       <label className="customer-info-label">Notes</label>
@@ -297,13 +315,16 @@ const ViewCustomer = ({ onLogout }) => {
                               </td>
                               <td>
                                 <div className="order-actions">
-                                  <button className="order-action-button edit">
+                                  <button className="order-action-button edit" onClick={() => navigate(`/orders/edit/${order._id}`)}
+                                    title="Edit">
                                     <FiEdit size={16} />
                                   </button>
-                                  <button className="order-action-button delete">
+                                  <button className="order-action-button delete" onClick={() => handleCancelOrder(order._id)}
+                                    title="Delete">
                                     <FiTrash2 size={16} />
                                   </button>
-                                  <button className="order-action-button view">
+                                  <button className="order-action-button view" onClick={() => navigate(`/orders/view/${order._id}`)}
+                                    title="View">
                                     <FiEye size={16} />
                                   </button>
                                 </div>

@@ -94,10 +94,6 @@ const FinanceTransactionModal = ({
       setError('Type name is required');
       return;
     }
-    if (!orderId) {
-      setError('Order is required');
-      return;
-    }
     if (!amount || Number(amount) <= 0) {
       setError('Amount must be greater than 0');
       return;
@@ -244,7 +240,7 @@ const FinanceTransactionModal = ({
 
             <div className="form-group">
               <label className="form-label">Type</label>
-              <div style={{ display: 'flex', gap: '20px'}}>
+              <div style={{ display: 'flex', gap: '20px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
                     type="radio"
@@ -357,7 +353,6 @@ const FinanceTransactionModal = ({
                   onBlur={handleOrderInputBlur}
                   placeholder="Click to see all orders or type to search..."
                   disabled={isSubmitting || orders.length === 0}
-                  required
                   style={{ width: '100%' }}
                 />
                 {showOrderDropdown && filteredOrders.length > 0 && (
@@ -436,7 +431,7 @@ const FinanceTransactionModal = ({
             <button
               type="submit"
               className="btn btn-save"
-              disabled={isSubmitting || !typeName || !orderId || !amount}
+              disabled={isSubmitting || !typeName || !amount}
             >
               {isSubmitting ? 'Saving...' : isEditMode ? 'Update Transaction' : 'Add Transaction'}
             </button>

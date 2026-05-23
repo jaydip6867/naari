@@ -38,7 +38,7 @@ const Order = ({ onLogout }) => {
     e.preventDefault();
     const query = e.target.value;
     setSearchQuery(query);
-    
+
     // Filter orders locally
     if (!query.trim()) {
       setOrders(allOrders); // Show all orders if search is empty
@@ -56,14 +56,14 @@ const Order = ({ onLogout }) => {
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
+  const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Are you sure you want to delete this order?')) {
       return;
     }
 
     try {
       setLoading(true);
-      await orderAPI.deleteOrder(orderId);
+      await orderAPI.cancelOrder(orderId);
       fetchOrders(); // Refresh orders after deletion
     } catch (err) {
       console.error('Error deleting order:', err);
@@ -197,7 +197,7 @@ const Order = ({ onLogout }) => {
                       <td style={{ padding: '12px' }}>{getStatusBadge(order.status)}</td>
                       <td style={{ padding: '12px' }}>{order.deliveryDate || '-'}</td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px'}}>
                           <button
                             className="edit-btn"
                             onClick={() => navigate(`/orders/view/${order._id}`)}
@@ -212,13 +212,15 @@ const Order = ({ onLogout }) => {
                           >
                             <FiEdit2 />
                           </button>
-                          {/* <button
-                            className="delete-btn"
-                            onClick={() => handleDeleteOrder(order._id)}
-                            title="Delete"
-                          >
-                            <FiTrash2 />
-                          </button> */}
+                          {order.status !== 'cancelled' && (
+                            <button
+                              className="delete-btn"
+                              onClick={() => handleCancelOrder(order._id)}
+                              title="Delete"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

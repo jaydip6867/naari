@@ -252,8 +252,8 @@ const ViewOrder = ({ onLogout }) => {
                 <h3 className="section-title form-section-title">Basic Information</h3>
                 <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                   <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Order ID</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order._id}</p>
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Invoice Number</label>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.orderId}</p>
                   </div>
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Order Date</label>
@@ -303,13 +303,25 @@ const ViewOrder = ({ onLogout }) => {
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Delivery Date</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.deliveryDate || '-'}</p>
                   </div>
-                  <div className="view-item">
+                  {/* <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Total Price</label>
                     <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.totalPrice || 0}</p>
+                  </div> */}
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Selling Price</label>
+                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.sellingPrice || 0}</p>
                   </div>
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Paid Amount</label>
                     <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.advanceAmount || 0}</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Pending Amount</label>
+                    <p style={{ fontWeight: '600', fontSize: '18px', color: 'var(--alert-color)', marginTop: '4px' }}>₹{order.sellingPrice - order.advanceAmount || 0}</p>
+                  </div>
+                  <div className="view-item">
+                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Diff Percentage (%)</label>
+                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.diffPercentage || 0} %</p>
                   </div>
                 </div>
                 

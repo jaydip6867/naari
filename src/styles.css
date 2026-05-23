@@ -3977,7 +3977,7 @@ textarea.input-field {
 .measurement-section p,
 .order-actions p,
 .customer-info-value {
-  word-wrap: break-word;
+  word-break: break-all;
   overflow-wrap: break-word;
   white-space: normal;
   max-width: 100%;

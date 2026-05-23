@@ -522,13 +522,13 @@ export const orderAPI = {
     }
   },
 
-  deleteOrder: async (orderId) => {
-    const response = await api.post('/user/orders/delete', { orderId });
+  cancelOrder: async (orderId) => {
+    const response = await api.post('/user/orders/cancel', { orderId });
     
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
-      throw new Error(response.data.Message || 'Failed to delete order');
+      throw new Error(response.data.Message || 'Failed to Cancel order');
     }
   }
 };
