@@ -1510,7 +1510,6 @@ const AddEditOrder = ({ onLogout }) => {
                   </div>
                 )}
 
-
                 {/* Work Type Tab */}
                 {activeTab === 'worktype' && (
                   <div className="tab-content">
@@ -2091,74 +2090,12 @@ const AddEditOrder = ({ onLogout }) => {
                               value={formData.totalPrice}
                               disabled
                               placeholder="Auto-calculated"
-                              style={{ 
+                              style={{
                                 background: '#f8f9fa',
                                 cursor: 'not-allowed'
                               }}
                             />
-                            {/* <div style={{ 
-                            marginTop: '8px', 
-                            fontSize: '12px', 
-                            color: 'var(--gray-color)',
-                            background: '#f8f9fa',
-                            padding: '8px 12px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border-color)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}>
-                            <span>
-                              Calculated from timeline: 
-                              <span style={{ fontWeight: '600', color: 'var(--primary-color)', marginLeft: '4px' }}>
-                                ₹{calculateTimelineTotal()}
-                              </span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleInputChange('totalPrice', calculateTimelineTotal())}
-                              style={{
-                                fontSize: '11px',
-                                padding: '4px 8px',
-                                background: 'var(--primary-color)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                transition: 'background-color 0.2s ease'
-                              }}
-                              onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-color-dark)'}
-                              onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
-                            >
-                              Use This
-                            </button>
-                          </div> */}
                           </div>
-
-                          <div>
-                            <label>Advance (₹)</label>
-                            <input
-                              type="number"
-                              className="input-field"
-                              value={formData.advanceAmount}
-                              onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
-                              onWheel={handleNumberInputWheel}
-                              onKeyDown={handleNumberInputKeyDown}
-                              placeholder="Advance Amount"
-                            />
-                          </div>
-                          <div>
-                            <label>Delivery Date</label>
-                            <input
-                              type="date"
-                              className="input-field"
-                              value={formData.deliveryDate}
-                              onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
-                            />
-                          </div>
-
-                        </div>
-                        <div className='form-row'>
                           <div>
                             <label>Selling Price (₹)</label>
                             <input
@@ -2180,10 +2117,37 @@ const AddEditOrder = ({ onLogout }) => {
                               disabled
                               placeholder="Auto-calculated"
                               step="0.1"
-                              style={{ 
+                              style={{
                                 background: '#f8f9fa',
                                 cursor: 'not-allowed'
                               }}
+                            />
+                          </div>
+                        </div>
+                        <div className='form-row'>
+                          <div>
+                            <label>Advance (₹)</label>
+                            <input
+                              type="number"
+                              className="input-field"
+                              value={formData.advanceAmount}
+                              onChange={(e) => handleInputChange('advanceAmount', e.target.value)}
+                              onWheel={handleNumberInputWheel}
+                              onKeyDown={handleNumberInputKeyDown}
+                              placeholder="Advance Amount"
+                            />
+                          </div>
+                          <div>
+                            <label>Pending (₹)</label>
+                            <div className="value-box">{formData.sellingPrice - formData.advanceAmount || 0}</div>
+                          </div>
+                          <div>
+                            <label>Delivery Date</label>
+                            <input
+                              type="date"
+                              className="input-field"
+                              value={formData.deliveryDate}
+                              onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
                             />
                           </div>
                         </div>

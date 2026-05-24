@@ -25,6 +25,7 @@ const FinanceTransactionModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const prevTransactionTypeRef = useRef(null);
+  const [paymentType, setPaymentType] = useState('cash');
 
   // Type Name search state
   const [typeNameSearchInput, setTypeNameSearchInput] = useState('');
@@ -50,6 +51,7 @@ const FinanceTransactionModal = ({
         setTypeNameSearchInput(editingTransaction.typeName || '');
         setName(editingTransaction.name || '');
         setOrderId(resolveOrderId(editingTransaction.orderId));
+        setPaymentType(editingTransaction.paymentType || '');
         setAmount(
           editingTransaction.amount != null ? String(editingTransaction.amount) : ''
         );
@@ -62,6 +64,7 @@ const FinanceTransactionModal = ({
         setOrderId('');
         setOrderSearchInput('');
         setAmount('');
+        setPaymentType('cash');
         prevTransactionTypeRef.current = 'income';
       }
       setError('');
@@ -110,6 +113,7 @@ const FinanceTransactionModal = ({
         name: name.trim(),
         orderId,
         amount: Number(amount),
+        paymentMethod: paymentType,
       });
       onClose();
     } catch (err) {
@@ -401,6 +405,34 @@ const FinanceTransactionModal = ({
                   No orders available.
                 </p>
               )}
+            </div>
+
+            <div className='form-group'>
+              <label className="form-label">Payment Type</label>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={paymentType === 'cash'}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <span>Cash</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="bank"
+                    checked={paymentType === 'bank'}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <span>Bank</span>
+                </label>
+              </div>
             </div>
 
             <div className="form-group">

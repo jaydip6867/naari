@@ -822,18 +822,6 @@ const ViewOrder = ({ onLogout }) => {
                       <label>Total Cost (₹)</label>
                       <div className="value-box">{order.totalPrice || 0}</div>
                     </div>
-
-                    <div>
-                      <label>Advance (₹)</label>
-                      <div className="value-box">{order.advanceAmount || 0}</div>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div>
-                      <label>Delivery Date</label>
-                      <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
-                    </div>
                     <div>
                       <label>Selling Price (₹)</label>
                       <div className="value-box">{order.sellingPrice || 0}</div>
@@ -842,6 +830,24 @@ const ViewOrder = ({ onLogout }) => {
                       <label>Diff Percentage (%)</label>
                       <div className="value-box">{order.diffPercentage || 0}</div>
                     </div>
+                    
+                  </div>
+
+                  <div className="form-row">
+                    <div>
+                      <label>Advance (₹)</label>
+                      <div className="value-box">{order.advanceAmount || 0}</div>
+                    </div>
+                    <div>
+                      <label>Pending (₹)</label>
+                      <div className="value-box">{order.sellingPrice - order.advanceAmount || 0}</div>
+                    </div>
+                    <div>
+                      <label>Delivery Date</label>
+                      <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
+                    </div>
+                    
+                    
                   </div>
                 </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles.css';
-import { FiUpload, FiX } from 'react-icons/fi';
+import { FiUpload, FiX, FiEye, FiEyeOff } from 'react-icons/fi';
 import { uploadAPI, workTypeAPI, userRoleAPI, skillsAPI } from '../services/api';
 
 const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
@@ -23,6 +23,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
   const [rolesList, setRolesList] = useState([]);
   const [skillsList, setSkillsList] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -373,17 +374,41 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
             <label htmlFor="password" className="form-label">
               Password {!editingStaff && '*'}
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={staffData.password}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder={editingStaff ? "Password displayed but disabled" : "Enter password"}
-              disabled={isSubmitting || editingStaff}
-              required={!editingStaff}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={staffData.password}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder={editingStaff ? "Enter new password or leave unchanged" : "Enter password"}
+                disabled={isSubmitting}
+                required={!editingStaff}
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isSubmitting}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#666',
+                  padding: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="form-group">

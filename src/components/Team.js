@@ -78,8 +78,19 @@ const Team = ({ onLogout }) => {
     setIsStaffModalOpen(true);
   };
 
-  const openEditStaffModal = (staffMember) => {
-    setEditingStaff(staffMember);
+  const openEditStaffModal = async (staffMember) => {
+    try {
+      const staffId = staffMember._id || staffMember.staffId;
+      if (staffId) {
+        const fullStaffData = await staffAPI.getStaffById(staffId);
+        setEditingStaff(fullStaffData);
+      } else {
+        setEditingStaff(staffMember);
+      }
+    } catch (err) {
+      console.error('Error fetching staff details:', err);
+      setEditingStaff(staffMember);
+    }
     setIsStaffModalOpen(true);
   };
 
