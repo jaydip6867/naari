@@ -14,6 +14,7 @@ import AddEditProduct from './components/AddEditProduct.js';
 import ViewProduct from './components/ViewProduct.js';
 import AddEditOrder from './components/AddEditOrder.js';
 import ViewOrder from './components/ViewOrder.js';
+import Chat from './components/Chat.js';
 import './styles.css';
 import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
@@ -249,13 +250,21 @@ function App() {
                   <Navigate to="/" replace />
               } 
             />
-            <Route 
-              path="/orders/view/:orderId" 
+            <Route
+              path="/orders/view/:orderId"
               element={
-                isLoggedIn ? 
-                  <ViewOrder onLogout={handleLogout} /> : 
+                isLoggedIn ?
+                  <ViewOrder onLogout={handleLogout} /> :
                   <Navigate to="/" replace />
-              } 
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                isLoggedIn ?
+                  <Chat onLogout={handleLogout} /> :
+                  <Navigate to="/" replace />
+              }
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles.css';
-import { FiFileText, FiLayout, FiLogOut, FiMenu, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
+import { FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
 
 const Sidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ const Sidebar = ({ onLogout }) => {
     { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
     { id: 'team', label: 'Team', icon: <FiUsers /> },
     { id: 'tasks', label: 'Tasks', icon: <FiFileText /> },
+    { id: 'chat', label: 'Chat', icon: <FiMessageSquare /> },
     { id: 'settings', label: 'Settings', icon: <FiSettings /> }
   ];
 
@@ -27,6 +28,7 @@ const Sidebar = ({ onLogout }) => {
     if (path === '/orders' || path.startsWith('/orders/')) return 'orders';
     if (path === '/team' || path.startsWith('/team/')) return 'team';
     if (path === '/tasks' || path.startsWith('/tasks/')) return 'tasks';
+    if (path === '/chat' || path.startsWith('/chat/')) return 'chat';
     if (path === '/settings' || path.startsWith('/settings/')) return 'settings';
     return 'dashboard'; // default
   };

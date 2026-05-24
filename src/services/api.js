@@ -677,6 +677,79 @@ export const accountingAPI = {
   },
 };
 
+// Chat API calls
+export const chatAPI = {
+  getChats: async (search = '') => {
+    const response = await api.post('/user/chat', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chats');
+    }
+  },
+
+  getChatsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/chat/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chats');
+    }
+  },
+
+  getChatDetailsWithPagination: async (groupId, page = 1, limit = 10) => {
+    const response = await api.post('/user/chat/details/list', { groupId, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chat details');
+    }
+  },
+
+  getChatDetails: async (groupId) => {
+    const response = await api.post('/user/chat/details', { groupId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chat details');
+    }
+  },
+
+  addUserToGroup: async (groupId, userId) => {
+    const response = await api.post('/user/chat/add-user', { groupId, userId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to add user to group');
+    }
+  },
+
+  removeUserFromGroup: async (groupId, userId) => {
+    const response = await api.post('/user/chat/remove-user', { groupId, userId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to remove user from group');
+    }
+  },
+
+  sendMessage: async (groupId, message, attachments = []) => {
+    const response = await api.post('/user/chat/send-message', { groupId, message, attachments });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to send message');
+    }
+  }
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,
