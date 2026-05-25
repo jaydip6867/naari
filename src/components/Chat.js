@@ -315,9 +315,9 @@ const Chat = ({ onLogout }) => {
                       return (
                         <div key={message._id || index} className={`message-wrapper ${isOwn ? 'own' : 'other'}`}>
                           <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
-                            {!isOwn && message.senderName && (
-                              <span className="message-sender">{message.senderName}</span>
-                            )}
+                            {/* {!isOwn && message.senderName && ( */}
+                              <span className="message-sender">{message.senderId.fullName}</span>
+                            {/* )} */}
                             <p className="message-text">{formatText(message.message)}</p>
                             <span className="message-time">
                               {formatTime(message.createdAt || message.timestamp)}
