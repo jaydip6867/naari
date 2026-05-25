@@ -17,6 +17,7 @@ const Chat = ({ onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const messagesEndRef = useRef(null);
 
   const handleLogout = () => {
@@ -29,7 +30,7 @@ const Chat = ({ onLogout }) => {
     try {
       setLoading(true);
       setError('');
-      const chatsData = await chatAPI.getChats(searchQuery);
+      const chatsData = await chatAPI.getChats();
       setChats(chatsData || []);
     } catch (err) {
       console.error('Error fetching chats:', err);
@@ -44,7 +45,7 @@ const Chat = ({ onLogout }) => {
       setLoading(true);
       setError('');
       const messagesData = await chatAPI.getChatDetails(groupId);
-      setMessages(messagesData || []);
+      setMessages(normalizeMessages(messagesData));
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError(err.message || 'Failed to fetch messages');
@@ -56,12 +57,15 @@ const Chat = ({ onLogout }) => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat) return;
 
+    const chatId = selectedChat.groupId || selectedChat._id;
+    if (!chatId) return;
+
     try {
       setLoading(true);
       setError('');
-      await chatAPI.sendMessage(selectedChat._id || selectedChat.groupId, newMessage);
+      await chatAPI.sendMessage(chatId, newMessage);
       setNewMessage('');
-      await fetchMessages(selectedChat._id || selectedChat.groupId);
+      await fetchMessages(chatId);
     } catch (err) {
       console.error('Error sending message:', err);
       setError(err.message || 'Failed to send message');
@@ -79,7 +83,43 @@ const Chat = ({ onLogout }) => {
 
   const selectChat = (chat) => {
     setSelectedChat(chat);
+    setShowHeaderMenu(false);
     fetchMessages(chat._id || chat.groupId);
+  };
+
+  const handleHeaderMenuToggle = () => {
+    setShowHeaderMenu(prev => !prev);
+  };
+
+  const closeHeaderMenu = () => {
+    setShowHeaderMenu(false);
+  };
+
+  const removeCurrentUserFromGroup = async () => {
+    if (!selectedChat) return;
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
+      setError('Unable to identify current user. Please login again.');
+      return;
+    }
+
+    const groupId = selectedChat.groupId || selectedChat._id;
+    if (!groupId) return;
+
+    try {
+      setLoading(true);
+      setError('');
+      await chatAPI.removeUserFromGroup(groupId, currentUserId);
+      setSelectedChat(null);
+      setMessages([]);
+      setShowHeaderMenu(false);
+      await fetchChats();
+    } catch (err) {
+      console.error('Error removing user from group:', err);
+      setError(err.message || 'Failed to remove user from group');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const scrollToBottom = () => {
@@ -88,7 +128,13 @@ const Chat = ({ onLogout }) => {
 
   useEffect(() => {
     fetchChats();
-  }, [searchQuery]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedChat) {
+      setShowHeaderMenu(false);
+    }
+  }, [selectedChat]);
 
   useEffect(() => {
     scrollToBottom();
@@ -121,11 +167,33 @@ const Chat = ({ onLogout }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const getAvatarColor = (name) => {
-    const colors = ['#00a884', '#25D366', '#128C7E', '#075E54', '#34B7F1', '#53Bdeb', '#A367FF', '#FF6B6B'];
-    if (!name) return colors[0];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
+  // const getAvatarColor = (name) => {
+  //   const colors = ['#00a884', '#25D366', '#128C7E', '#075E54', '#34B7F1', '#53Bdeb', '#A367FF', '#FF6B6B'];
+  //   if (!name) return colors[0];
+  //   const index = name.charCodeAt(0) % colors.length;
+  //   return colors[index];
+  // };
+
+  const getCurrentUserId = () => {
+    const user = storage.getUser();
+    return user?._id || user?.id || null;
+  };
+
+  const normalizeMessages = (data) => {
+    if (Array.isArray(data)) return data;
+    if (!data) return [];
+    if (Array.isArray(data.messages)) return data.messages;
+    if (data._id && data.message) return [data];
+    return [];
+  };
+
+  const formatText = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string' || typeof value === 'number') return value;
+    if (typeof value === 'object') {
+      return value.message || value.text || JSON.stringify(value);
+    }
+    return String(value);
   };
 
   return (
@@ -140,9 +208,9 @@ const Chat = ({ onLogout }) => {
         <div className="chat-wrapper">
           {/* Left Sidebar - Chat List */}
           <div className="chat-sidebar">
-            <div className="chat-sidebar-header">
+            {/* <div className="chat-sidebar-header">
               <div className="chat-search">
-                {/* <FiSearch className="search-icon" /> */}
+                <FiSearch className="search-icon" />
                 <input
                   type="text"
                   placeholder="Search or start new chat"
@@ -151,7 +219,7 @@ const Chat = ({ onLogout }) => {
                   className="chat-search-input"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="chat-list">
               {loading && chats.length === 0 ? (
@@ -169,7 +237,6 @@ const Chat = ({ onLogout }) => {
                   >
                     <div
                       className="chat-avatar"
-                      style={{ backgroundColor: getAvatarColor(chat.name || chat.groupName) }}
                     >
                       {chat.avatar ? (
                         <img src={chat.avatar} alt={chat.name || chat.groupName} />
@@ -187,7 +254,7 @@ const Chat = ({ onLogout }) => {
                       <div className="chat-preview">
                         {chat.lastMessage && (
                           <span className="chat-last-message">
-                            {chat.lastMessage}
+                            {formatText(chat.lastMessage)}
                           </span>
                         )}
                       </div>
@@ -206,7 +273,6 @@ const Chat = ({ onLogout }) => {
                 <div className="chat-main-header">
                   <div
                     className="chat-avatar"
-                    style={{ backgroundColor: getAvatarColor(selectedChat.name || selectedChat.groupName) }}
                   >
                     {selectedChat.avatar ? (
                       <img src={selectedChat.avatar} alt={selectedChat.name || selectedChat.groupName} />
@@ -220,8 +286,15 @@ const Chat = ({ onLogout }) => {
                       <span className="chat-participants">{selectedChat.participants.length} participants</span>
                     )}
                   </div>
-                  <div className="chat-header-actions">
+                  <div className="chat-header-actions" onClick={handleHeaderMenuToggle} style={{ position: 'relative', cursor: 'pointer' }}>
                     <FiMoreVertical className="chat-more-icon" />
+                    {showHeaderMenu && (
+                      <div className="chat-header-dropdown" onMouseLeave={closeHeaderMenu}>
+                        <button type="button" className="add-btn chat-header-dropdown-item" onClick={removeCurrentUserFromGroup}>
+                          Leave Group
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -237,14 +310,15 @@ const Chat = ({ onLogout }) => {
                     </div>
                   ) : (
                     messages.map((message, index) => {
-                      const isOwn = message.isOwn || message.senderId === storage.getAuthData()?.user?._id;
+                      const currentUserId = getCurrentUserId();
+                      const isOwn = message.isOwn || message.senderId === currentUserId;
                       return (
                         <div key={message._id || index} className={`message-wrapper ${isOwn ? 'own' : 'other'}`}>
                           <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
                             {!isOwn && message.senderName && (
                               <span className="message-sender">{message.senderName}</span>
                             )}
-                            <p className="message-text">{message.message}</p>
+                            <p className="message-text">{formatText(message.message)}</p>
                             <span className="message-time">
                               {formatTime(message.createdAt || message.timestamp)}
                               {isOwn && message.read && <span className="message-read">✓✓</span>}
@@ -259,9 +333,9 @@ const Chat = ({ onLogout }) => {
 
                 {/* Message Input */}
                 <div className="chat-input-area">
-                  <button className="chat-attach-btn">
+                  {/* <button className="chat-attach-btn">
                     <FiPaperclip size={20} />
-                  </button>
+                  </button> */}
                   <input
                     type="text"
                     placeholder="Type a message"

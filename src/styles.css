@@ -4788,6 +4788,9 @@ textarea.input-field {
   background: #f0f2f5;
   border-radius: 0;
   overflow: hidden;
+  border-top: 1px solid var(--primary-light);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* Chat Sidebar */
@@ -4835,6 +4838,7 @@ textarea.input-field {
 .chat-list {
   flex: 1;
   overflow-y: auto;
+  background: var(--primary-dim-light);
 }
 
 .chat-item {
@@ -4842,16 +4846,28 @@ textarea.input-field {
   align-items: center;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid #f0f2f5;
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  border-bottom: 1px solid rgba(240,242,245,0.8);
+  border-left: 2px solid transparent;
+  background: transparent;
 }
 
 .chat-item:hover {
-  background: #f5f6f6;
+  background: rgba(255,255,255,0.6);
+  transform: translateX(2px);
+  box-shadow: 0 6px 18px var(--shadow-light);
 }
 
 .chat-item.active {
-  background: #f0f2f5;
+  background: var(--white-color);
+  border-left-color: var(--primary-light);
+  box-shadow: 0 8px 24px var(--shadow-light);
+  transform: translateX(0);
+}
+
+.chat-item.active .chat-avatar {
+  box-shadow: 0 0 0 4px rgba(234,157,129,0.12);
+  transform: scale(1.03);
 }
 
 .chat-avatar {
@@ -4864,6 +4880,7 @@ textarea.input-field {
   margin-right: 15px;
   flex-shrink: 0;
   overflow: hidden;
+  background: var(--primary-gradient);
 }
 
 .chat-avatar img {
@@ -4956,6 +4973,19 @@ textarea.input-field {
 
 .chat-header-actions {
   padding: 8px;
+  position: relative;
+}
+
+.chat-header-dropdown{
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  white-space: nowrap;
 }
 
 .chat-more-icon {

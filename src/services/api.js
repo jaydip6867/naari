@@ -679,8 +679,8 @@ export const accountingAPI = {
 
 // Chat API calls
 export const chatAPI = {
-  getChats: async (search = '') => {
-    const response = await api.post('/user/chat', { search });
+  getChats: async () => {
+    const response = await api.post('/user/chat');
     
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
