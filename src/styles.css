@@ -4974,6 +4974,9 @@ textarea.input-field {
 .chat-header-actions {
   padding: 8px;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .chat-header-dropdown{
@@ -4994,9 +4997,10 @@ textarea.input-field {
 }
 
 .chat-messages {
+  position: relative;
   flex: 1;
   overflow-y: auto;
-  padding: 20px 60px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -5017,7 +5021,8 @@ textarea.input-field {
 }
 
 .message-bubble {
-  max-width: 65%;
+  max-width: 100%;
+  width: fit-content;
   padding: 6px 7px 8px 9px;
   border-radius: 7.5px;
   position: relative;
@@ -5188,6 +5193,41 @@ textarea.input-field {
 .chat-empty-messages p {
   font-size: 16px;
   margin: 0;
+}
+
+.message-wrapper {
+  display: flex;
+  /* align-items: flex-end; */
+  margin-bottom: 4px;
+}
+
+.avatar-wrapper {
+  width: 40px;
+  margin-right: 8px;
+  justify-content: flex-start;
+}
+
+.avatar-circle {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #e8b29c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.avatar-space {
+  width: 35px;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+  flex-grow: 1;
 }
 
 /* Responsive Chat */

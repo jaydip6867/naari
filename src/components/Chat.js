@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { chatAPI } from '../services/api';
-import { FiSend, FiMoreVertical, FiSearch, FiPaperclip } from 'react-icons/fi';
+import { chatAPI, staffAPI } from '../services/api';
+import { FiSend, FiMoreVertical, FiSearch, FiPaperclip, FiPlusSquare } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { IoLogoWechat } from 'react-icons/io5';
 
@@ -16,8 +16,13 @@ const Chat = ({ onLogout }) => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffList, setStaffList] = useState([]);
+  const [selectedStaffId, setSelectedStaffId] = useState('');
+  const [modalError, setModalError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [staffLoading, setStaffLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const handleLogout = () => {
@@ -122,6 +127,81 @@ const Chat = ({ onLogout }) => {
     }
   };
 
+  const openStaffModal = async () => {
+    if (!selectedChat) {
+      setError('Please select a chat first.');
+      return;
+    }
+
+    setModalError('');
+    setSuccessMessage('');
+    setSelectedStaffId('');
+    setIsStaffModalOpen(true);
+    setStaffLoading(true);
+
+    try {
+      const staff = await staffAPI.getStaff();
+      let staffListData = [];
+      if (Array.isArray(staff)) {
+        staffListData = staff;
+      } else if (staff && Array.isArray(staff.data)) {
+        staffListData = staff.data;
+      } else if (staff && Array.isArray(staff.staffList)) {
+        staffListData = staff.staffList;
+      } else if (staff && typeof staff === 'object') {
+        staffListData = Object.values(staff).find(Array.isArray) || [];
+      }
+      setStaffList(staffListData);
+    } catch (err) {
+      console.error('Error fetching staff list:', err);
+      setModalError(err.message || 'Failed to fetch staff list');
+      setStaffList([]);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const closeStaffModal = () => {
+    setIsStaffModalOpen(false);
+    setModalError('');
+    setSelectedStaffId('');
+  };
+
+  const handleAddUserToGroup = async () => {
+    if (!selectedStaffId) {
+      setModalError('Please select a staff member.');
+      return;
+    }
+
+    if (!selectedChat) {
+      setModalError('No chat selected.');
+      return;
+    }
+
+    const groupId = selectedChat.groupId || selectedChat._id;
+    if (!groupId) {
+      setModalError('Invalid group selected.');
+      return;
+    }
+
+    try {
+      setStaffLoading(true);
+      setModalError('');
+      await chatAPI.addUserToGroup(groupId, selectedStaffId);
+      setSuccessMessage('User added successfully.');
+      setIsStaffModalOpen(false);
+      setSelectedStaffId('');
+      setShowHeaderMenu(false);
+      await fetchChats();
+      await fetchMessages(groupId);
+    } catch (err) {
+      console.error('Error adding user to group:', err);
+      setModalError(err.message || 'Failed to add user to group');
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -139,6 +219,12 @@ const Chat = ({ onLogout }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(''), 4000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -208,19 +294,6 @@ const Chat = ({ onLogout }) => {
         <div className="chat-wrapper">
           {/* Left Sidebar - Chat List */}
           <div className="chat-sidebar">
-            {/* <div className="chat-sidebar-header">
-              <div className="chat-search">
-                <FiSearch className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search or start new chat"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="chat-search-input"
-                />
-              </div>
-            </div> */}
-
             <div className="chat-list">
               {loading && chats.length === 0 ? (
                 <div className="chat-loading">Loading chats...</div>
@@ -286,17 +359,76 @@ const Chat = ({ onLogout }) => {
                       <span className="chat-participants">{selectedChat.participants.length} participants</span>
                     )}
                   </div>
-                  <div className="chat-header-actions" onClick={handleHeaderMenuToggle} style={{ position: 'relative', cursor: 'pointer' }}>
-                    <FiMoreVertical className="chat-more-icon" />
-                    {showHeaderMenu && (
-                      <div className="chat-header-dropdown" onMouseLeave={closeHeaderMenu}>
-                        <button type="button" className="add-btn chat-header-dropdown-item" onClick={removeCurrentUserFromGroup}>
-                          Leave Group
-                        </button>
-                      </div>
-                    )}
+
+                  <div className="chat-header-actions" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="add-btn"
+                      style={{ padding: '8px', minWidth: 'auto' }}
+                      onClick={openStaffModal}
+                    >
+                      <FiPlusSquare />
+                    </button>
+                    <div style={{ position: 'relative', cursor: 'pointer' }}>
+                      <FiMoreVertical className="chat-more-icon" onClick={handleHeaderMenuToggle} />
+                      {showHeaderMenu && (
+                        <div className="chat-header-dropdown" onMouseLeave={closeHeaderMenu}>
+                          <button type="button" className="add-btn chat-header-dropdown-item" onClick={removeCurrentUserFromGroup}>
+                            Leave Group
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {isStaffModalOpen && (
+                  <div className="modal-overlay" onClick={closeStaffModal}>
+                    <div className="modal small" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px', width: '95%' }}>
+                      <div className="modal-header simple">
+                        <h3 className="modal-title">Add Staff to Group</h3>
+                      </div>
+                      <div className="modal-body">
+                        {modalError && <div className="modal-error">{modalError}</div>}
+                        <div className="form-group" style={{ marginTop: '12px' }}>
+                          <label htmlFor="staff-select" className="form-label">Select staff member</label>
+                          <select
+                            id="staff-select"
+                            className="form-control"
+                            value={selectedStaffId}
+                            onChange={(e) => setSelectedStaffId(e.target.value)}
+                            disabled={staffLoading}
+                          >
+                            <option value="">Choose a staff member</option>
+                            {staffList && staffList.length > 0 ? (
+                              staffList.map((staff) => (
+                                <option key={staff._id || staff.id} value={staff._id || staff.id}>
+                                  {staff.fullName || staff.name || staff.userName || staff.email || 'Staff Member'}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="" disabled>{staffLoading ? 'Loading staff...' : 'No staff members found'}</option>
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="modal-footer" style={{ justifyContent: 'flex-end', gap: '10px' }}>
+                        <button type="button" className="secondary-btn" onClick={closeStaffModal} disabled={staffLoading}>
+                          Cancel
+                        </button>
+                        <button type="button" className="add-btn" onClick={handleAddUserToGroup} disabled={!selectedStaffId || staffLoading}>
+                          {staffLoading ? 'Submitting...' : 'Submit'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="chat-success" style={{ color: 'var(--success-color)', margin: '10px 0' }}>
+                    {successMessage}
+                  </div>
+                )}
 
                 {/* Messages Area */}
                 <div className="chat-messages">
@@ -309,20 +441,85 @@ const Chat = ({ onLogout }) => {
                       <p>No messages yet. Start the conversation!</p>
                     </div>
                   ) : (
+                    // messages.map((message, index) => {
+                    //   const currentUserId = getCurrentUserId();
+                    //   const isOwn = message.isOwn || message.senderId === currentUserId;
+                    //   return (
+                    //     <div key={message._id || index} className={`message-wrapper ${isOwn ? 'own' : 'other'}`}>
+                    //       <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
+                    //         {/* {!isOwn && message.senderName && ( */}
+                    //           <span className="message-sender">{message.senderId.fullName}</span>
+                    //         {/* )} */}
+                    //         <p className="message-text">{formatText(message.message)}</p>
+                    //         <span className="message-time">
+                    //           {formatTime(message.createdAt || message.timestamp)}
+                    //           {isOwn && message.read && <span className="message-read">✓✓</span>}
+                    //         </span>
+                    //       </div>
+                    //     </div>
+                    //   );
+                    // })
                     messages.map((message, index) => {
                       const currentUserId = getCurrentUserId();
-                      const isOwn = message.isOwn || message.senderId === currentUserId;
+                      const isOwn =
+                        message.isOwn || message.senderId === currentUserId;
+
+                      // Previous message
+                      const prevMessage = messages[index - 1];
+
+                      // Same sender check
+                      const isSameSender =
+                        prevMessage &&
+                        prevMessage.senderId?._id === message.senderId?._id;
+
                       return (
-                        <div key={message._id || index} className={`message-wrapper ${isOwn ? 'own' : 'other'}`}>
-                          <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
-                            {/* {!isOwn && message.senderName && ( */}
-                              <span className="message-sender">{message.senderId.fullName}</span>
-                            {/* )} */}
-                            <p className="message-text">{formatText(message.message)}</p>
-                            <span className="message-time">
-                              {formatTime(message.createdAt || message.timestamp)}
-                              {isOwn && message.read && <span className="message-read">✓✓</span>}
-                            </span>
+                        <div>
+                          <div
+                            key={message._id || index}
+                            className="message-wrapper">
+
+                            {/* First Letter Circle */}
+                            {!isOwn && (
+                              <div className="avatar-wrapper">
+                                {!isSameSender ? (
+                                  <div className="avatar-circle">
+                                    {message.senderId?.fullName?.charAt(0).toUpperCase()}
+                                  </div>
+                                ) : (
+                                  <div className="avatar-space"></div>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="message-content">
+
+                              {/* Name show only first msg */}
+                              {!isOwn && !isSameSender && (
+                                <span className="message-sender">
+                                  {message.senderId.fullName}
+                                </span>
+                              )}
+
+                              <div
+                                className={`message-bubble ${isOwn ? "own" : "other"}`}
+                              >
+                                <p className="message-text">
+                                  {formatText(message.message)}
+                                </p>
+
+                                <span className="message-time">
+                                  {formatTime(
+                                    message.createdAt || message.timestamp
+                                  )}
+
+                                  {isOwn && message.read && (
+                                    <span className="message-read">
+                                      ✓✓
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
