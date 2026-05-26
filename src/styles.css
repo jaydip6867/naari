@@ -4950,9 +4950,14 @@ textarea.input-field {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: #f0f2f5;
+  background: var(--background-light);
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
+}
+
+.chat_search{
+  padding: 8px;
+  background: var(--primary-light);
 }
 
 .chat-header-info {

@@ -23,6 +23,7 @@ const Chat = ({ onLogout }) => {
   const [modalError, setModalError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [staffLoading, setStaffLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef(null);
 
   const handleLogout = () => {
@@ -226,6 +227,14 @@ const Chat = ({ onLogout }) => {
     return () => clearTimeout(timer);
   }, [successMessage]);
 
+  const filteredChats = searchTerm.trim()
+  ? chats.filter((chat) =>
+      (chat.name || chat.groupName || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+  : chats;
+
   const formatTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -287,22 +296,28 @@ const Chat = ({ onLogout }) => {
       <Sidebar onLogout={handleLogout} />
 
       <div className="main-content chat-container">
-        {/* <div className="page-header">
-          <h1 className="page-title">Chat</h1>
-        </div> */}
 
         <div className="chat-wrapper">
           {/* Left Sidebar - Chat List */}
           <div className="chat-sidebar">
+            <div className="form-group chat_search">
+              <input
+                type='text'
+                className='input-field'
+                placeholder='find order Chats'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="chat-list">
               {loading && chats.length === 0 ? (
                 <div className="chat-loading">Loading chats...</div>
               ) : error ? (
                 <div className="chat-error">{error}</div>
-              ) : chats.length === 0 ? (
+              ) : filteredChats.length === 0 ? (
                 <div className="chat-empty">No chats found</div>
               ) : (
-                chats.map((chat) => (
+                filteredChats.map((chat) => (
                   <div
                     key={chat._id || chat.groupId}
                     className={`chat-item ${selectedChat?._id === chat._id || selectedChat?.groupId === chat.groupId ? 'active' : ''}`}
