@@ -574,16 +574,16 @@ const Chat = ({ onLogout }) => {
                 {isStaffModalOpen && (
                   <div className="modal-overlay" onClick={closeStaffModal}>
                     <div className="modal small" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px', width: '95%' }}>
-                      <div className="modal-header simple">
+                      <div className="modal-header">
                         <h3 className="modal-title">Add Staff to Group</h3>
                       </div>
                       <div className="modal-body">
                         {modalError && <div className="modal-error">{modalError}</div>}
-                        <div className="form-group" style={{ marginTop: '12px' }}>
+                        <div className="form-group">
                           <label htmlFor="staff-select" className="form-label">Select staff member</label>
                           <select
                             id="staff-select"
-                            className="form-control"
+                            className="input-field"
                             value={selectedStaffId}
                             onChange={(e) => setSelectedStaffId(e.target.value)}
                             disabled={staffLoading}
@@ -602,7 +602,7 @@ const Chat = ({ onLogout }) => {
                         </div>
                       </div>
                       <div className="modal-footer" style={{ justifyContent: 'flex-end', gap: '10px' }}>
-                        <button type="button" className="secondary-btn" onClick={closeStaffModal} disabled={staffLoading}>
+                        <button type="button" className="btn btn-cancel" onClick={closeStaffModal} disabled={staffLoading}>
                           Cancel
                         </button>
                         <button type="button" className="add-btn" onClick={handleAddUserToGroup} disabled={!selectedStaffId || staffLoading}>
@@ -662,7 +662,7 @@ const Chat = ({ onLogout }) => {
                         prevMessage.senderId?._id === message.senderId?._id;
 
                       return (
-                        <div>
+                        <div key={index}>
                           <div
                             key={message._id || index}
                             className="message-wrapper">
