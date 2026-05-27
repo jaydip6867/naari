@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { chatAPI, staffAPI } from '../services/api';
+import api, { chatAPI, staffAPI } from '../services/api';
+import { io } from 'socket.io-client';
 import { FiSend, FiMoreVertical, FiSearch, FiPaperclip, FiPlusSquare } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { IoLogoWechat } from 'react-icons/io5';
@@ -24,6 +25,11 @@ const Chat = ({ onLogout }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [staffLoading, setStaffLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [socketStatus, setSocketStatus] = useState('disconnected');
+  const [notification, setNotification] = useState('');
+  const [activeRoom, setActiveRoom] = useState(null);
+  const socketRef = useRef(null);
+  const selectedChatRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const handleLogout = () => {
@@ -91,6 +97,16 @@ const Chat = ({ onLogout }) => {
     setSelectedChat(chat);
     setShowHeaderMenu(false);
     fetchMessages(chat._id || chat.groupId);
+    
+    // Clear unread count from local state
+    const groupId = chat._id || chat.groupId;
+    setChats((prevChats) =>
+      prevChats.map((c) =>
+        c._id === groupId || c.groupId === groupId
+          ? { ...c, unreadMessageCount: 0 }
+          : c
+      )
+    );
   };
 
   const handleHeaderMenuToggle = () => {
@@ -262,16 +278,37 @@ const Chat = ({ onLogout }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  // const getAvatarColor = (name) => {
-  //   const colors = ['#00a884', '#25D366', '#128C7E', '#075E54', '#34B7F1', '#53Bdeb', '#A367FF', '#FF6B6B'];
-  //   if (!name) return colors[0];
-  //   const index = name.charCodeAt(0) % colors.length;
-  //   return colors[index];
-  // };
-
   const getCurrentUserId = () => {
     const user = storage.getUser();
     return user?._id || user?.id || null;
+  };
+
+  const getSocketUrl = () => api?.defaults?.baseURL || window.location.origin;
+
+  const requestBrowserNotificationPermission = () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  };
+
+  const pushBrowserNotification = (title, body) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+        });
+      } catch (err) {
+        console.warn('Browser notification error:', err);
+      }
+    }
+  };
+
+  const showNewMessageNotification = (title, body) => {
+    setNotification(`${title}: ${body}`);
+    pushBrowserNotification(title, body);
   };
 
   const normalizeMessages = (data) => {
@@ -281,6 +318,135 @@ const Chat = ({ onLogout }) => {
     if (data._id && data.message) return [data];
     return [];
   };
+
+  const normalizeIncomingMessage = (payload) => {
+    const messages = normalizeMessages(payload);
+    if (messages.length > 0) return messages[0];
+    if (payload && typeof payload === 'object') return payload;
+    return { message: payload };
+  };
+
+  const joinChatRoom = (roomId) => {
+    if (!socketRef.current || !roomId) return;
+    socketRef.current.emit('joinRoom', { roomId });
+    socketRef.current.emit('joinChat', { roomId });
+  };
+
+  const leaveChatRoom = (roomId) => {
+    if (!socketRef.current || !roomId) return;
+    socketRef.current.emit('leaveRoom', { roomId });
+  };
+
+  const handleSocketMessage = (payload) => {
+    const incomingMessage = normalizeIncomingMessage(payload);
+    const roomId = payload?.groupId || payload?.chatId || incomingMessage.groupId || incomingMessage.chatId;
+    const senderName = payload?.senderName || incomingMessage.senderName || incomingMessage.senderId?.fullName || 'New message';
+    const content = formatText(incomingMessage.message || incomingMessage.text || '');
+    const title = `New message from ${senderName}`;
+
+    const currentSelectedChat = selectedChatRef.current;
+    const isActiveChat = currentSelectedChat && (currentSelectedChat._id === roomId || currentSelectedChat.groupId === roomId);
+
+    if (isActiveChat) {
+      setMessages((prev) => [...prev, incomingMessage]);
+    }
+
+    setChats((prevChats) =>
+      prevChats.map((chat) => {
+        if (chat._id === roomId || chat.groupId === roomId) {
+          const updatedChat = {
+            ...chat,
+            lastMessage: content,
+            lastMessageTime: incomingMessage.createdAt || incomingMessage.timestamp || new Date().toISOString(),
+          };
+          // Only increment unread count for inactive chats
+          // Never reset unread count (only selectChat should do that)
+          if (!isActiveChat) {
+            updatedChat.unreadMessageCount = (chat.unreadMessageCount || 0) + 1;
+          }
+          return updatedChat;
+        }
+        return chat;
+      })
+    );
+
+    if (!isActiveChat) {
+      showNewMessageNotification(title, content);
+    }
+  };
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  useEffect(() => {
+    requestBrowserNotificationPermission();
+
+    const token = localStorage.getItem('naari_token');
+    const userId = getCurrentUserId();
+    if (!token || !userId) return;
+
+    const socket = io(getSocketUrl(), {
+      transports: ['websocket', 'polling'],
+      auth: { token, userId },
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setSocketStatus('connected');
+      // console.log(getSocketUrl());
+    });
+
+    socket.on('disconnect', (reason) => {
+      setSocketStatus('disconnected');
+      console.warn('Socket disconnected:', reason);
+    });
+
+    socket.on('connect_error', (error) => {
+      setSocketStatus('error');
+      console.error('Socket connect error:', error);
+    });
+
+    socket.on('message', handleSocketMessage);
+    socket.on('newMessage', handleSocketMessage);
+    socket.on('chatMessage', handleSocketMessage);
+    socket.on('notify', handleSocketMessage);
+
+    return () => {
+      socket.off();
+      socket.disconnect();
+      socketRef.current = null;
+      setSocketStatus('disconnected');
+    };
+  }, []);
+
+  useEffect(() => {
+    const roomId = selectedChat?.groupId || selectedChat?._id;
+    if (!socketRef.current) return;
+
+    if (!roomId) {
+      if (activeRoom) {
+        leaveChatRoom(activeRoom);
+        setActiveRoom(null);
+      }
+      return;
+    }
+
+    if (activeRoom === roomId) return;
+    if (activeRoom) {
+      leaveChatRoom(activeRoom);
+    }
+
+    joinChatRoom(roomId);
+    setActiveRoom(roomId);
+  }, [selectedChat]);
+
+  useEffect(() => {
+    if (!notification) return;
+    const timer = setTimeout(() => setNotification(''), 5000);
+    return () => clearTimeout(timer);
+  }, [notification]);
 
   const formatText = (value) => {
     if (value === null || value === undefined) return '';
@@ -338,6 +504,11 @@ const Chat = ({ onLogout }) => {
                         {chat.lastMessageTime && (
                           <span className="chat-time">{formatDate(chat.lastMessageTime)}</span>
                         )}
+                        {chat.unreadMessageCount > 0 && (
+                          <span className="chat-unread">
+                            {chat.unreadMessageCount}
+                          </span>
+                        )}
                       </div>
                       <div className="chat-preview">
                         {chat.lastMessage && (
@@ -355,6 +526,9 @@ const Chat = ({ onLogout }) => {
 
           {/* Right Panel - Chat Messages */}
           <div className="chat-main">
+            {notification && (
+              <div className="chat-notification-banner">{notification}</div>
+            )}
             {selectedChat ? (
               <>
                 {/* Chat Header */}
