@@ -127,65 +127,67 @@ const Product = ({ onLogout }) => {
               Loading products...
             </div>
           ) : products.length > 0 ? (
-            <div className="table-container" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Image</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Name</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Subcategory</th>
-                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentProducts.map((product, index) => (
-                    <tr key={product._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
-                          {product.outfitStyleRefImg && product.outfitStyleRefImg.length > 0 ? (
-                            <img
-                              src={product.outfitStyleRefImg[0]}
-                              alt={product.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <FiPackage size={24} color="var(--gray-color)" />
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px' }}>{product.name}</td>
-                      <td style={{ padding: '12px' }}>{product.outfitTypeName || '-'}</td>
-                      <td style={{ padding: '12px' }}>{product.subCategoryName || '-'}</td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button
-                            className="edit-btn"
-                            onClick={() => navigate(`/products/view/${product._id}`)}
-                            title="View"
-                          >
-                            <FiEye />
-                          </button>
-                          <button
-                            className="edit-btn"
-                            onClick={() => navigate(`/products/edit/${product._id}`)}
-                            title="Edit"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          {/* <button 
+            <div className="table-container">
+              <div className="table-scroll-wrapper">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Name</th>
+                      <th>Outfit Type</th>
+                      <th>Subcategory</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentProducts.map((product, index) => (
+                      <tr key={product._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td >
+                          <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
+                            {product.outfitStyleRefImg && product.outfitStyleRefImg.length > 0 ? (
+                              <img
+                                src={product.outfitStyleRefImg[0]}
+                                alt={product.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <FiPackage size={24} color="var(--gray-color)" />
+                            )}
+                          </div>
+                        </td>
+                        <td >{product.name}</td>
+                        <td >{product.outfitTypeName || '-'}</td>
+                        <td >{product.subCategoryName || '-'}</td>
+                        <td style={{textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              className="edit-btn"
+                              onClick={() => navigate(`/products/view/${product._id}`)}
+                              title="View"
+                            >
+                              <FiEye />
+                            </button>
+                            <button
+                              className="edit-btn"
+                              onClick={() => navigate(`/products/edit/${product._id}`)}
+                              title="Edit"
+                            >
+                              <FiEdit2 />
+                            </button>
+                            {/* <button 
                             className="delete-btn"
                             onClick={() => handleDeleteProduct(product._id)}
                             title="Delete"
                           >
                             <FiTrash2 />
                           </button> */}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

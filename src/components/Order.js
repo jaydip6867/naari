@@ -166,83 +166,85 @@ const Order = ({ onLogout }) => {
               Loading orders...
             </div>
           ) : orders.length > 0 ? (
-            <div className="table-container" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Image</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order Date</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order Type</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Delivery Date</th>
-                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrders.map((order, index) => (
-                    <tr key={order._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
-                          {order.outfitStyleRefImg && order.outfitStyleRefImg.length > 0 ? (
-                            <img
-                              src={order.outfitStyleRefImg[0]}
-                              alt={order._id}
-                              style={{ width: '100%', height: '100%' }}
-                            />
-                          ) : (
-                            <FiPackage size={24} color="var(--gray-color)" />
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px' }}>{order.orderId || '-'}</td>
-                      <td style={{ padding: '12px' }}>
-                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        }) : '-'}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        {typeof order.customerId === 'object' && order.customerId !== null
-                          ? (order.customerId.fullName || order.customerId.name || '-')
-                          : (order.customerId || '-')}
-                      </td>
-                      <td style={{ padding: '12px', textTransform: 'capitalize' }}>{order.orderType || '-'}</td>
-                      <td style={{ padding: '12px' }}>{getStatusBadge(order.status)}</td>
-                      <td style={{ padding: '12px' }}>{order.deliveryDate || '-'}</td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            className="edit-btn"
-                            onClick={() => navigate(`/orders/view/${order._id}`)}
-                            title="View"
-                          >
-                            <FiEye />
-                          </button>
-                          <button
-                            className="edit-btn"
-                            onClick={() => navigate(`/orders/edit/${order._id}`)}
-                            title="Edit"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          {order.status !== 'cancelled' && (
-                            <button
-                              className="delete-btn"
-                              onClick={() => handleCancelOrder(order._id)}
-                              title="Delete"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+            <div className="table-container">
+              <div className="table-scroll-wrapper">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Order ID</th>
+                      <th>Order Date</th>
+                      <th>Customer</th>
+                      <th>Order Type</th>
+                      <th>Status</th>
+                      <th>Delivery Date</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentOrders.map((order, index) => (
+                      <tr key={order._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td >
+                          <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
+                            {order.outfitStyleRefImg && order.outfitStyleRefImg.length > 0 ? (
+                              <img
+                                src={order.outfitStyleRefImg[0]}
+                                alt={order._id}
+                                style={{ width: '100%', height: '100%' }}
+                              />
+                            ) : (
+                              <FiPackage size={24} color="var(--gray-color)" />
+                            )}
+                          </div>
+                        </td>
+                        <td >{order.orderId || '-'}</td>
+                        <td >
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : '-'}
+                        </td>
+                        <td >
+                          {typeof order.customerId === 'object' && order.customerId !== null
+                            ? (order.customerId.fullName || order.customerId.name || '-')
+                            : (order.customerId || '-')}
+                        </td>
+                        <td style={{ padding: '12px', textTransform: 'capitalize' }}>{order.orderType || '-'}</td>
+                        <td >{getStatusBadge(order.status)}</td>
+                        <td >{order.deliveryDate || '-'}</td>
+                        <td style={{textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="edit-btn"
+                              onClick={() => navigate(`/orders/view/${order._id}`)}
+                              title="View"
+                            >
+                              <FiEye />
+                            </button>
+                            <button
+                              className="edit-btn"
+                              onClick={() => navigate(`/orders/edit/${order._id}`)}
+                              title="Edit"
+                            >
+                              <FiEdit2 />
+                            </button>
+                            {order.status !== 'cancelled' && (
+                              <button
+                                className="delete-btn"
+                                onClick={() => handleCancelOrder(order._id)}
+                                title="Delete"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

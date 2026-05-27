@@ -207,7 +207,7 @@ const Tasks = ({ onLogout }) => {
             </div>
           )}
 
-          <div className="section-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
+          <div className="section-header">
             <h2 className="section-title">Tasks</h2>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
               <div className="search-container" style={{ position: 'relative' }}>
@@ -232,62 +232,118 @@ const Tasks = ({ onLogout }) => {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>Loading tasks...</div>
           ) : tasks.length > 0 ? (
-            <div className="table-container" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-                    {/* <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th> */}
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Product</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Assigned To</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Delivery Date</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Price</th>
-                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
-                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentTasks.map((task) => (
-                    <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      {/* <td style={{ padding: '12px' }}>
-                          <span className="order-id">{task._id?.slice(-6) || '-'}</span>
-                        </td> */}
-                      <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
-                      <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span
-                          className="task-status"
-                          style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
-                        >
-                          {getTaskStatusText(task.status)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button
-                            className="edit-btn"
-                            onClick={() => handleTaskClick(task)}
-                            title="View"
-                          >
-                            <FiEye />
-                          </button>
-                        </div>
-                      </td>
+            <div className="table-container">
+              <div className="table-scroll-wrapper">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th >Customer</th>
+                      <th >Product</th>
+                      <th >Outfit Type</th>
+                      <th >Assigned To</th>
+                      <th >Delivery Date</th>
+                      <th >Price</th>
+                      <th >Status</th>
+                      <th >Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentTasks.map((task) => (
+                      <tr key={task._id}>
+                        <td>{task.customerId?.fullName || 'N/A'}</td>
+                        <td>{task.productName || 'N/A'}</td>
+                        <td>{task.outfitTypeName || 'N/A'}</td>
+                        <td>{task.assignWorker?.fullName || 'Not assigned'}</td>
+                        <td>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
+                        <td>₹{task.totalPrice || 0}</td>
+                        <td>
+                          <span
+                            className="task-status"
+                            style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
+                          >
+                            {getTaskStatusText(task.status)}
+                          </span>
+                        </td>
+                        <td style={{textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              className="edit-btn"
+                              onClick={() => handleTaskClick(task)}
+                              title="View"
+                            >
+                              <FiEye />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
             </div>
+            // <div className="table-container tasks-table-container">
+            //   <div className="table-scroll-wrapper">
+            //     <table className="tasks-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            //       <thead>
+            //         <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+            //           {/* <th >Order ID</th> */}
+            //           <th >Customer</th>
+            //           <th >Product</th>
+            //           <th >Outfit Type</th>
+            //           <th >Assigned To</th>
+            //           <th >Delivery Date</th>
+            //           <th >Price</th>
+            //           <th >Status</th>
+            //           <th >Actions</th>
+            //         </tr>
+            //       </thead>
+            //       <tbody>
+            //         {currentTasks.map((task) => (
+            //           <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+            //             {/* <td style={{ padding: '12px' }}>
+            //               <span className="order-id">{task._id?.slice(-6) || '-'}</span>
+            //             </td> */}
+            //             <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
+            //             <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
+            //             <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
+            //             <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
+            //             <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
+            //             <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
+            //             <td style={{ padding: '12px' }}>
+            //               <span
+            //                 className="task-status"
+            //                 style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
+            //               >
+            //                 {getTaskStatusText(task.status)}
+            //               </span>
+            //             </td>
+            //             <td style={{ padding: '12px', textAlign: 'center' }}>
+            //               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            //                 <button
+            //                   className="edit-btn"
+            //                   onClick={() => handleTaskClick(task)}
+            //                   title="View"
+            //                 >
+            //                   <FiEye />
+            //                 </button>
+            //               </div>
+            //             </td>
+            //           </tr>
+            //         ))}
+            //       </tbody>
+            //     </table>
+            //   </div>
+            //   <Pagination
+            //     currentPage={currentPage}
+            //     totalPages={totalPages}
+            //     onPageChange={setCurrentPage}
+            //   />
+            // </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
               <p>No tasks found</p>

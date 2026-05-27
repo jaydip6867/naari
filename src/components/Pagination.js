@@ -52,7 +52,8 @@ const Pagination = ({
       alignItems: 'center',
       gap: '12px',
       marginTop: '24px',
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
+      marginBottom: '24px'
     }}>
       {/* First */}
       <button
