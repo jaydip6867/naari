@@ -4,7 +4,8 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { productAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
+import Pagination from './Pagination.js';
+import { FiPlus, FiSearch, FiEdit2, FiEye, FiPackage } from 'react-icons/fi';
 
 const Product = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ const Product = ({ onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const fetchProducts = async (search = '') => {
     try {
@@ -33,13 +36,17 @@ const Product = ({ onLogout }) => {
   }, []);
 
   const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-    fetchProducts(e.target.value);
+    const value = e.target.value;
+
+    setSearchQuery(value);
+    setCurrentPage(1);
+
+    fetchProducts(value);
   };
 
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
-    
+
     try {
       await productAPI.deleteProduct(productId);
       fetchProducts(searchQuery);
@@ -55,10 +62,18 @@ const Product = ({ onLogout }) => {
     navigate('/');
   };
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+
   return (
     <div className="settings-container">
       <Sidebar onLogout={handleLogout} />
-      
+
       <div className="main-content">
         <div className="page-header">
           <h1 className="page-title">Products</h1>
@@ -97,7 +112,7 @@ const Product = ({ onLogout }) => {
                   }}
                 />
               </div>
-              <button 
+              <button
                 className="add-btn"
                 onClick={() => navigate('/products/add')}
               >
@@ -124,7 +139,7 @@ const Product = ({ onLogout }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product, index) => (
+                  {currentProducts.map((product, index) => (
                     <tr key={product._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '12px' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
@@ -144,14 +159,14 @@ const Product = ({ onLogout }) => {
                       <td style={{ padding: '12px' }}>{product.subCategoryName || '-'}</td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button 
+                          <button
                             className="edit-btn"
                             onClick={() => navigate(`/products/view/${product._id}`)}
                             title="View"
                           >
                             <FiEye />
                           </button>
-                          <button 
+                          <button
                             className="edit-btn"
                             onClick={() => navigate(`/products/edit/${product._id}`)}
                             title="Edit"
@@ -171,12 +186,17 @@ const Product = ({ onLogout }) => {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
               <p>No products found</p>
-              <button 
-                className="add-btn" 
+              <button
+                className="add-btn"
                 onClick={() => navigate('/products/add')}
                 style={{ marginTop: '16px' }}
               >

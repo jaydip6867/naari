@@ -8,6 +8,7 @@ import Sidebar from './Sidebar.js';
 import { customerAPI } from '../services/api.js';
 import { storage } from '../utils/storage';
 import '../styles.css';
+import Pagination from './Pagination.js';
 
 const Customer = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const Customer = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -70,6 +73,14 @@ const Customer = ({ onLogout }) => {
       .slice(0, 2);
   };
 
+  // pagincation logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  const currentCustomers = customers.slice(indexOfFirstItem, indexOfLastItem);
+  // customers → replace with orders/tasks/customers
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+
   return (
     <div className="settings-container">
       <Sidebar onLogout={handleLogout} />
@@ -101,9 +112,6 @@ const Customer = ({ onLogout }) => {
                     className="search-input"
                   />
                 </div>
-                <button type="submit" className="search-btn">
-                  Search
-                </button>
               </form>
               <button
                 className="add-btn"
@@ -140,7 +148,7 @@ const Customer = ({ onLogout }) => {
           ) : (
             <>
               <div className="customer-grid">
-                {customers.map((customer) => (
+                {currentCustomers.map((customer) => (
                   <div key={customer._id} className="customer-card">
                     <div className="customer-card-header">
                       <div className="customer-avatar">
@@ -204,6 +212,11 @@ const Customer = ({ onLogout }) => {
                   </div>
                 ))}
               </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </div>

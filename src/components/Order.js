@@ -5,6 +5,7 @@ import '../styles.css';
 import { storage } from '../utils/storage';
 import { orderAPI } from '../services/api';
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
+import Pagination from './Pagination.js';
 
 const Order = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Order = ({ onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const fetchOrders = async () => {
     try {
@@ -38,7 +41,7 @@ const Order = ({ onLogout }) => {
     e.preventDefault();
     const query = e.target.value;
     setSearchQuery(query);
-
+    setCurrentPage(1);
     // Filter orders locally
     if (!query.trim()) {
       setOrders(allOrders); // Show all orders if search is empty
@@ -93,6 +96,19 @@ const Order = ({ onLogout }) => {
       </span>
     );
   };
+
+  // pagination logic
+  const indexOfLastOrder = currentPage * itemsPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+
+  const currentOrders = orders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+
+  const totalPages = Math.ceil(
+    orders.length / itemsPerPage
+  );
 
   return (
     <div className="settings-container">
@@ -165,7 +181,7 @@ const Order = ({ onLogout }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => (
+                  {currentOrders.map((order, index) => (
                     <tr key={order._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '12px' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background-light)', border: '1px solid var(--border-color)' }}>
@@ -197,7 +213,7 @@ const Order = ({ onLogout }) => {
                       <td style={{ padding: '12px' }}>{getStatusBadge(order.status)}</td>
                       <td style={{ padding: '12px' }}>{order.deliveryDate || '-'}</td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px'}}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
                           <button
                             className="edit-btn"
                             onClick={() => navigate(`/orders/view/${order._id}`)}
@@ -227,6 +243,11 @@ const Order = ({ onLogout }) => {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>

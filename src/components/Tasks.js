@@ -4,7 +4,8 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye } from 'react-icons/fi';
+import Pagination from './Pagination.js';
 
 const Tasks = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ const Tasks = ({ onLogout }) => {
   const [refImages, setRefImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [isEndingTask, setIsEndingTask] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchTasks();
@@ -43,7 +47,7 @@ const Tasks = ({ onLogout }) => {
     e.preventDefault();
     const query = e.target.value;
     setSearchQuery(query);
-    
+    setCurrentPage(1); // Reset to first page on new search
     // Filter tasks locally
     if (!query.trim()) {
       setTasks(allTasks); // Show all tasks if search is empty
@@ -112,6 +116,7 @@ const Tasks = ({ onLogout }) => {
     }
   };
 
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -125,11 +130,11 @@ const Tasks = ({ onLogout }) => {
       // For now, create preview URLs
       const previews = files.map(file => URL.createObjectURL(file));
       setImagePreviews(prev => [...prev, ...previews]);
-      
+
       // You can integrate with uploadAPI.uploadMultipleImages if needed
       // const uploadedImages = await uploadAPI.uploadMultipleImages(files);
       // setRefImages(uploadedImages);
-      
+
       // For now, store file names as refImages
       const imageNames = files.map(file => file.name);
       setRefImages(prev => [...prev, ...imageNames]);
@@ -169,6 +174,13 @@ const Tasks = ({ onLogout }) => {
     onLogout();
     navigate('/');
   };
+  // pagination logic
+  const indexOfLastTask = currentPage * itemsPerPage;
+  const indexOfFirstTask = indexOfLastTask - itemsPerPage;
+
+  const currentTasks = tasks.slice(indexOfFirstTask, indexOfLastTask);
+
+  const totalPages = Math.ceil(tasks.length / itemsPerPage);
 
   return (
     <div className="settings-container">
@@ -194,7 +206,7 @@ const Tasks = ({ onLogout }) => {
               {error}
             </div>
           )}
-          
+
           <div className="section-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
             <h2 className="section-title">Tasks</h2>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
@@ -217,70 +229,75 @@ const Tasks = ({ onLogout }) => {
             </div>
           </div>
 
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>Loading tasks...</div>
-            ) : tasks.length > 0 ? (
-              <div className="table-container" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-                      {/* <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th> */}
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Product</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Assigned To</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Delivery Date</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Price</th>
-                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
-                      <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((task) => (
-                      <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        {/* <td style={{ padding: '12px' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>Loading tasks...</div>
+          ) : tasks.length > 0 ? (
+            <div className="table-container" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                    {/* <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order ID</th> */}
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Customer</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Product</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Outfit Type</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Assigned To</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Delivery Date</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Price</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Status</th>
+                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentTasks.map((task) => (
+                    <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      {/* <td style={{ padding: '12px' }}>
                           <span className="order-id">{task._id?.slice(-6) || '-'}</span>
                         </td> */}
-                        <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
-                        <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
-                        <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
-                        <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
-                        <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
-                        <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span 
-                            className="task-status" 
-                            style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
+                      <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
+                      <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
+                      <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
+                      <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
+                      <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
+                      <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span
+                          className="task-status"
+                          style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
+                        >
+                          {getTaskStatusText(task.status)}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleTaskClick(task)}
+                            title="View"
                           >
-                            {getTaskStatusText(task.status)}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            <button 
-                              className="edit-btn" 
-                              onClick={() => handleTaskClick(task)}
-                              title="View"
-                            >
-                              <FiEye />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <FiEye />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
+              <p>No tasks found</p>
+              <div style={{ marginTop: '16px' }}>
+                <button className="add-btn" onClick={() => navigate('/orders')}>
+                  <FiPlus /> Create Order to Generate Tasks
+                </button>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
-                <p>No tasks found</p>
-                <div style={{ marginTop: '16px' }}>
-                  <button className="add-btn" onClick={() => navigate('/orders')}>
-                    <FiPlus /> Create Order to Generate Tasks
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
+          )}
         </div>
 
         {/* Task Detail Modal */}
@@ -291,9 +308,9 @@ const Tasks = ({ onLogout }) => {
                 <h2 style={{ margin: 0, color: 'var(--primary-dark)', fontSize: '24px' }}>Task Details</h2>
                 <button className="close-btn" onClick={() => setShowTaskDetail(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--gray-color)' }}>×</button>
               </div>
-              
+
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                
+
                 {/* Task Status & Basic Info */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', padding: '16px', background: 'var(--background-light)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -302,15 +319,15 @@ const Tasks = ({ onLogout }) => {
                   </div> */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Status:</span>
-                    <span 
-                      style={{ 
-                        backgroundColor: getTaskStatusColor(selectedTask.status), 
-                        color: 'white', 
-                        padding: '4px 12px', 
-                        borderRadius: '12px', 
-                        fontSize: '12px', 
-                        fontWeight: '500', 
-                        textTransform: 'capitalize' 
+                    <span
+                      style={{
+                        backgroundColor: getTaskStatusColor(selectedTask.status),
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        textTransform: 'capitalize'
                       }}
                     >
                       {getTaskStatusText(selectedTask.status)}
@@ -442,9 +459,9 @@ const Tasks = ({ onLogout }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
                       {selectedTask.outfitStyleRefImg.map((img, index) => (
                         <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                          <img 
-                            src={img} 
-                            alt={`Outfit Style ${index + 1}`} 
+                          <img
+                            src={img}
+                            alt={`Outfit Style ${index + 1}`}
                             style={{ width: '100%', height: '120px', objectFit: 'cover' }}
                           />
                         </div>
@@ -469,16 +486,16 @@ const Tasks = ({ onLogout }) => {
                         onChange={handleImageUpload}
                         style={{ display: 'none' }}
                       />
-                      <label 
-                        htmlFor="refImageUpload" 
-                        style={{ 
-                          display: 'inline-block', 
-                          padding: '8px 16px', 
-                          background: 'var(--primary-color)', 
-                          color: 'white', 
-                          borderRadius: '6px', 
-                          cursor: 'pointer', 
-                          fontSize: '14px', 
+                      <label
+                        htmlFor="refImageUpload"
+                        style={{
+                          display: 'inline-block',
+                          padding: '8px 16px',
+                          background: 'var(--primary-color)',
+                          color: 'white',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
                           fontWeight: '500',
                           border: 'none',
                           transition: 'background-color 0.2s'
@@ -489,29 +506,29 @@ const Tasks = ({ onLogout }) => {
                         + Upload Reference Images
                       </label>
                     </div>
-                    
+
                     {imagePreviews.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
                         {imagePreviews.map((preview, index) => (
                           <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                            <img 
-                              src={preview} 
-                              alt={`Preview ${index + 1}`} 
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
                               style={{ width: '100%', height: '120px', objectFit: 'cover' }}
                             />
-                            <button 
+                            <button
                               onClick={() => removeImage(index)}
-                              style={{ 
-                                position: 'absolute', 
-                                top: '4px', 
-                                right: '4px', 
-                                background: 'rgba(255, 255, 255, 0.9)', 
-                                border: 'none', 
-                                borderRadius: '50%', 
-                                width: '24px', 
-                                height: '24px', 
-                                cursor: 'pointer', 
-                                fontSize: '16px', 
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '24px',
+                                height: '24px',
+                                cursor: 'pointer',
+                                fontSize: '16px',
                                 color: 'var(--alert-color)',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -524,7 +541,7 @@ const Tasks = ({ onLogout }) => {
                         ))}
                       </div>
                     )}
-                    
+
                     {imagePreviews.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)', background: 'var(--background-light)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                         No reference images uploaded yet
@@ -534,19 +551,19 @@ const Tasks = ({ onLogout }) => {
                 )}
 
               </div>
-              
+
               <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 {selectedTask.status === 'pending' && (
-                  <button 
+                  <button
                     onClick={() => handleStartTask(selectedTask._id)}
-                    style={{ 
-                      padding: '8px 16px', 
-                      background: 'var(--success-color)', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer', 
-                      fontSize: '14px', 
+                    style={{
+                      padding: '8px 16px',
+                      background: 'var(--success-color)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
                       fontWeight: '500',
                       transition: 'background-color 0.2s'
                     }}
@@ -557,16 +574,16 @@ const Tasks = ({ onLogout }) => {
                   </button>
                 )}
                 {selectedTask.status === 'start' && (
-                  <button 
+                  <button
                     onClick={() => handlePauseTask(selectedTask._id)}
-                    style={{ 
-                      padding: '8px 16px', 
-                      background: 'var(--warn-color)', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer', 
-                      fontSize: '14px', 
+                    style={{
+                      padding: '8px 16px',
+                      background: 'var(--warn-color)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
                       fontWeight: '500',
                       transition: 'background-color 0.2s'
                     }}
@@ -577,16 +594,16 @@ const Tasks = ({ onLogout }) => {
                   </button>
                 )}
                 {(selectedTask.status === 'start' || selectedTask.status === 'paused') && (
-                  <button 
+                  <button
                     onClick={() => handleEndTask(selectedTask._id)}
-                    style={{ 
-                      padding: '8px 16px', 
-                      background: 'var(--primary-color)', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer', 
-                      fontSize: '14px', 
+                    style={{
+                      padding: '8px 16px',
+                      background: 'var(--primary-color)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
                       fontWeight: '500',
                       transition: 'background-color 0.2s'
                     }}
@@ -596,16 +613,16 @@ const Tasks = ({ onLogout }) => {
                     End Task
                   </button>
                 )}
-                <button 
+                <button
                   onClick={() => setShowTaskDetail(false)}
-                  style={{ 
-                    padding: '8px 16px', 
-                    background: 'var(--gray-color)', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '6px', 
-                    cursor: 'pointer', 
-                    fontSize: '14px', 
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--gray-color)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
                     fontWeight: '500',
                     transition: 'background-color 0.2s'
                   }}
