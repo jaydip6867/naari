@@ -416,7 +416,7 @@ const Tasks = ({ onLogout }) => {
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
                       <label style={{ display: 'block', fontSize: '12px', color: 'var(--gray-color)', marginBottom: '4px', fontWeight: '600' }}>Address</label>
-                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500' }}>{selectedTask.customerId?.address || 'N/A'}</span>
+                      <span style={{ display: 'block', fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '500', wordBreak: 'break-word' }}>{selectedTask.customerId?.address || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
