@@ -2335,40 +2335,21 @@ const Settings = ({ onLogout }) => {
             {bankLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>Loading bank details...</div>
             ) : bankList.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                {bankList.map((bank) => (
-                  <div key={bank._id} style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'white' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                {bankList.map((bank, index) => (
+                  <div key={index} style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'white' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                       <h3 style={{ margin: 0, color: 'var(--primary-dark)', fontSize: '16px', fontWeight: '600' }}>{bank.bankName}</h3>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
                         <button
                           onClick={() => openBankModal(bank)}
-                          style={{
-                            background: 'var(--primary-color)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}
+                          className="edit-btn"
                         >
-                          <FiEdit style={{ marginRight: '4px' }} />
-                          Edit
+                          <FiEdit />
                         </button>
                         <button
                           onClick={() => deleteBankDetails(bank._id)}
-                          style={{
-                            background: 'var(--alert-color)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}
+                          className="delete-btn"
                         >
                           <FiTrash2 />
                         </button>
@@ -2419,31 +2400,17 @@ const Settings = ({ onLogout }) => {
                   <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Bank Type *</label>
-                      <div style={{ display: 'flex', gap: '20px' }}>
-                        <input type="radio" name="bankType" value="Personal" checked={bankForm.bankType === 'Personal'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
-                        <label style={{ display: 'inline-block', marginLeft: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Personal</label>
+                      <div style={{ display: 'flex', gap: '18px' }}>
+                        <div style={{ display: 'flex'}}>
+                          <input type="radio" name="bankType" value="Personal" checked={bankForm.bankType === 'Personal'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
+                          <label style={{ display: 'inline-block', marginLeft: '4px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Personal</label>
+                        </div>
+                        <div style={{ display: 'flex'}}>
+                          <input type="radio" name="bankType" value="Corporate" checked={bankForm.bankType === 'Corporate'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
+                          <label style={{ display: 'inline-block', marginLeft: '4px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Corporate</label>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '20px' }}>
-<input type="radio" name="bankType" value="Corporate" checked={bankForm.bankType === 'Corporate'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
-                      <label style={{ display: 'inline-block', marginLeft: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Corporate</label>
-                      </div>
-                      {/* <select
-                        value={bankForm.bankType}
-                        onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontFamily: 'inherit'
-                        }}
-                      >
-                        <option value="Personal">Personal</option>
-                        <option value="Corporate">Corporate</option>
-                      </select> */}
 
-                      
                     </div>
 
                     <div>
