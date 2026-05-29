@@ -739,6 +739,59 @@ export const chatAPI = {
   }
 };
 
+// Bank Details API calls
+export const bankDetailsAPI = {
+  saveBankDetails: async (bankData) => {
+    const response = await api.post('/user/bankdetails/save', bankData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save bank details');
+    }
+  },
+
+  getBankDetails: async (search = '') => {
+    const response = await api.post('/user/bankdetails', { search });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  getBankDetailsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/bankdetails/list', { page, limit, search });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  getBankDetailsById: async (id) => {
+    const response = await api.post('/user/bankdetails/getone', { id });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  deleteBankDetails: async (bankDetailsId) => {
+    const response = await api.post('/user/bankdetails/delete', { bankDetailsId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete bank details');
+    }
+  },
+};
+
 export const apiCall = async (method, endpoint, data = null) => {
   const response = await api({
     method,

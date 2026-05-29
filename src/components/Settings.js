@@ -19,6 +19,7 @@ import {
   expenseTypeAPI,
   accountingAPI,
   orderAPI,
+  bankDetailsAPI,
 } from '../services/api';
 import { FiEdit, FiTrash2, FiX } from 'react-icons/fi';
 import { RxDragHandleDots2 } from 'react-icons/rx';
@@ -41,6 +42,22 @@ const Settings = ({ onLogout }) => {
   const [workTypesError, setWorkTypesError] = useState('');
   const [isWorkTypeModalOpen, setIsWorkTypeModalOpen] = useState(false);
   const [editingWorkType, setEditingWorkType] = useState(null);
+
+  // Bank Details state
+  const [bankList, setBankList] = useState([]);
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankError, setBankError] = useState('');
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [editingBank, setEditingBank] = useState(null);
+  const [bankForm, setBankForm] = useState({
+    bankType: 'Personal',
+    custom: '',
+    bankName: '',
+    accountHolderName: '',
+    accountNumber: '',
+    branch: '',
+    ifscCode: '',
+  });
 
   // Outfit Types API function - defined before useEffect to avoid hoisting issues
   const fetchOutfitTypes = useCallback(async () => {
@@ -96,6 +113,9 @@ const Settings = ({ onLogout }) => {
           fetchAddons();
           break;
         case 'finance':
+          fetchFinanceData();
+          break;
+        case 'bank':
           fetchFinanceData();
           break;
         default:
@@ -588,6 +608,9 @@ const Settings = ({ onLogout }) => {
       const currentFields = getCurrentFields();
       setFieldItems(currentFields);
     }
+    if (activeTab === 'bank') {
+      fetchBankDetails();
+    }
   }, [selectedOutfit, selectedSubcategory, outfitTypes, activeTab]);
 
   // Addons state
@@ -726,6 +749,88 @@ const Settings = ({ onLogout }) => {
     setEditingTransaction(null);
   };
 
+  // Bank Details Management Functions
+  const fetchBankDetails = async () => {
+    try {
+      setBankLoading(true);
+      setBankError('');
+      const banksData = await bankDetailsAPI.getBankDetails();
+      setBankList(banksData || []);
+    } catch (err) {
+      console.error('Error fetching bank details:', err);
+      setBankError(err.message || 'Failed to fetch bank details');
+    } finally {
+      setBankLoading(false);
+    }
+  };
+
+  const saveBankDetails = async (bankData) => {
+    try {
+      const payload = editingBank ? { ...bankData, _id: editingBank._id } : bankData;
+      await bankDetailsAPI.saveBankDetails(payload);
+      await fetchBankDetails();
+      closeBankModal();
+      return true;
+    } catch (err) {
+      console.error('Error saving bank details:', err);
+      alert('Failed to save bank details: ' + err.message);
+      return false;
+    }
+  };
+
+  const deleteBankDetails = async (bankId) => {
+    if (window.confirm('Are you sure you want to delete this bank account?')) {
+      try {
+        await bankDetailsAPI.deleteBankDetails(bankId);
+        await fetchBankDetails();
+      } catch (err) {
+        console.error('Error deleting bank details:', err);
+        alert('Failed to delete bank details: ' + err.message);
+      }
+    }
+  };
+
+  const openBankModal = (bank = null) => {
+    if (bank) {
+      setEditingBank(bank);
+      setBankForm({
+        bankType: bank.bankType || 'Personal',
+        custom: bank.custom || '',
+        bankName: bank.bankName || '',
+        accountHolderName: bank.accountHolderName || '',
+        accountNumber: bank.accountNumber || '',
+        branch: bank.branch || '',
+        ifscCode: bank.ifscCode || '',
+      });
+    } else {
+      setEditingBank(null);
+      setBankForm({
+        bankType: 'Personal',
+        custom: '',
+        bankName: '',
+        accountHolderName: '',
+        accountNumber: '',
+        branch: '',
+        ifscCode: '',
+      });
+    }
+    setIsBankModalOpen(true);
+  };
+
+  const closeBankModal = () => {
+    setIsBankModalOpen(false);
+    setEditingBank(null);
+    setBankForm({
+      bankType: 'Personal',
+      custom: '',
+      bankName: '',
+      accountHolderName: '',
+      accountNumber: '',
+      branch: '',
+      ifscCode: '',
+    });
+  };
+
   const tabs = [
     { id: 'measurements', label: 'Measurements' },
     { id: 'addons', label: 'Addons' },
@@ -733,6 +838,7 @@ const Settings = ({ onLogout }) => {
     { id: 'skills', label: 'Skills' },
     { id: 'worktype', label: 'Work Type' },
     { id: 'finance', label: 'Finance' },
+    { id: 'bank', label: 'Bank' },
   ];
 
 
@@ -2103,109 +2209,386 @@ const Settings = ({ onLogout }) => {
               </div>
             ) : (
               <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                  <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Income Types</h3>
-                  {incomeTypes.length > 0 ? (
-                    <div className="skills-list">
-                      {incomeTypes.map((type, index) => (
-                        <div key={`${type}-${index}`} className="roll-item">
-                          <div className="roll-info">
-                            <div className="roll-name">{type}</div>
-                          </div>
-                          <div className="roll-actions">
-                            <button
-                              className="delete-btn skills-delete"
-                              onClick={() => deleteFinanceType(type, 'income')}
-                              title="Delete income type"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No income types yet.</p>
-                  )}
-                </div>
-                <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                  <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Expense Types</h3>
-                  {expenseTypes.length > 0 ? (
-                    <div className="skills-list">
-                      {expenseTypes.map((type, index) => (
-                        <div key={`${type}-${index}`} className="roll-item">
-                          <div className="roll-info">
-                            <div className="roll-name">{type}</div>
-                          </div>
-                          <div className="roll-actions">
-                            <button
-                              className="delete-btn skills-delete"
-                              onClick={() => deleteFinanceType(type, 'expense')}
-                              title="Delete expense type"
-                            >
-                              <FiX />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No expense types yet.</p>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginTop: '8px' }}>
-                <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Transactions</h3>
-                {transactions.length > 0 ? (
-                  <div className="table-container" style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Name</th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type</th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type Name</th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order</th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Date</th>
-                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Amount</th>
-                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {transactions.map((transaction, index) => (
-                          <tr key={transaction._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: '12px' }}>{transaction.name || '-'}</td>
-                            <td style={{ padding: '12px', textTransform: 'capitalize' }}>{transaction.type || '-'}</td>
-                            <td style={{ padding: '12px' }}>{transaction.typeName || '-'}</td>
-                            <td style={{ padding: '12px' }}>{getTransactionOrderLabel(transaction, financeOrders)}</td>
-                            <td style={{ padding: '12px' }}>{transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('en-IN', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            }) : '-'}</td>
-                            <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
-                              {transaction.amount != null ? Number(transaction.amount).toLocaleString('en-IN') : '-'}
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                  <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                    <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Income Types</h3>
+                    {incomeTypes.length > 0 ? (
+                      <div className="skills-list">
+                        {incomeTypes.map((type, index) => (
+                          <div key={`${type}-${index}`} className="roll-item">
+                            <div className="roll-info">
+                              <div className="roll-name">{type}</div>
+                            </div>
+                            <div className="roll-actions">
                               <button
-                                className="edit-btn"
-                                onClick={() => openEditFinanceTransactionModal(transaction)}
-                                title="Edit transaction"
+                                className="delete-btn skills-delete"
+                                onClick={() => deleteFinanceType(type, 'income')}
+                                title="Delete income type"
                               >
-                                <FiEdit />
+                                <FiX />
                               </button>
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No income types yet.</p>
+                    )}
                   </div>
-                ) : (
-                  <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No transactions yet.</p>
-                )}
-              </div>
+                  <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                    <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Expense Types</h3>
+                    {expenseTypes.length > 0 ? (
+                      <div className="skills-list">
+                        {expenseTypes.map((type, index) => (
+                          <div key={`${type}-${index}`} className="roll-item">
+                            <div className="roll-info">
+                              <div className="roll-name">{type}</div>
+                            </div>
+                            <div className="roll-actions">
+                              <button
+                                className="delete-btn skills-delete"
+                                onClick={() => deleteFinanceType(type, 'expense')}
+                                title="Delete expense type"
+                              >
+                                <FiX />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No expense types yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '8px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Transactions</h3>
+                  {transactions.length > 0 ? (
+                    <div className="table-container" style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                            <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Name</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Type Name</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Order</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Date</th>
+                            <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Amount</th>
+                            <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--primary-dark)' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {transactions.map((transaction, index) => (
+                            <tr key={transaction._id || index} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '12px' }}>{transaction.name || '-'}</td>
+                              <td style={{ padding: '12px', textTransform: 'capitalize' }}>{transaction.type || '-'}</td>
+                              <td style={{ padding: '12px' }}>{transaction.typeName || '-'}</td>
+                              <td style={{ padding: '12px' }}>{getTransactionOrderLabel(transaction, financeOrders)}</td>
+                              <td style={{ padding: '12px' }}>{transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('en-IN', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              }) : '-'}</td>
+                              <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
+                                {transaction.amount != null ? Number(transaction.amount).toLocaleString('en-IN') : '-'}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                                <button
+                                  className="edit-btn"
+                                  onClick={() => openEditFinanceTransactionModal(transaction)}
+                                  title="Edit transaction"
+                                >
+                                  <FiEdit />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No transactions yet.</p>
+                  )}
+                </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* Bank Tab */}
+        {activeTab === 'bank' && (
+          <div className="content-section">
+            <div className="section-header">
+              <h2 className="section-title">Bank Accounts <span className='fields-tag'>{bankList.length > 0 && bankList.length <= 10 ? '0' + bankList.length : bankList.length} Banks</span></h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="add-btn" onClick={() => openBankModal()}>+ Add New Bank</button>
+              </div>
+            </div>
+
+            {bankError && (
+              <div style={{ color: 'var(--alert-color)', marginBottom: '16px', padding: '12px', background: 'rgba(255,0,0,0.1)', borderRadius: '6px' }}>
+                {bankError}
+              </div>
+            )}
+
+            {bankLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)' }}>Loading bank details...</div>
+            ) : bankList.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                {bankList.map((bank) => (
+                  <div key={bank._id} style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'white' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                      <h3 style={{ margin: 0, color: 'var(--primary-dark)', fontSize: '16px', fontWeight: '600' }}>{bank.bankName}</h3>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => openBankModal(bank)}
+                          style={{
+                            background: 'var(--primary-color)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          <FiEdit style={{ marginRight: '4px' }} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteBankDetails(bank._id)}
+                          style={{
+                            background: 'var(--alert-color)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--gray-color)', lineHeight: '1.6' }}>
+                      <div><strong>Type:</strong> {bank.bankType}</div>
+                      <div><strong>Account Holder:</strong> {bank.accountHolderName}</div>
+                      <div><strong>Account Number:</strong> {bank.accountNumber}</div>
+                      <div><strong>Branch:</strong> {bank.branch}</div>
+                      <div><strong>IFSC Code:</strong> {bank.ifscCode}</div>
+                      {bank.custom && <div><strong>Custom:</strong> {bank.custom}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
+                <p>No bank accounts added yet.</p>
+                <button className="add-btn" onClick={() => openBankModal()} style={{ marginTop: '16px' }}>
+                  + Add Your First Bank Account
+                </button>
+              </div>
+            )}
+
+            {/* Bank Details Modal */}
+            {isBankModalOpen && (
+              <div className="modal-overlay" onClick={closeBankModal}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
+                  <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                    <h2 style={{ margin: 0, color: 'var(--primary-dark)', fontSize: '20px' }}>
+                      {editingBank ? 'Edit Bank Account' : 'Add New Bank Account'}
+                    </h2>
+                    <button
+                      onClick={closeBankModal}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        color: 'var(--gray-color)'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Bank Type *</label>
+                      <div style={{ display: 'flex', gap: '20px' }}>
+                        <input type="radio" name="bankType" value="Personal" checked={bankForm.bankType === 'Personal'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
+                        <label style={{ display: 'inline-block', marginLeft: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Personal</label>
+                      </div>
+                      <div style={{ display: 'flex', gap: '20px' }}>
+<input type="radio" name="bankType" value="Corporate" checked={bankForm.bankType === 'Corporate'} onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })} />
+                      <label style={{ display: 'inline-block', marginLeft: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--primary-dark)' }}>Corporate</label>
+                      </div>
+                      {/* <select
+                        value={bankForm.bankType}
+                        onChange={(e) => setBankForm({ ...bankForm, bankType: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <option value="Personal">Personal</option>
+                        <option value="Corporate">Corporate</option>
+                      </select> */}
+
+                      
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Custom Label</label>
+                      <input
+                        type="text"
+                        value={bankForm.custom}
+                        onChange={(e) => setBankForm({ ...bankForm, custom: e.target.value })}
+                        placeholder="e.g., Primary Salary Account"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Bank Name *</label>
+                      <input
+                        type="text"
+                        value={bankForm.bankName}
+                        onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                        placeholder="e.g., State Bank of India"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Account Holder Name *</label>
+                      <input
+                        type="text"
+                        value={bankForm.accountHolderName}
+                        onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
+                        placeholder="Full name on account"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Account Number *</label>
+                      <input
+                        type="text"
+                        value={bankForm.accountNumber}
+                        onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
+                        placeholder="Account number"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>Branch *</label>
+                      <input
+                        type="text"
+                        value={bankForm.branch}
+                        onChange={(e) => setBankForm({ ...bankForm, branch: e.target.value })}
+                        placeholder="Branch name"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: 'var(--primary-dark)' }}>IFSC Code *</label>
+                      <input
+                        type="text"
+                        value={bankForm.ifscCode}
+                        onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value })}
+                        placeholder="IFSC code"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-footer" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+                    <button
+                      onClick={closeBankModal}
+                      style={{
+                        padding: '8px 16px',
+                        background: 'var(--gray-color)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => saveBankDetails(bankForm)}
+                      style={{
+                        padding: '8px 16px',
+                        background: 'var(--primary-color)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      {editingBank ? 'Update' : 'Save'} Bank Account
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
