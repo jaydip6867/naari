@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEye } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye, FiEdit } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 
 const Tasks = ({ onLogout }) => {
@@ -269,7 +269,15 @@ const Tasks = ({ onLogout }) => {
                             <button
                               className="edit-btn"
                               onClick={() => handleTaskClick(task)}
-                              title="View"
+                              title="Task Edit"
+                            >
+                              <FiEdit />
+                              {/* <FiEye /> */}
+                            </button>
+                            <button
+                              className="edit-btn"
+                              onClick={() => navigate(`/tasks/${task.orderId}`)}
+                              title="Task Details"
                             >
                               <FiEye />
                             </button>

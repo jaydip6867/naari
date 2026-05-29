@@ -9,6 +9,7 @@ import ViewCustomer from './components/ViewCustomer.js';
 import Order from './components/Order.js';
 import Team from './components/Team.js';
 import Tasks from './components/Tasks.js';
+import TaskDetail from './components/TaskDetail.js';
 import Product from './components/Product.js';
 import AddEditProduct from './components/AddEditProduct.js';
 import ViewProduct from './components/ViewProduct.js';
@@ -199,6 +200,14 @@ function App() {
               element={
                 isLoggedIn ? 
                   <Tasks onLogout={handleLogout} /> : 
+                  <Navigate to="/" replace />
+              } 
+            />
+            <Route 
+              path="/tasks/:orderId" 
+              element={
+                isLoggedIn ? 
+                  <TaskDetail onLogout={handleLogout} /> : 
                   <Navigate to="/" replace />
               } 
             />
