@@ -16,6 +16,7 @@ const Tasks = ({ onLogout }) => {
   const [error, setError] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const [selectedTaskLoading, setSelectedTaskLoading] = useState(false);
   const [refImages, setRefImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [isEndingTask, setIsEndingTask] = useState(false);
@@ -67,20 +68,38 @@ const Tasks = ({ onLogout }) => {
     }
   };
 
-  const handleTaskClick = (task) => {
-    setSelectedTask(task);
-    setShowTaskDetail(true);
+  const loadTaskDetails = async (taskId) => {
+    try {
+      const response = await taskAPI.getTaskById(taskId);
+      return response || null;
+    } catch (error) {
+      console.error('Error loading task details:', error);
+      throw error;
+    }
+  };
+
+  const handleTaskClick = async (task) => {
+    try {
+      setSelectedTaskLoading(true);
+      setError('');
+      const taskDetails = await loadTaskDetails(task._id);
+      setSelectedTask(taskDetails || task);
+      setRefImages([]);
+      setImagePreviews([]);
+      setShowTaskDetail(true);
+    } catch (error) {
+      setError(error.message || 'Failed to load task details');
+    } finally {
+      setSelectedTaskLoading(false);
+    }
   };
 
   const handleStartTask = async (taskId) => {
     try {
       await taskAPI.startTask(taskId);
       alert('Task started successfully');
+      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
       fetchTasks();
-      // Update selected task status locally
-      if (selectedTask && selectedTask._id === taskId) {
-        setSelectedTask(prev => ({ ...prev, status: 'in_progress' }));
-      }
     } catch (error) {
       console.error('Error starting task:', error);
       alert('Failed to start task: ' + error.message);
@@ -91,11 +110,8 @@ const Tasks = ({ onLogout }) => {
     try {
       await taskAPI.pauseTask(taskId);
       alert('Task paused successfully');
+      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
       fetchTasks();
-      // Update selected task status locally
-      if (selectedTask && selectedTask._id === taskId) {
-        setSelectedTask(prev => ({ ...prev, status: 'paused' }));
-      }
     } catch (error) {
       console.error('Error pausing task:', error);
       alert('Failed to pause task: ' + error.message);
@@ -106,10 +122,11 @@ const Tasks = ({ onLogout }) => {
     try {
       await taskAPI.endTask(taskId, refImages);
       alert('Task ended successfully');
+      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
       fetchTasks();
-      setShowTaskDetail(false);
       setRefImages([]);
       setImagePreviews([]);
+      setShowTaskDetail(false);
     } catch (error) {
       console.error('Error ending task:', error);
       alert('Failed to end task: ' + error.message);
@@ -149,25 +166,45 @@ const Tasks = ({ onLogout }) => {
     setRefImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const normalizeStatus = (status) => {
+    if (!status) return 'unknown';
+    const normalized = status.toString().toLowerCase();
+    if (normalized === 'start' || normalized === 'started' || normalized === 'in_progress') return 'started';
+    if (normalized === 'pause' || normalized === 'paused') return 'paused';
+    if (normalized === 'end' || normalized === 'ended' || normalized === 'completed') return 'ended';
+    if (normalized === 'pending' || normalized === 'created' || normalized === 'not_started') return 'pending';
+    return normalized;
+  };
+
   const getTaskStatusColor = (status) => {
-    switch (status) {
+    switch (normalizeStatus(status)) {
       case 'pending': return '#ffc107';
-      case 'in_progress': return '#28a745';
+      case 'started': return '#28a745';
       case 'paused': return '#fd7e14';
-      case 'completed': return '#007bff';
+      case 'ended': return '#007bff';
       default: return '#6c757d';
     }
   };
 
   const getTaskStatusText = (status) => {
-    switch (status) {
+    switch (normalizeStatus(status)) {
       case 'pending': return 'Pending';
-      case 'in_progress': return 'In Progress';
+      case 'started': return 'Started';
       case 'paused': return 'Paused';
-      case 'completed': return 'Completed';
+      case 'ended': return 'Ended';
       default: return 'Unknown';
     }
   };
+
+  const getDetailTaskStatus = (task) => {
+    if (!task) return null;
+    return task.taskDetails?.[0]?.status || task.status || null;
+  };
+
+  const isPendingStatus = (status) => ['pending', 'created', 'not_started'].includes(status?.toString().toLowerCase());
+  const isStartedStatus = (status) => ['start', 'started', 'in_progress'].includes(status?.toString().toLowerCase());
+  const isPausedStatus = (status) => ['pause', 'paused'].includes(status?.toString().toLowerCase());
+  const isEndedStatus = (status) => ['end', 'ended', 'completed'].includes(status?.toString().toLowerCase());
 
   const handleLogout = () => {
     storage.clearAuthData();
@@ -181,6 +218,7 @@ const Tasks = ({ onLogout }) => {
   const currentTasks = tasks.slice(indexOfFirstTask, indexOfLastTask);
 
   const totalPages = Math.ceil(tasks.length / itemsPerPage);
+  const selectedTaskDetailStatus = getDetailTaskStatus(selectedTask);
 
   return (
     <div className="settings-container">
@@ -276,7 +314,7 @@ const Tasks = ({ onLogout }) => {
                             </button>
                             <button
                               className="edit-btn"
-                              onClick={() => navigate(`/tasks/${task.orderId}`)}
+                              onClick={() => navigate(`/tasks/${task._id}`)}
                               title="Task Details"
                             >
                               <FiEye />
@@ -385,7 +423,7 @@ const Tasks = ({ onLogout }) => {
                     <span style={{ fontWeight: '600', color: 'var(--gray-color)' }}>Status:</span>
                     <span
                       style={{
-                        backgroundColor: getTaskStatusColor(selectedTask.status),
+                        backgroundColor: getTaskStatusColor(selectedTaskDetailStatus),
                         color: 'white',
                         padding: '4px 12px',
                         borderRadius: '12px',
@@ -394,7 +432,7 @@ const Tasks = ({ onLogout }) => {
                         textTransform: 'capitalize'
                       }}
                     >
-                      {getTaskStatusText(selectedTask.status)}
+                      {getTaskStatusText(selectedTaskDetailStatus)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -535,7 +573,7 @@ const Tasks = ({ onLogout }) => {
                 )}
 
                 {/* Work Reference Images - Show only when task is in_progress or paused */}
-                {(selectedTask.status === 'in_progress' || selectedTask.status === 'paused') && (
+                {(isStartedStatus(selectedTaskDetailStatus) || isPausedStatus(selectedTaskDetailStatus)) && (
                   <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ width: '4px', height: '20px', background: 'var(--secondary-color)', borderRadius: '2px' }}></span>
@@ -617,7 +655,7 @@ const Tasks = ({ onLogout }) => {
               </div>
 
               <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                {selectedTask.status === 'pending' && (
+                {isPendingStatus(selectedTaskDetailStatus) && (
                   <button
                     onClick={() => handleStartTask(selectedTask._id)}
                     style={{
@@ -637,7 +675,7 @@ const Tasks = ({ onLogout }) => {
                     Start Task
                   </button>
                 )}
-                {selectedTask.status === 'start' && (
+                {isStartedStatus(selectedTaskDetailStatus) && (
                   <button
                     onClick={() => handlePauseTask(selectedTask._id)}
                     style={{
@@ -657,7 +695,7 @@ const Tasks = ({ onLogout }) => {
                     Pause Task
                   </button>
                 )}
-                {(selectedTask.status === 'start' || selectedTask.status === 'paused') && (
+                {(isStartedStatus(selectedTaskDetailStatus) || isPausedStatus(selectedTaskDetailStatus)) && (
                   <button
                     onClick={() => handleEndTask(selectedTask._id)}
                     style={{

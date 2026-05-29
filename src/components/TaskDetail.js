@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
@@ -10,6 +10,7 @@ import Pagination from './Pagination.js';
 const Tasks = ({ onLogout }) => {
     const navigate = useNavigate();
     const [tasks, setTasks] = useState([]);
+    const { orderId } = useParams();
     const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +27,7 @@ const Tasks = ({ onLogout }) => {
         try {
             setLoading(true);
             setError('');
-            const response = await taskAPI.getTaskById("69d163160513678ca6785f91"); // Fetch all tasks without search
+            const response = await taskAPI.getTaskById(orderId); // Fetch all tasks without search
             const tasksData = Array.isArray(response) ? response : (response || []);
             setAllTasks(tasksData); // Store all tasks
             setTasks(tasksData); // Initially display all tasks
