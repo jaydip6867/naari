@@ -16,6 +16,8 @@ const FinanceTransactionModal = ({
   incomeTypes = [],
   expenseTypes = [],
   orders = [],
+  bankList = [],
+  bankLoading = false,
 }) => {
   const [transactionType, setTransactionType] = useState('income');
   const [typeName, setTypeName] = useState('');
@@ -26,6 +28,7 @@ const FinanceTransactionModal = ({
   const [error, setError] = useState('');
   const prevTransactionTypeRef = useRef(null);
   const [paymentType, setPaymentType] = useState('cash');
+  const [bankDetailsId, setBankDetailsId] = useState('');
 
   // Type Name search state
   const [typeNameSearchInput, setTypeNameSearchInput] = useState('');
@@ -52,6 +55,7 @@ const FinanceTransactionModal = ({
         setName(editingTransaction.name || '');
         setOrderId(resolveOrderId(editingTransaction.orderId));
         setPaymentType(editingTransaction.paymentType || '');
+        setBankDetailsId(editingTransaction.bankDetailsId || '');
         setAmount(
           editingTransaction.amount != null ? String(editingTransaction.amount) : ''
         );
@@ -97,6 +101,10 @@ const FinanceTransactionModal = ({
       setError('Type name is required');
       return;
     }
+    if (paymentType === 'bank' && !bankDetailsId) {
+      setError('Please select a bank account');
+      return;
+    }
     if (!amount || Number(amount) <= 0) {
       setError('Amount must be greater than 0');
       return;
@@ -112,6 +120,7 @@ const FinanceTransactionModal = ({
         typeName,
         name: name.trim(),
         orderId,
+        bankDetailsId: paymentType === 'bank' ? bankDetailsId : undefined,
         amount: Number(amount),
         paymentMethod: paymentType,
       });
@@ -434,6 +443,33 @@ const FinanceTransactionModal = ({
                 </label>
               </div>
             </div>
+
+            {paymentType === 'bank' && (
+              <div className="form-group">
+                <label className="form-label">Bank</label>
+                {bankLoading ? (
+                  <p style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Loading banks...</p>
+                ) : bankList && bankList.length > 0 ? (
+                  <select
+                    className="form-input"
+                    value={bankDetailsId}
+                    onChange={(e) => setBankDetailsId(e.target.value)}
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select bank account</option>
+                    {bankList.map((b) => (
+                      <option key={b._id} value={b._id}>
+                        {b.custom ? b.custom + ' - ' : ''}{b.bankName} {b.accountNumber ? `(${b.accountNumber.slice(-4)})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p style={{ fontSize: '12px', color: 'var(--gray-color)' }}>
+                    No bank accounts available. Add one from Bank tab.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">Amount</label>

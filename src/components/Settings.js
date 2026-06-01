@@ -2606,6 +2606,8 @@ const Settings = ({ onLogout }) => {
           incomeTypes={incomeTypes}
           expenseTypes={expenseTypes}
           orders={financeOrders}
+          bankList={bankList}
+          bankLoading={bankLoading}
         />
       </div>
     </div>
