@@ -127,7 +127,7 @@ const FinanceTransactionModal = ({
       onClose();
     } catch (err) {
       console.error('Error saving transaction:', err);
-      setError(err.message || 'Failed to save transaction');
+      setError(err.response.data.Message || 'Failed to save transaction');
     } finally {
       setIsSubmitting(false);
     }

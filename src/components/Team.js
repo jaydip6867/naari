@@ -41,7 +41,7 @@ const Team = ({ onLogout }) => {
       setStaff(staffList);
     } catch (err) {
       console.error('Error fetching staff:', err);
-      setStaffError(err.message || 'Failed to fetch staff');
+      setStaffError(err.response.data.Message || 'Failed to fetch staff');
     } finally {
       setStaffLoading(false);
     }
@@ -108,6 +108,13 @@ const Team = ({ onLogout }) => {
           <h1 className="page-title">Team Management</h1>
         </div>
 
+        {staffError && (
+            <div className="error-badge">
+              {staffError}
+            </div>
+          )}
+
+
         <div className="content-section">
           <div className="section-header">
             <h2 className="section-title">Staff Account</h2>
@@ -115,19 +122,6 @@ const Team = ({ onLogout }) => {
               <button className="add-btn" onClick={openStaffModal}>+ Add Staff</button>
             </div>
           </div>
-
-          {staffError && (
-            <div style={{
-              color: 'var(--alert-color)',
-              background: 'rgba(255, 0, 0, 0.1)',
-              padding: '12px',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '16px',
-              border: '1px solid rgba(255, 0, 0, 0.2)'
-            }}>
-              {staffError}
-            </div>
-          )}
 
           {staffLoading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>

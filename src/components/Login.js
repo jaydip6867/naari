@@ -36,7 +36,7 @@ const Login = ({ onLogin }) => {
       
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.response.data.Message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

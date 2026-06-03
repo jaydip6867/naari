@@ -554,13 +554,17 @@ body {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--white-color);
+  background: inherit;
   padding: 0px 0 20px;
   margin: 0;
   border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.section-header.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .section-title {
@@ -3353,7 +3357,7 @@ textarea.input-field {
 .table-scroll-wrapper {
   max-height: calc(100vh - 340px);
   overflow-y: auto;
-  margin-top: 16px;
+  /* margin-top: 16px; */
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
@@ -3954,12 +3958,12 @@ textarea.input-field {
   flex-wrap: wrap;
 }
 
-.task_group{
+.task_group {
   width: 33.33%;
   padding: 0 10px;
 }
 
-.task_group + .task_group {
+.task_group+.task_group {
   border-left: 1px solid var(--border-color);
 }
 
@@ -3968,7 +3972,7 @@ textarea.input-field {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
-  
+
 }
 
 .task_count {
@@ -3991,9 +3995,11 @@ textarea.input-field {
   border: 1px solid #eee;
   font-size: 16px;
 }
-.task-card + .task-card {
+
+.task-card+.task-card {
   margin-top: 16px;
 }
+
 .task-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   background-color: var(--primary-dim-light)
@@ -5468,6 +5474,16 @@ textarea.input-field {
 .pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* error badge */
+.error-badge {
+  color: var(--alert-color);
+  background: rgba(255, 0, 0, 0.1);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 0, 0, 0.2)
 }
 
 /* Responsive Chat */

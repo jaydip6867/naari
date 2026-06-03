@@ -36,7 +36,7 @@ const FinanceTypeModal = ({ isOpen, onClose, onSave }) => {
       onClose();
     } catch (err) {
       console.error('Error saving finance type:', err);
-      setError(err.message || 'Failed to save type');
+      setError(err.response.data.Message || 'Failed to save type');
     } finally {
       setIsSubmitting(false);
     }

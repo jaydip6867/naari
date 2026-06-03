@@ -51,7 +51,7 @@ const ViewProduct = ({ onLogout }) => {
       setProduct(data);
     } catch (err) {
       console.error('Error fetching product:', err);
-      setError(err.message || 'Failed to fetch product');
+      setError(err.response.data.Message || 'Failed to fetch product');
     } finally {
       setLoading(false);
     }

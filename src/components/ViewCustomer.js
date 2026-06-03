@@ -42,7 +42,7 @@ const ViewCustomer = ({ onLogout }) => {
       setCustomer(customerData);
     } catch (err) {
       console.error('Error fetching customer:', err);
-      setError(err.message || 'Failed to fetch customer');
+      setError(err.response.data.Message || 'Failed to fetch customer');
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ const ViewCustomer = ({ onLogout }) => {
       fetchCustomer(); // Refresh orders after deletion
     } catch (err) {
       console.error('Error deleting order:', err);
-      alert(err.message || 'Failed to delete order');
+      alert(err.response.data.Message || 'Failed to delete order');
     } finally {
       setLoading(false);
     }

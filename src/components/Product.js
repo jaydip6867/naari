@@ -25,7 +25,7 @@ const Product = ({ onLogout }) => {
       setProducts(Array.isArray(response) ? response : (response || []));
     } catch (err) {
       console.error('Error fetching products:', err);
-      setError(err.message || 'Failed to fetch products');
+      setError(err.response.data.Message || 'Failed to fetch products');
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ const Product = ({ onLogout }) => {
       fetchProducts(searchQuery);
     } catch (err) {
       console.error('Error deleting product:', err);
-      setError(err.message || 'Failed to delete product');
+      setError(err.response.data.Message || 'Failed to delete product');
     }
   };
 
@@ -80,14 +80,7 @@ const Product = ({ onLogout }) => {
         </div>
 
         {error && (
-          <div style={{
-            color: 'var(--alert-color)',
-            background: 'rgba(255, 0, 0, 0.1)',
-            padding: '12px',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '16px',
-            border: '1px solid rgba(255, 0, 0, 0.2)'
-          }}>
+          <div className="error-badge">
             {error}
           </div>
         )}

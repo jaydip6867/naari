@@ -31,7 +31,7 @@ const Customer = ({ onLogout }) => {
         setCustomers(data);
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch customers');
+      setError(err.response.data.Message || 'Failed to fetch customers');
       console.error(err);
     } finally {
       setLoading(false);

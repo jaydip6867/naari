@@ -84,6 +84,16 @@ export const userRoleAPI = {
       throw new Error(response.data.Message || 'Failed to save role');
     }
   },
+
+  getPermission: async () => {
+    const response = await api.get('/user/role/getpermission');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch permissions');
+    }
+  },
 };
 
 // Skills API calls

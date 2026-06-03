@@ -373,7 +373,7 @@ const AddEditOrder = ({ onLogout }) => {
       }
     } catch (err) {
       console.error('Error fetching order:', err);
-      setError(err.message || 'Failed to fetch order');
+      setError(err.response.data.Message || 'Failed to fetch order');
       throw err;
     }
   };
@@ -770,7 +770,7 @@ const AddEditOrder = ({ onLogout }) => {
       }
     } catch (err) {
       console.error('Error saving order:', err);
-      setError(err.message || 'Failed to save order');
+      setError(err.response.data.Message || 'Failed to save order');
     } finally {
       setSaving(false);
       setGlobalLoading('saving', false);

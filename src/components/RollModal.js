@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import '../styles.css';
+import { userRoleAPI } from '../services/api';
 
 const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
   const [rollName, setRollName] = useState('');
   const [permissions, setPermissions] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isFetchingPermissions, setIsFetchingPermissions] = useState(false);
+  const [fetchError, setFetchError] = useState('');
 
-  // Default permissions structure matching API
+  // Default permissions structure - will be overwritten by API response
   const defaultPermissions = useMemo(() => [
     { displayname: 'Users', collectionName: 'users', insertUpdate: false, delete: false, view: false },
     { displayname: 'Role & Permissions', collectionName: 'roles', insertUpdate: false, delete: false, view: false },
@@ -16,6 +19,103 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
     { displayname: 'Orders', collectionName: 'orders', insertUpdate: false, delete: false, view: false },
     { displayname: 'Tasks', collectionName: 'tasks', insertUpdate: false, delete: false, view: false }
   ], []);
+
+  // Merge API permissions with existing role permissions
+  const mergePermissionsWithAPIData = useCallback(async (rolePermissions) => {
+    try {
+      setIsFetchingPermissions(true);
+      setFetchError('');
+      
+      // Fetch all available permissions from API
+      const permissionsData = await userRoleAPI.getPermission();
+      let apiPermissions = [];
+      
+      // Extract permissions array from API response
+      if (Array.isArray(permissionsData)) {
+        apiPermissions = permissionsData;
+      } else if (permissionsData && typeof permissionsData === 'object') {
+        if (Array.isArray(permissionsData.permissions)) {
+          apiPermissions = permissionsData.permissions;
+        } else {
+          apiPermissions = defaultPermissions;
+        }
+      } else {
+        apiPermissions = defaultPermissions;
+      }
+      
+      // Merge: Start with API permissions, then override with existing role permissions
+      const mergedPermissions = apiPermissions.map(apiPerm => {
+        // Find matching permission in the existing role's permissions
+        const existingPerm = rolePermissions.find(
+          rolePerm => rolePerm.collectionName === apiPerm.collectionName
+        );
+        
+        // If found, merge the values; otherwise use API values
+        if (existingPerm) {
+          return {
+            displayname: existingPerm.displayname || apiPerm.displayname,
+            collectionName: apiPerm.collectionName,
+            view: existingPerm.view ?? apiPerm.view ?? false,
+            insertUpdate: existingPerm.insertUpdate ?? apiPerm.insertUpdate ?? false,
+            delete: existingPerm.delete ?? apiPerm.delete ?? false
+          };
+        }
+        
+        // Return API permission if no match found
+        return {
+          ...apiPerm,
+          view: apiPerm.view ?? false,
+          insertUpdate: apiPerm.insertUpdate ?? false,
+          delete: apiPerm.delete ?? false
+        };
+      });
+      
+      setPermissions(mergedPermissions);
+    } catch (err) {
+      console.error('Error merging permissions:', err);
+      setFetchError(err.response.data.Message || 'Failed to fetch permissions');
+      // Fallback to role's existing permissions
+      if (Array.isArray(rolePermissions)) {
+        setPermissions(rolePermissions);
+      } else {
+        setPermissions(defaultPermissions);
+      }
+    } finally {
+      setIsFetchingPermissions(false);
+    }
+  }, [defaultPermissions]);
+
+  // Fetch permissions from API for adding new role
+  const fetchPermissionsFromAPI = useCallback(async () => {
+    try {
+      setIsFetchingPermissions(true);
+      setFetchError('');
+      const permissionsData = await userRoleAPI.getPermission();
+      
+      // If API returns an array of permissions, use it directly
+      if (Array.isArray(permissionsData)) {
+        setPermissions(permissionsData);
+      } else if (permissionsData && typeof permissionsData === 'object') {
+        // If API returns an object, check if it has a permissions property
+        if (Array.isArray(permissionsData.permissions)) {
+          setPermissions(permissionsData.permissions);
+        } else {
+          // Fallback to default if structure doesn't match
+          setPermissions(defaultPermissions);
+        }
+      } else {
+        // Fallback to default permissions
+        setPermissions(defaultPermissions);
+      }
+    } catch (err) {
+      console.error('Error fetching permissions:', err);
+      setFetchError(err.response.data.Message || 'Failed to fetch permissions');
+      // Use default permissions on error
+      setPermissions(defaultPermissions);
+    } finally {
+      setIsFetchingPermissions(false);
+    }
+  }, [defaultPermissions]);
 
   // Map old permission structure to new API structure
   const mapOldPermissionsToNew = useCallback((oldPermissions) => {
@@ -66,23 +166,29 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
   useEffect(() => {
     if (isOpen) {
       if (editingRoll) {
-        // Edit mode - populate with existing data
+        // Edit mode - fetch latest permissions from API and merge with existing role permissions
         setRollName(editingRoll.name || '');
+        
+        let rolePermissions = [];
         if (editingRoll.permissions && Array.isArray(editingRoll.permissions)) {
           // Already in new format
-          setPermissions(editingRoll.permissions);
-        } else {
+          rolePermissions = editingRoll.permissions;
+        } else if (editingRoll.permissions && typeof editingRoll.permissions === 'object') {
           // Convert from old format to new format
-          setPermissions(mapOldPermissionsToNew(editingRoll.permissions || {}));
+          rolePermissions = mapOldPermissionsToNew(editingRoll.permissions);
         }
+        
+        // Merge API permissions with existing role permissions
+        mergePermissionsWithAPIData(rolePermissions);
       } else {
-        // Add mode - reset form
+        // Add mode - fetch permissions from API
         setRollName('');
-        setPermissions(defaultPermissions);
+        fetchPermissionsFromAPI();
       }
       setError('');
+      setFetchError('');
     }
-  }, [isOpen, editingRoll, defaultPermissions, mapOldPermissionsToNew]);
+  }, [isOpen, editingRoll, fetchPermissionsFromAPI, mergePermissionsWithAPIData, mapOldPermissionsToNew]);
 
   const handlePermissionChange = (index, field, value) => {
     const updatedPermissions = [...permissions];
@@ -126,10 +232,11 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmitting && !isFetchingPermissions) {
       setRollName('');
       setPermissions(defaultPermissions);
       setError('');
+      setFetchError('');
       onClose();
     }
   };
@@ -169,6 +276,35 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
               </div>
             )}
 
+            {fetchError && (
+              <div style={{ 
+                color: 'var(--alert-color)', 
+                background: 'rgba(255, 0, 0, 0.1)', 
+                padding: '12px', 
+                borderRadius: 'var(--radius-md)', 
+                marginBottom: '16px',
+                border: '1px solid rgba(255, 0, 0, 0.2)',
+                fontSize: '14px'
+              }}>
+                {fetchError}
+              </div>
+            )}
+
+            {isFetchingPermissions && (
+              <div style={{ 
+                color: 'var(--text-secondary)', 
+                background: 'rgba(100, 100, 100, 0.1)', 
+                padding: '12px', 
+                borderRadius: 'var(--radius-md)', 
+                marginBottom: '16px',
+                border: '1px solid rgba(100, 100, 100, 0.2)',
+                fontSize: '14px',
+                textAlign: 'center'
+              }}>
+                Loading permissions...
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label" htmlFor="roll-name">
                 Roll / Designation
@@ -181,60 +317,74 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
                 value={rollName}
                 onChange={(e) => setRollName(e.target.value)}
                 autoFocus
-                disabled={isSubmitting}
+                disabled={isSubmitting || isFetchingPermissions}
                 required
               />
             </div>
 
             <div className="permissions-section">
               <h3 className="permissions-title">Permissions</h3>
-              <table className="permissions-table">
-                <thead>
-                  <tr>
-                    <th>Module</th>
-                    <th>View</th>
-                    <th>Add/Edit</th>
-                    <th>Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {permissions.map((permission, index) => (
-                    <tr key={index}>
-                      <td className="section-name">{permission.displayname}</td>
-                      <td>
-                        <div className="permission-toggles">
-                          <div
-                            className={`toggle-switch ${permission.view ? 'active' : ''}`}
-                            onClick={() => handlePermissionChange(index, 'view', !permission.view)}
-                          >
-                            <div className="toggle-slider"></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="permission-toggles">
-                          <div
-                            className={`toggle-switch ${permission.insertUpdate ? 'active' : ''}`}
-                            onClick={() => handlePermissionChange(index, 'insertUpdate', !permission.insertUpdate)}
-                          >
-                            <div className="toggle-slider"></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="permission-toggles">
-                          <div
-                            className={`toggle-switch ${permission.delete ? 'active' : ''}`}
-                            onClick={() => handlePermissionChange(index, 'delete', !permission.delete)}
-                          >
-                            <div className="toggle-slider"></div>
-                          </div>
-                        </div>
-                      </td>
+              {permissions.length > 0 ? (
+                <table className="permissions-table">
+                  <thead>
+                    <tr>
+                      <th>Module</th>
+                      <th>View</th>
+                      <th>Add/Edit</th>
+                      <th>Delete</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {permissions.map((permission, index) => (
+                      <tr key={index}>
+                        <td className="section-name">{permission.displayname}</td>
+                        <td>
+                          <div className="permission-toggles">
+                            <div
+                              className={`toggle-switch ${permission.view ? 'active' : ''}`}
+                              onClick={() => !isFetchingPermissions && handlePermissionChange(index, 'view', !permission.view)}
+                              style={{ cursor: isFetchingPermissions ? 'not-allowed' : 'pointer' }}
+                            >
+                              <div className="toggle-slider"></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="permission-toggles">
+                            <div
+                              className={`toggle-switch ${permission.insertUpdate ? 'active' : ''}`}
+                              onClick={() => !isFetchingPermissions && handlePermissionChange(index, 'insertUpdate', !permission.insertUpdate)}
+                              style={{ cursor: isFetchingPermissions ? 'not-allowed' : 'pointer' }}
+                            >
+                              <div className="toggle-slider"></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="permission-toggles">
+                            <div
+                              className={`toggle-switch ${permission.delete ? 'active' : ''}`}
+                              onClick={() => !isFetchingPermissions && handlePermissionChange(index, 'delete', !permission.delete)}
+                              style={{ cursor: isFetchingPermissions ? 'not-allowed' : 'pointer' }}
+                            >
+                              <div className="toggle-slider"></div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ 
+                  padding: '20px', 
+                  textAlign: 'center', 
+                  color: 'var(--text-secondary)',
+                  fontSize: '14px'
+                }}>
+                  {isFetchingPermissions ? 'Loading permissions...' : 'No permissions available'}
+                </div>
+              )}
             </div>
           </div>
           
@@ -243,14 +393,14 @@ const RollModal = ({ isOpen, onClose, onSave, editingRoll }) => {
               type="button"
               className="btn btn-cancel"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isFetchingPermissions}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn btn-save"
-              disabled={!rollName.trim() || isSubmitting}
+              disabled={!rollName.trim() || isSubmitting || isFetchingPermissions}
             >
               {isSubmitting ? 'Saving...' : 'Save'}
             </button>

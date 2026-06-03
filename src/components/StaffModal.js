@@ -291,7 +291,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
       onClose();
     } catch (err) {
       console.error('Error saving staff:', err);
-      setError(err.message || 'Failed to save staff');
+      setError(err.response.data.Message || 'Failed to save staff');
     } finally {
       setIsSubmitting(false);
     }

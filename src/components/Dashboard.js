@@ -14,6 +14,7 @@ const Dashboard = ({ onLogout }) => {
     onLogout();
     navigate('/');
   };
+  
 
   return (
     <div className="settings-container">

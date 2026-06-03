@@ -46,7 +46,7 @@ const Chat = ({ onLogout }) => {
       setChats(chatsData || []);
     } catch (err) {
       console.error('Error fetching chats:', err);
-      setError(err.message || 'Failed to fetch chats');
+      setError(err.response.data.Message || 'Failed to fetch chats');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ const Chat = ({ onLogout }) => {
       setMessages(normalizeMessages(messagesData));
     } catch (err) {
       console.error('Error fetching messages:', err);
-      setError(err.message || 'Failed to fetch messages');
+      setError(err.response.data.Message || 'Failed to fetch messages');
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ const Chat = ({ onLogout }) => {
       await fetchMessages(chatId);
     } catch (err) {
       console.error('Error sending message:', err);
-      setError(err.message || 'Failed to send message');
+      setError(err.response.data.Message || 'Failed to send message');
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ const Chat = ({ onLogout }) => {
       await fetchChats();
     } catch (err) {
       console.error('Error removing user from group:', err);
-      setError(err.message || 'Failed to remove user from group');
+      setError(err.response.data.Message || 'Failed to remove user from group');
     } finally {
       setLoading(false);
     }
@@ -171,7 +171,7 @@ const Chat = ({ onLogout }) => {
       setStaffList(staffListData);
     } catch (err) {
       console.error('Error fetching staff list:', err);
-      setModalError(err.message || 'Failed to fetch staff list');
+      setModalError(err.response.data.Message || 'Failed to fetch staff list');
       setStaffList([]);
     } finally {
       setStaffLoading(false);
@@ -213,7 +213,7 @@ const Chat = ({ onLogout }) => {
       await fetchMessages(groupId);
     } catch (err) {
       console.error('Error adding user to group:', err);
-      setModalError(err.message || 'Failed to add user to group');
+      setModalError(err.response.data.Message || 'Failed to add user to group');
     } finally {
       setStaffLoading(false);
     }

@@ -27,7 +27,7 @@ const Order = ({ onLogout }) => {
       setOrders(ordersData); // Initially display all orders
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError(err.message || 'Failed to fetch orders');
+      setError(err.response.data.Message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ const Order = ({ onLogout }) => {
       fetchOrders(); // Refresh orders after deletion
     } catch (err) {
       console.error('Error deleting order:', err);
-      alert(err.message || 'Failed to delete order');
+      alert(err.response.data.Message || 'Failed to delete order');
     } finally {
       setLoading(false);
     }
@@ -119,6 +119,20 @@ const Order = ({ onLogout }) => {
           <h1 className="page-title">Order Management</h1>
         </div>
 
+        {error && (
+            <div style={{
+              color: 'var(--alert-color)',
+              background: 'rgba(255, 0, 0, 0.1)',
+              padding: '12px',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '16px',
+              border: '1px solid rgba(255, 0, 0, 0.2)'
+            }}>
+            {error}
+          </div>
+        )}
+
+
         <div className="content-section">
           <div className="section-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
             <h2 className="section-title">Orders</h2>
@@ -148,18 +162,6 @@ const Order = ({ onLogout }) => {
             </div>
           </div>
 
-          {error && (
-            <div style={{
-              color: 'var(--alert-color)',
-              background: 'rgba(255, 0, 0, 0.1)',
-              padding: '12px',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '16px',
-              border: '1px solid rgba(255, 0, 0, 0.2)'
-            }}>
-              {error}
-            </div>
-          )}
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
@@ -213,7 +215,7 @@ const Order = ({ onLogout }) => {
                         <td style={{ padding: '12px', textTransform: 'capitalize' }}>{order.orderType || '-'}</td>
                         <td >{getStatusBadge(order.status)}</td>
                         <td >{order.deliveryDate || '-'}</td>
-                        <td style={{textAlign: 'center' }}>
+                        <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button
                               className="edit-btn"
