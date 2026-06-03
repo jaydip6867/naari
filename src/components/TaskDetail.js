@@ -62,18 +62,22 @@ const Tasks = ({ onLogout }) => {
                             <p>To Do</p> <span className='task_count'>01</span>
                         </div>
                         <div class="task-card">
-
                             <div class="task-title">
-                                Solve the dribble prioritization issue with the team
+                                N0056
+                                <div class="task-actions">
+                                    <div class="task_view-btn ">
+                                        <FiEye />
+                                    </div>
+                                    <div class="task_view-btn ">
+                                        <FiEdit />
+                                    </div>
+                                </div>
                             </div>
                             <div class="task-date">
                                 <FiCalendar /> <span>Jan 08,2027</span>
                             </div>
                             <div class="bottom-row">
                                 <div class="tag">Artwork</div>
-                                <div class="task_view-btn ">
-                                    <FiEye  />
-                                </div>
                             </div>
 
                         </div>
@@ -93,7 +97,7 @@ const Tasks = ({ onLogout }) => {
                             <div class="bottom-row">
                                 <div class="tag">Artwork</div>
                                 <div class="task_view-btn ">
-                                    <FiEye  />
+                                    <FiEye />
                                 </div>
                             </div>
 
@@ -109,7 +113,7 @@ const Tasks = ({ onLogout }) => {
                             <div class="bottom-row">
                                 <div class="tag">Artwork</div>
                                 <div class="task_view-btn ">
-                                    <FiEye  />
+                                    <FiEye />
                                 </div>
                             </div>
 
@@ -130,7 +134,7 @@ const Tasks = ({ onLogout }) => {
                             <div class="bottom-row">
                                 <div class="tag">Artwork</div>
                                 <div class="task_view-btn ">
-                                    <FiEye  />
+                                    <FiEye />
                                 </div>
                             </div>
                         </div>

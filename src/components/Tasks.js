@@ -4,8 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEye, FiEdit } from 'react-icons/fi';
-import Pagination from './Pagination.js';
+import { FiPlus, FiSearch, FiEye, FiEdit, FiCalendar } from 'react-icons/fi';
 
 const Tasks = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -20,9 +19,6 @@ const Tasks = ({ onLogout }) => {
   const [refImages, setRefImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [isEndingTask, setIsEndingTask] = useState(false);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchTasks();
@@ -48,7 +44,6 @@ const Tasks = ({ onLogout }) => {
     e.preventDefault();
     const query = e.target.value;
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page on new search
     // Filter tasks locally
     if (!query.trim()) {
       setTasks(allTasks); // Show all tasks if search is empty
@@ -201,23 +196,123 @@ const Tasks = ({ onLogout }) => {
     return task.taskDetails?.[0]?.status || task.status || null;
   };
 
+  const getTaskCardTitle = (task) => {
+    if (task.orderId) return task.orderId;
+    // if (task.productName) return task.productName;
+    return 'No Order ID';
+  };
+
+  const formatTaskDate = (task) => {
+    const dateValue = task.deliveryDate || task.createdAt;
+    return dateValue ? new Date(dateValue).toLocaleDateString() : 'No date';
+  };
+
+  const getAssignWorkerStatuses = (task) => {
+    if (!task) return [];
+    if (Array.isArray(task.assignWorker)) {
+      return task.assignWorker.map((item) => item?.status).filter(Boolean);
+    }
+    if (task.assignWorker?.status) {
+      return [task.assignWorker.status];
+    }
+    return [];
+  };
+
+  const statusColors = {
+    FABRIC_PURCHASE: {
+      backgroundColor: "#fef2f2",
+      color: "#dc2626",
+    },
+    DYING: {
+      backgroundColor: "#fff7ed",
+      color: "#ea580c",
+    },
+    FUSING: {
+      backgroundColor: "#fefce8",
+      color: "#a16207",
+    },
+    KHAKHA: {
+      backgroundColor: "#f0fdf4",
+      color: "#15803d",
+    },
+    ARTWORK: {
+      backgroundColor: "#f0f9ff",
+      color: "#0284c7",
+    },
+    ADDONS: {
+      backgroundColor: "#eff6ff",
+      color: "#2563eb",
+    },
+    CUTTING: {
+      backgroundColor: "#faf5ff",
+      color: "#9333ea",
+    },
+    STITCHING: {
+      backgroundColor: "#fdf2f8",
+      color: "#db2777",
+    },
+    QC: {
+      backgroundColor: "#f3f4f6",
+      color: "#374151",
+    },
+    OTHER_WORK: {
+      backgroundColor: "#f5f3ff",
+      color: "#7e22ce",
+    },
+    PACKING: {
+      backgroundColor: "#ecfeff",
+      color: "#0369a1",
+    },
+    READY_TO_DELIVERY: {
+      backgroundColor: "#fefce8",
+      color: "#a16207",
+    },
+    DELIVERY_COMPLETE: {
+      backgroundColor: "#dcfce7",
+      color: "#166534",
+    },
+    REPAIRING: {
+      backgroundColor: "#fef2f2",
+      color: "#b91c1c",
+    },
+  };
+
+  const getStatusStyle = (status) => {
+    const key = status?.toUpperCase().replace(/\s+/g, "_");
+    return (
+      statusColors[key] || {
+        backgroundColor: "#f3f4f6",
+        color: "#374151",
+      }
+    );
+  };
+
   const isPendingStatus = (status) => ['pending', 'created', 'not_started'].includes(status?.toString().toLowerCase());
   const isStartedStatus = (status) => ['start', 'started', 'in_progress'].includes(status?.toString().toLowerCase());
   const isPausedStatus = (status) => ['pause', 'paused'].includes(status?.toString().toLowerCase());
   const isEndedStatus = (status) => ['end', 'ended', 'completed'].includes(status?.toString().toLowerCase());
+
+  const todoTasks = tasks.filter((task) => {
+    const status = getDetailTaskStatus(task);
+    return !status || isPendingStatus(status);
+  });
+
+  const inProgressTasks = tasks.filter((task) => {
+    const status = getDetailTaskStatus(task);
+    return isStartedStatus(status) || isPausedStatus(status);
+  });
+
+  const completedTasks = tasks.filter((task) => {
+    const status = getDetailTaskStatus(task);
+    return isEndedStatus(status);
+  });
 
   const handleLogout = () => {
     storage.clearAuthData();
     onLogout();
     navigate('/');
   };
-  // pagination logic
-  const indexOfLastTask = currentPage * itemsPerPage;
-  const indexOfFirstTask = indexOfLastTask - itemsPerPage;
 
-  const currentTasks = tasks.slice(indexOfFirstTask, indexOfLastTask);
-
-  const totalPages = Math.ceil(tasks.length / itemsPerPage);
   const selectedTaskDetailStatus = getDetailTaskStatus(selectedTask);
 
   return (
@@ -270,126 +365,110 @@ const Tasks = ({ onLogout }) => {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>Loading tasks...</div>
           ) : tasks.length > 0 ? (
-            <div className="table-container">
-              <div className="table-scroll-wrapper">
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th >Customer</th>
-                      <th >Product</th>
-                      <th >Outfit Type</th>
-                      <th >Assigned To</th>
-                      <th >Delivery Date</th>
-                      <th >Price</th>
-                      <th >Status</th>
-                      <th >Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentTasks.map((task) => (
-                      <tr key={task._id}>
-                        <td>{task.customerId?.fullName || 'N/A'}</td>
-                        <td>{task.productName || 'N/A'}</td>
-                        <td>{task.outfitTypeName || 'N/A'}</td>
-                        <td>{task.assignWorker?.fullName || 'Not assigned'}</td>
-                        <td>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
-                        <td>₹{task.totalPrice || 0}</td>
-                        <td>
-                          <span
-                            className="task-status"
-                            style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
+            <div className="kanban-board">
+              <div className="task_group">
+                <div className="task_group_heading">
+                  <p>Todo</p> <span className="task_count">{todoTasks.length}</span>
+                </div>
+                {todoTasks.length > 0 ? todoTasks.map((task) => (
+                  <div className="task-card" key={task._id}>
+                    <div className="task-title">
+                      {getTaskCardTitle(task)}
+                      <div className="task-actions">
+                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
+                          <FiEye />
+                        </div>
+                        <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
+                          <FiEdit />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="task-date">
+                      <FiCalendar /> <span>{formatTaskDate(task)}</span>
+                    </div>
+                    <div className="bottom-row">
+                      {getAssignWorkerStatuses(task).length > 0 ? (
+                        getAssignWorkerStatuses(task).map((status, index) => (
+                          <div
+                            key={index}
+                            className="tag"
+                            style={getStatusStyle(status)}
                           >
-                            {getTaskStatusText(task.status)}
-                          </span>
-                        </td>
-                        <td style={{textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleTaskClick(task)}
-                              title="Task Edit"
-                            >
-                              <FiEdit />
-                              {/* <FiEye /> */}
-                            </button>
-                            <button
-                              className="edit-btn"
-                              onClick={() => navigate(`/tasks/${task._id}`)}
-                              title="Task Details"
-                            >
-                              <FiEye />
-                            </button>
+                            {status.replace(/_/g, " ")}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ))
+                      ) : ""}
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ padding: '16px', color: 'var(--gray-color)' }}>No pending tasks</div>
+                )}
               </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
+              <div className="task_group">
+                <div className="task_group_heading">
+                  <p>In Progress</p> <span className="task_count">{inProgressTasks.length}</span>
+                </div>
+                {inProgressTasks.length > 0 ? inProgressTasks.map((task) => (
+                  <div className="task-card" key={task._id || `${task.productName}-${Math.random()}`}>
+                    <div className="task-title">
+                      {getTaskCardTitle(task)}
+                      <div className="task-actions">
+                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
+                          <FiEye />
+                        </div>
+                        <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
+                          <FiEdit />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="task-date">
+                      <FiCalendar /> <span>{formatTaskDate(task)}</span>
+                    </div>
+                    <div className="bottom-row">
+                      {getAssignWorkerStatuses(task).length > 0 ? getAssignWorkerStatuses(task).map((status, index) => (
+                        <div key={index} className="tag">{status.replace(/_/g, ' ')}</div>
+                      )) : (
+                        <div className="tag">{task.outfitTypeName || task.productName || 'Artwork'}</div>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ padding: '16px', color: 'var(--gray-color)' }}>No tasks in progress</div>
+                )}
+              </div>
+              <div className="task_group">
+                <div className="task_group_heading">
+                  <p>Completed</p> <span className="task_count">{completedTasks.length}</span>
+                </div>
+                {completedTasks.length > 0 ? completedTasks.map((task) => (
+                  <div className="task-card" key={task._id || `${task.productName}-${Math.random()}`}>
+                    <div className="task-title">
+                      {getTaskCardTitle(task)}
+                      <div className="task-actions">
+                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
+                          <FiEye />
+                        </div>
+                        <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
+                          <FiEdit />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="task-date">
+                      <FiCalendar /> <span>{formatTaskDate(task)}</span>
+                    </div>
+                    <div className="bottom-row">
+                      {getAssignWorkerStatuses(task).length > 0 ? getAssignWorkerStatuses(task).map((status, index) => (
+                        <div key={index} className="tag">{status.replace(/_/g, ' ')}</div>
+                      )) : (
+                        <div className="tag">{task.outfitTypeName || task.productName || 'Artwork'}</div>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ padding: '16px', color: 'var(--gray-color)' }}>No completed tasks</div>
+                )}
+              </div>
             </div>
-            // <div className="table-container tasks-table-container">
-            //   <div className="table-scroll-wrapper">
-            //     <table className="tasks-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            //       <thead>
-            //         <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
-            //           {/* <th >Order ID</th> */}
-            //           <th >Customer</th>
-            //           <th >Product</th>
-            //           <th >Outfit Type</th>
-            //           <th >Assigned To</th>
-            //           <th >Delivery Date</th>
-            //           <th >Price</th>
-            //           <th >Status</th>
-            //           <th >Actions</th>
-            //         </tr>
-            //       </thead>
-            //       <tbody>
-            //         {currentTasks.map((task) => (
-            //           <tr key={task._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-            //             {/* <td style={{ padding: '12px' }}>
-            //               <span className="order-id">{task._id?.slice(-6) || '-'}</span>
-            //             </td> */}
-            //             <td style={{ padding: '12px' }}>{task.customerId?.fullName || 'N/A'}</td>
-            //             <td style={{ padding: '12px' }}>{task.productName || 'N/A'}</td>
-            //             <td style={{ padding: '12px' }}>{task.outfitTypeName || 'N/A'}</td>
-            //             <td style={{ padding: '12px' }}>{task.assignWorker?.fullName || 'Not assigned'}</td>
-            //             <td style={{ padding: '12px' }}>{task.deliveryDate ? new Date(task.deliveryDate).toLocaleDateString() : 'N/A'}</td>
-            //             <td style={{ padding: '12px' }}>₹{task.totalPrice || 0}</td>
-            //             <td style={{ padding: '12px' }}>
-            //               <span
-            //                 className="task-status"
-            //                 style={{ backgroundColor: getTaskStatusColor(task.status), color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' }}
-            //               >
-            //                 {getTaskStatusText(task.status)}
-            //               </span>
-            //             </td>
-            //             <td style={{ padding: '12px', textAlign: 'center' }}>
-            //               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-            //                 <button
-            //                   className="edit-btn"
-            //                   onClick={() => handleTaskClick(task)}
-            //                   title="View"
-            //                 >
-            //                   <FiEye />
-            //                 </button>
-            //               </div>
-            //             </td>
-            //           </tr>
-            //         ))}
-            //       </tbody>
-            //     </table>
-            //   </div>
-            //   <Pagination
-            //     currentPage={currentPage}
-            //     totalPages={totalPages}
-            //     onPageChange={setCurrentPage}
-            //   />
-            // </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--gray-color)' }}>
               <p>No tasks found</p>
