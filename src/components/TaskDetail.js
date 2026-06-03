@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
-import { FiEye, FiEdit, FiCalendar } from 'react-icons/fi';
+import { FiEye, FiEdit, FiCalendar, FiPlay, FiPause, FiCheckCircle } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 
 const TaskDetail = ({ onLogout }) => {
@@ -69,21 +69,31 @@ const TaskDetail = ({ onLogout }) => {
     const completedTasks = tasks.filter((task) => task.status === 'completed');
 
     const renderTaskCard = (task) => (
-        <div className="task-card" key={task._id || `${task.orderId}-${Math.random()}`}>
+        <div className="task-card" key={task._id}>
             <div className="task-title">
                 <div>
-                    <strong>{task.orderId}</strong>
+                    {/* <strong>{task.orderId}</strong> */}
+                    <strong>{task.orderId.slice(-6)}</strong>
                     {/* <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>
                         {task.customerId || task.outfitTypeName || 'Task details'}
                     </div> */}
                 </div>
                 <div className="task-actions">
-                    <div className="task_view-btn" title="View Task">
-                        <FiEye />
-                    </div>
-                    <div className="task_view-btn" title="Edit Task">
-                        <FiEdit />
-                    </div>
+                    {task.status === 'pending' || task.status === 'paused' &&  (
+                        <div className="task_view-btn start" title="Start Task">
+                            <FiPlay />
+                        </div>
+                    )}
+                    {task.status === 'started' && (
+                        <div className="task_view-btn pause" title="Pause Task">
+                            <FiPause />
+                        </div>
+                    )}
+                    {task.status !== 'completed' && (
+                        <div className="task_view-btn complete" title="Complete Task">
+                            <FiCheckCircle />
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="task-date">

@@ -4063,6 +4063,19 @@ textarea.input-field {
   font-size: 14px;
 }
 
+.task_view-btn.start{
+  background: var(--warn-color);
+  color: white;
+}
+.task_view-btn.pause{
+  background: var(--alert-color);
+  color: white;
+}
+.task_view-btn.complete{
+  background: var(--success-color);
+  color: white;
+}
+
 .kanban-board {
   display: flex;
   margin-top: 20px;
@@ -5546,6 +5559,8 @@ textarea.input-field {
   display: flex;
   gap: 8px;
 }
+
+
 
 /* Responsive Chat */
 @media (max-width: 1200px) {
