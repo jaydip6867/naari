@@ -35,8 +35,9 @@ const Login = ({ onLogin }) => {
       navigate('/settings');
       
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response.data.Message || 'Login failed. Please check your credentials.');
+      console.log('Login error:', err);
+      // setError(err.message || 'Login failed. Please check your credentials.');
+      setError('Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

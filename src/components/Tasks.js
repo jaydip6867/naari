@@ -326,7 +326,7 @@ const Tasks = ({ onLogout }) => {
           <h1 className="page-title">Task Management</h1>
         </div>
 
-        <div className="content-section">
+        <div className="content-section pt-0">
           {error && (
             <div style={{
               color: 'var(--alert-color)',
@@ -340,7 +340,7 @@ const Tasks = ({ onLogout }) => {
             </div>
           )}
 
-          <div className="section-header">
+          <div className="section-header pt-3">
             <h2 className="section-title">Tasks</h2>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
               <div className="search-container" style={{ position: 'relative' }}>
@@ -370,39 +370,41 @@ const Tasks = ({ onLogout }) => {
                 <div className="task_group_heading">
                   <p>Todo</p> <span className="task_count">{todoTasks.length}</span>
                 </div>
-                {todoTasks.length > 0 ? todoTasks.map((task) => (
-                  <div className="task-card" key={task._id}>
-                    <div className="task-title">
-                      {getTaskCardTitle(task)}
-                      <div className="task-actions">
-                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
-                          <FiEye />
-                        </div>
-                        <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
-                          <FiEdit />
+                <div>
+                  {todoTasks.length > 0 ? todoTasks.map((task) => (
+                    <div className="task-card" key={task._id}>
+                      <div className="task-title">
+                        {getTaskCardTitle(task)}
+                        <div className="task-actions">
+                          <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
+                            <FiEye />
+                          </div>
+                          <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
+                            <FiEdit />
+                          </div>
                         </div>
                       </div>
+                      <div className="task-date">
+                        <FiCalendar /> <span>{formatTaskDate(task)}</span>
+                      </div>
+                      <div className="bottom-row">
+                        {getAssignWorkerStatuses(task).length > 0 ? (
+                          getAssignWorkerStatuses(task).map((status, index) => (
+                            <div
+                              key={index}
+                              className="tag"
+                              style={getStatusStyle(status)}
+                            >
+                              {status.replace(/_/g, " ")}
+                            </div>
+                          ))
+                        ) : ""}
+                      </div>
                     </div>
-                    <div className="task-date">
-                      <FiCalendar /> <span>{formatTaskDate(task)}</span>
-                    </div>
-                    <div className="bottom-row">
-                      {getAssignWorkerStatuses(task).length > 0 ? (
-                        getAssignWorkerStatuses(task).map((status, index) => (
-                          <div
-                            key={index}
-                            className="tag"
-                            style={getStatusStyle(status)}
-                          >
-                            {status.replace(/_/g, " ")}
-                          </div>
-                        ))
-                      ) : ""}
-                    </div>
-                  </div>
-                )) : (
-                  <div style={{ padding: '16px', color: 'var(--gray-color)' }}>No pending tasks</div>
-                )}
+                  )) : (
+                    <div style={{ padding: '16px', color: 'var(--gray-color)' }}>No pending tasks</div>
+                  )}
+                </div>
               </div>
               <div className="task_group">
                 <div className="task_group_heading">

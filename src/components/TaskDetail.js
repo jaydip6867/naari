@@ -4,36 +4,32 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEye, FiEdit, FiCalendar } from 'react-icons/fi';
+import { FiEye, FiEdit, FiCalendar } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 
-const Tasks = ({ onLogout }) => {
+const TaskDetail = ({ onLogout }) => {
     const navigate = useNavigate();
     const [tasks, setTasks] = useState([]);
     const { orderId } = useParams();
-    const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState('');
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
 
     useEffect(() => {
         fetchTasks();
-    }, []);
+    }, [orderId]);
 
     const fetchTasks = async () => {
         try {
             setLoading(true);
             setError('');
-            const response = await taskAPI.getTaskById(orderId); // Fetch all tasks without search
-            const tasksData = Array.isArray(response) ? response : (response || []);
-            setAllTasks(tasksData); // Store all tasks
-            setTasks(tasksData); // Initially display all tasks
+            const response = await taskAPI.getTaskById(orderId);
+            const tasksData = Array.isArray(response?.taskDetails)
+                ? response.taskDetails
+                : [];
+            setTasks(tasksData);
         } catch (error) {
-            console.error('Error fetching tasks:', error);
-            setError(error.message || 'Failed to fetch tasks');
+            console.error('Error fetching task details:', error);
+            setError(error.message || 'Failed to fetch task details');
         } finally {
             setLoading(false);
         }
@@ -45,104 +41,124 @@ const Tasks = ({ onLogout }) => {
         navigate('/');
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No date';
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return 'No date';
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+        });
+    };
+
+    const getTaskTags = (task) => {
+        const assignStatuses = Array.isArray(task.assignWorker)
+            ? task.assignWorker
+                .map((item) => item.status)
+                .filter(Boolean)
+            : [];
+        if (assignStatuses.length > 0) return assignStatuses;
+        if (Array.isArray(task.workTypes) && task.workTypes.length > 0) return task.workTypes;
+        if (task.outfitTypeName) return [task.outfitTypeName];
+        return ['Task'];
+    };
+
+    const pendingTasks = tasks.filter((task) => task.status === 'pending');
+    const inProgressTasks = tasks.filter((task) => ['started', 'paused'].includes(task.status));
+    const completedTasks = tasks.filter((task) => task.status === 'completed');
+
+    const renderTaskCard = (task) => (
+        <div className="task-card" key={task._id || `${task.orderId}-${Math.random()}`}>
+            <div className="task-title">
+                <div>
+                    <strong>{task.orderId}</strong>
+                    {/* <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>
+                        {task.customerId || task.outfitTypeName || 'Task details'}
+                    </div> */}
+                </div>
+                <div className="task-actions">
+                    <div className="task_view-btn" title="View Task">
+                        <FiEye />
+                    </div>
+                    <div className="task_view-btn" title="Edit Task">
+                        <FiEdit />
+                    </div>
+                </div>
+            </div>
+            <div className="task-date">
+                <FiCalendar /> <span>{formatDate(task.deliveryDate || task.createdAt)}</span>
+            </div>
+            <div className="bottom-row">
+                {getTaskTags(task).map((tag, index) => (
+                    <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
         <div className="settings-container">
-            {/* Sidebar */}
             <Sidebar onLogout={handleLogout} />
-
-            {/* Main Content */}
             <div className="main-content">
                 <div className="page-header section-header">
-                    <h1 className="page-title">All Task</h1>
+                    <h1 className="page-title">Task Details</h1>
                 </div>
-                <div className='content-section task_details_div' >
-                    <div className='task_group'>
-                        <div className='task_group_heading'>
-                            <p>To Do</p> <span className='task_count'>01</span>
+                <div className="content-section task_details_div kanban-board">
+                    {error && (
+                        <div style={{
+                            color: 'var(--alert-color)',
+                            background: 'rgba(255, 0, 0, 0.1)',
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            marginBottom: '16px',
+                            border: '1px solid rgba(255, 0, 0, 0.2)'
+                        }}>
+                            {error}
                         </div>
-                        <div class="task-card">
-                            <div class="task-title">
-                                N0056
-                                <div class="task-actions">
-                                    <div class="task_view-btn ">
-                                        <FiEye />
+                    )}
+                    {loading ? (
+                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
+                            Loading task details...
+                        </div>
+                    ) : (
+                        <>
+                            <div className="task_group">
+                                <div className="task_group_heading">
+                                    <p>To Do</p> <span className="task_count">{pendingTasks.length}</span>
+                                </div>
+                                {pendingTasks.length > 0 ? pendingTasks.map(renderTaskCard) : (
+                                    <div style={{ padding: '16px', color: 'var(--gray-color)' }}>
+                                        No pending tasks
                                     </div>
-                                    <div class="task_view-btn ">
-                                        <FiEdit />
+                                )}
+                            </div>
+                            <div className="task_group">
+                                <div className="task_group_heading">
+                                    <p>In Progress</p> <span className="task_count">{inProgressTasks.length}</span>
+                                </div>
+                                {inProgressTasks.length > 0 ? inProgressTasks.map(renderTaskCard) : (
+                                    <div style={{ padding: '16px', color: 'var(--gray-color)' }}>
+                                        No tasks in progress
                                     </div>
+                                )}
+                            </div>
+                            <div className="task_group">
+                                <div className="task_group_heading">
+                                    <p>Completed</p> <span className="task_count">{completedTasks.length}</span>
                                 </div>
+                                {completedTasks.length > 0 ? completedTasks.map(renderTaskCard) : (
+                                    <div style={{ padding: '16px', color: 'var(--gray-color)' }}>
+                                        No completed tasks
+                                    </div>
+                                )}
                             </div>
-                            <div class="task-date">
-                                <FiCalendar /> <span>Jan 08,2027</span>
-                            </div>
-                            <div class="bottom-row">
-                                <div class="tag">Artwork</div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div className='task_group'>
-                        <div className='task_group_heading'>
-                            <p>In Progress</p> <span className='task_count'>01</span>
-                        </div>
-                        <div class="task-card">
-
-                            <div class="task-title">
-                                Solve the dribble prioritization issue with the team
-                            </div>
-                            <div class="task-date">
-                                <FiCalendar /> <span>Jan 08,2027</span>
-                            </div>
-                            <div class="bottom-row">
-                                <div class="tag">Artwork</div>
-                                <div class="task_view-btn ">
-                                    <FiEye />
-                                </div>
-                            </div>
-
-                        </div>
-                        <div class="task-card">
-
-                            <div class="task-title">
-                                Solve the dribble prioritization issue with the team
-                            </div>
-                            <div class="task-date">
-                                <FiCalendar /> <span>Jan 08,2027</span>
-                            </div>
-                            <div class="bottom-row">
-                                <div class="tag">Artwork</div>
-                                <div class="task_view-btn ">
-                                    <FiEye />
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div className='task_group'>
-                        <div className='task_group_heading'>
-                            <p>Completed</p> <span className='task_count'>01</span>
-                        </div>
-                        <div class="task-card">
-
-                            <div class="task-title">
-                                Solve the dribble prioritization issue with the team
-                            </div>
-                            <div class="task-date">
-                                <FiCalendar /> <span>Jan 08,2027</span>
-                            </div>
-                            <div class="bottom-row">
-                                <div class="tag">Artwork</div>
-                                <div class="task_view-btn ">
-                                    <FiEye />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-export default Tasks;
+export default TaskDetail;
