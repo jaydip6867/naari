@@ -1,0 +1,814 @@
+import axios from 'axios';
+
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: 'https://naariart-apibackend.onrender.com',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('naari_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('naari_token');
+      localStorage.removeItem('naari_user');
+      window.location.href = '/';
+    } else if (error.response?.status === 400) {
+      // Return error message from .Message key for 400 status
+      const errorMessage = error.response.data?.Message || 'Bad Request';
+      return Promise.reject(new Error(errorMessage));
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth API calls
+export const authAPI = {
+  login: async (userId, password) => {
+    const response = await api.post('/user/login', {
+      userId,
+      password
+    });
+    
+    // Handle the actual API response structure
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return {
+        token: response.data.Data.accessToken,
+        user: response.data.Data.userData,
+        message: response.data.Message
+      };
+    } else {
+      throw new Error(response.data.Message || 'Login failed');
+    }
+  },
+};
+
+// User Role API calls
+export const userRoleAPI = {
+  listRoles: async (search = '') => {
+    const response = await api.post('/user/role', {
+      search
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch roles');
+    }
+  },
+
+  saveRole: async (roleData) => {
+    const response = await api.post('/user/role/save', roleData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save role');
+    }
+  },
+
+  getPermission: async () => {
+    const response = await api.get('/user/role/getpermission');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch permissions');
+    }
+  },
+};
+
+// Skills API calls
+export const skillsAPI = {
+  getSkills: async () => {
+    const response = await api.get('/user/skills');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data.skills;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch skills');
+    }
+  },
+
+  saveSkill: async (skillData) => {
+    const response = await api.post('/user/skills/save', skillData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      console.log(response.data);
+      throw new Error(response.data.Message || 'Failed to save skill');
+    }
+  },
+};
+
+// WorkType API calls
+export const workTypeAPI = {
+  getWorkTypes: async () => {
+    const response = await api.get('/user/worktype');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data.worktypes || response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch work types');
+    }
+  },
+
+  saveWorkType: async (workTypeData) => {
+    const response = await api.post('/user/worktype/save', workTypeData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save work type');
+    }
+  },
+};
+
+// Measurements API calls
+export const measurementsAPI = {
+  getOutfitTypes: async (search = '') => {
+    const response = await api.post('/user/outfittype', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch outfit types');
+    }
+  },
+
+  saveOutfitType: async (outfitTypeData) => {
+    const response = await api.post('/user/outfittype/save', outfitTypeData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save outfit type');
+    }
+  },
+
+  saveOutfitTypeField: async (fieldData) => {
+    const response = await api.post('/user/outfittype/saveField', fieldData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save outfit type field');
+    }
+  },
+
+  deleteOutfitType: async (outfitTypeId) => {
+    const response = await api.post('/user/outfittype/delete', { outfitTypeId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete outfit type');
+    }
+  },
+
+  deleteSubcategory: async (outfitTypeId, subcategoryName) => {
+    const response = await api.post('/user/outfittype/deleteSubCategory', { outfitTypeId, name: subcategoryName });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete subcategory');
+    }
+  },
+
+  // Staff API calls
+  saveStaff: async (staffData) => {
+    const response = await api.post('/user/staff/save', staffData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save staff');
+    }
+  },
+
+  getStaffList: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      console.log(response.data.Data);
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffById: async (staffId) => {
+    const response = await api.post('/user/staff/getone', { staffId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  },
+};
+
+// Staff API export
+export const staffAPI = {
+  saveStaff: async (staffData) => {
+    const response = await api.post('/user/staff/save', staffData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save staff');
+    }
+  },
+
+  deleteStaff: async (staffId) => {
+    const response = await api.post('/user/staff/save', { staffId, type: 'Remove' });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete staff');
+    }
+  },
+
+  getStaff: async (search = '') => {
+    const response = await api.post('/user/staff', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  },
+
+  getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
+    const response = await api.post('/user/staff/list', { search, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff list');
+    }
+  },
+
+  getStaffById: async (staffId) => {
+    const response = await api.post('/user/staff/getone', { staffId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch staff');
+    }
+  }
+};
+
+// Customer API calls
+export const customerAPI = {
+  saveCustomer: async (customerData) => {
+    const response = await api.post('/user/customers/save', customerData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save customer');
+    }
+  },
+
+  getCustomers: async (search = '') => {
+    const response = await api.post('/user/customers', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      // console.log(response.data.Data)
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customers');
+    }
+  },
+
+  getCustomersWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/customers/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customers');
+    }
+  },
+
+  getCustomerById: async (customerId) => {
+    const response = await api.post('/user/customers/getone', { customerId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customer');
+    }
+  }
+};
+
+// Upload API calls
+export const uploadAPI = {
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/user/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to upload image');
+    }
+  },
+
+  uploadMultipleImages: async (files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    
+    const response = await api.post('/user/upload/multiple/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to upload images');
+    }
+  }
+};
+
+// Addons API calls
+export const addonsAPI = {
+  saveAddon: async (addonData) => {
+    const response = await api.post('/user/addons/save', addonData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save addon');
+    }
+  },
+
+  getAddons: async (search = '', outfitTypeId = '') => {
+    const response = await api.post('/user/addons', { search, outfitTypeId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addons');
+    }
+  },
+
+  getAddonsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/addons/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addons');
+    }
+  },
+
+  getAddonById: async (addonsId) => {
+    const response = await api.post('/user/addons/getone', { addonsId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch addon');
+    }
+  },
+
+  deleteAddon: async (addonsId) => {
+    const response = await api.post('/user/addons/delete', { addonsId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete addon');
+    }
+  }
+};
+
+// Product API calls
+export const productAPI = {
+  createProduct: async (productData) => {
+    const response = await api.post('/user/products/add', productData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to create product');
+    }
+  },
+
+  getProducts: async (search = '') => {
+    const response = await api.post('/user/products', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch products');
+    }
+  },
+
+  getProductById: async (productId) => {
+    const response = await api.post('/user/products/getone', { productId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch product');
+    }
+  },
+
+  updateProduct: async (productData) => {
+    const response = await api.post('/user/products/update', productData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to update product');
+    }
+  },
+
+  deleteProduct: async (productId) => {
+    const response = await api.post('/user/products/delete', { productId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete product');
+    }
+  }
+};
+
+export const orderAPI = {
+  createOrder: async (orderData) => {
+    const response = await api.post('/user/orders/add', orderData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to create order');
+    }
+  },
+
+  getOrders: async (search = '') => {
+    const response = await api.post('/user/orders', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch orders');
+    }
+  },
+
+  getOrderById: async (orderId) => {
+    const response = await api.post('/user/orders/getone', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch order');
+    }
+  },
+
+  updateOrder: async (orderData) => {
+    const response = await api.post('/user/orders/update', orderData);
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to update order');
+    }
+  },
+
+  cancelOrder: async (orderId) => {
+    const response = await api.post('/user/orders/cancel', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to Cancel order');
+    }
+  }
+};
+
+// Task API calls
+export const taskAPI = {
+  getTasks: async (search = '') => {
+    const response = await api.post('/user/task', { search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch tasks');
+    }
+  },
+
+  getTaskById: async (orderId) => {
+    const response = await api.post('/user/task/getone', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch task');
+    }
+  },
+
+  startTask: async (orderId) => {
+    const response = await api.post('/user/task/start', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to start task');
+    }
+  },
+
+  pauseTask: async (orderId) => {
+    const response = await api.post('/user/task/pause', { orderId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to pause task');
+    }
+  },
+
+  endTask: async (orderId, refImages = []) => {
+    const response = await api.post('/user/task/end', { orderId, refImages });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to end task');
+    }
+  }
+};
+
+// Income Type API calls
+export const incomeTypeAPI = {
+  getIncomeTypes: async () => {
+    const response = await api.get('/user/incometype');
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch income types');
+    }
+  },
+
+  saveIncomeType: async (incomeTypeData) => {
+    const response = await api.post('/user/incometype/save', incomeTypeData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save income type');
+    }
+  },
+};
+
+// Expense Type API calls
+export const expenseTypeAPI = {
+  getExpenseTypes: async () => {
+    const response = await api.get('/user/expensetype');
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch expense types');
+    }
+  },
+
+  saveExpenseType: async (expenseTypeData) => {
+    const response = await api.post('/user/expensetype/save', expenseTypeData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save expense type');
+    }
+  },
+};
+
+// Accounting API calls
+export const accountingAPI = {
+  saveAccounting: async (accountingData) => {
+    const response = await api.post('/user/accounting/save', accountingData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save accounting entry');
+    }
+  },
+
+  getAccountingList: async (filters = {}) => {
+    const { type = '', typeName = '', orderId = '' } = filters;
+    const response = await api.post('/user/accounting', { type, typeName, orderId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting list');
+    }
+  },
+
+  getAccountingListWithPagination: async (page = 1, limit = 10, filters = {}) => {
+    const { type = '', typeName = '', orderId = '' } = filters;
+    const response = await api.post('/user/accounting/list', { page, limit, type, typeName, orderId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting list');
+    }
+  },
+
+  getAccountingById: async (id) => {
+    const response = await api.post('/user/accounting/getone', { id });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch accounting entry');
+    }
+  },
+};
+
+// Chat API calls
+export const chatAPI = {
+  getChats: async () => {
+    const response = await api.post('/user/chat');
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chats');
+    }
+  },
+
+  getChatsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/chat/list', { page, limit, search });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chats');
+    }
+  },
+
+  getChatDetailsWithPagination: async (groupId, page = 1, limit = 10) => {
+    const response = await api.post('/user/chat/details/list', { groupId, page, limit });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chat details');
+    }
+  },
+
+  getChatDetails: async (groupId) => {
+    const response = await api.post('/user/chat/details', { groupId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch chat details');
+    }
+  },
+
+  addUserToGroup: async (groupId, userId) => {
+    const response = await api.post('/user/chat/add-user', { groupId, userId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to add user to group');
+    }
+  },
+
+  removeUserFromGroup: async (groupId, userId) => {
+    const response = await api.post('/user/chat/remove-user', { groupId, userId });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to remove user from group');
+    }
+  },
+
+  sendMessage: async (groupId, message, attachments = []) => {
+    const response = await api.post('/user/chat/send-message', { groupId, message, attachments });
+    
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to send message');
+    }
+  }
+};
+
+// Bank Details API calls
+export const bankDetailsAPI = {
+  saveBankDetails: async (bankData) => {
+    const response = await api.post('/user/bankdetails/save', bankData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save bank details');
+    }
+  },
+
+  getBankDetails: async (search = '') => {
+    const response = await api.post('/user/bankdetails', { search });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  getBankDetailsWithPagination: async (page = 1, limit = 10, search = '') => {
+    const response = await api.post('/user/bankdetails/list', { page, limit, search });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  getBankDetailsById: async (id) => {
+    const response = await api.post('/user/bankdetails/getone', { id });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch bank details');
+    }
+  },
+
+  deleteBankDetails: async (bankDetailsId) => {
+    const response = await api.post('/user/bankdetails/delete', { bankDetailsId });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to delete bank details');
+    }
+  },
+};
+
+export const apiCall = async (method, endpoint, data = null) => {
+  const response = await api({
+    method,
+    url: endpoint,
+    data,
+  });
+  return response.data;
+};
+
+export default api;
