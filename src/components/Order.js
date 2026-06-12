@@ -37,6 +37,22 @@ const Order = ({ onLogout }) => {
     fetchOrders();
   }, []);
 
+  // local permission get logic start
+
+  const permissions = JSON.parse(localStorage.getItem("naari_permissions")) || [];
+
+  const orderPermission = permissions.find(
+    (item) => item.collectionName === "orders"
+  );
+
+  const canAddEdit = orderPermission?.insertUpdate || false;
+  const canView = orderPermission?.view || false;
+  const canDelete = orderPermission?.delete || false;
+
+  // console.log(orderPermission)
+
+  // local permission get logic end
+
   const handleSearch = (e) => {
     e.preventDefault();
     const query = e.target.value;
@@ -120,14 +136,14 @@ const Order = ({ onLogout }) => {
         </div>
 
         {error && (
-            <div style={{
-              color: 'var(--alert-color)',
-              background: 'rgba(255, 0, 0, 0.1)',
-              padding: '12px',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '16px',
-              border: '1px solid rgba(255, 0, 0, 0.2)'
-            }}>
+          <div style={{
+            color: 'var(--alert-color)',
+            background: 'rgba(255, 0, 0, 0.1)',
+            padding: '12px',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '16px',
+            border: '1px solid rgba(255, 0, 0, 0.2)'
+          }}>
             {error}
           </div>
         )}
@@ -224,14 +240,16 @@ const Order = ({ onLogout }) => {
                             >
                               <FiEye />
                             </button>
-                            <button
+
+                            {canAddEdit && (<button
                               className="edit-btn"
                               onClick={() => navigate(`/orders/edit/${order._id}`)}
                               title="Edit"
                             >
                               <FiEdit2 />
                             </button>
-                            {order.status !== 'cancelled' && (
+                            )}
+                            {canDelete && order.status !== 'cancelled' && (
                               <button
                                 className="delete-btn"
                                 onClick={() => handleCancelOrder(order._id)}

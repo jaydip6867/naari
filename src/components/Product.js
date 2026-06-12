@@ -31,6 +31,20 @@ const Product = ({ onLogout }) => {
     }
   };
 
+  // local permission get logic start
+
+  const permissions = JSON.parse(localStorage.getItem("naari_permissions")) || [];
+
+  const productPermission = permissions.find(
+    (item) => item.collectionName === "products"
+  );
+
+  const canAddEdit = productPermission?.insertUpdate || false;
+  const canView = productPermission?.view || false;
+  
+
+  // local permission get logic end
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -105,13 +119,15 @@ const Product = ({ onLogout }) => {
                   }}
                 />
               </div>
-              <button
-                className="add-btn"
-                onClick={() => navigate('/products/add')}
-              >
-                <FiPlus style={{ marginRight: '6px' }} />
-                Add Product
-              </button>
+              {canAddEdit && (
+                <button
+                  className="add-btn"
+                  onClick={() => navigate('/products/add')}
+                >
+                  <FiPlus style={{ marginRight: '6px' }} />
+                  Add Product
+                </button>
+              )}
             </div>
           </div>
 
@@ -151,22 +167,27 @@ const Product = ({ onLogout }) => {
                         <td >{product.name}</td>
                         <td >{product.outfitTypeName || '-'}</td>
                         <td >{product.subCategoryName || '-'}</td>
-                        <td style={{textAlign: 'center' }}>
+                        <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            <button
-                              className="edit-btn"
-                              onClick={() => navigate(`/products/view/${product._id}`)}
-                              title="View"
-                            >
-                              <FiEye />
-                            </button>
-                            <button
-                              className="edit-btn"
-                              onClick={() => navigate(`/products/edit/${product._id}`)}
-                              title="Edit"
-                            >
-                              <FiEdit2 />
-                            </button>
+                            {canView && (
+                              <button
+                                className="edit-btn"
+                                onClick={() => navigate(`/products/view/${product._id}`)}
+                                title="View"
+                              >
+                                <FiEye />
+                              </button>
+                            )}
+
+                            {canAddEdit && (
+                              <button
+                                className="edit-btn"
+                                onClick={() => navigate(`/products/edit/${product._id}`)}
+                                title="Edit"
+                              >
+                                <FiEdit2 />
+                              </button>
+                            )}
                             {/* <button 
                             className="delete-btn"
                             onClick={() => handleDeleteProduct(product._id)}

@@ -44,7 +44,6 @@ const Sidebar = ({ onLogout }) => {
     const permission = permissions.find(
       (p) => p.collectionName === collectionName
     );
-
     return permission?.view === true;
   };
 
@@ -112,8 +111,6 @@ const Sidebar = ({ onLogout }) => {
   const visibleNavItems = navItems.filter(
     (item) => !item.permission || hasPermission(item.permission)
   );
-
-
 
   //  permission condition end
 

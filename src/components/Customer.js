@@ -42,6 +42,20 @@ const Customer = ({ onLogout }) => {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  // local permission get logic start
+
+  const permissions = JSON.parse(localStorage.getItem("naari_permissions")) || [];
+
+  const customerPermission = permissions.find(
+    (item) => item.collectionName === "customers"
+  );
+
+  const canAddEdit = customerPermission?.insertUpdate || false;
+  const canView = customerPermission?.view || false;
+  const canDelete = customerPermission?.delete || false;
+
+  // console.log(customerPermission)
+
   const handleLogout = () => {
     storage.clearAuthData();
     onLogout();
@@ -113,12 +127,13 @@ const Customer = ({ onLogout }) => {
                   />
                 </div>
               </form>
-              <button
+              {canAddEdit && <button
                 className="add-btn"
                 onClick={() => navigate('/customers/add')}
               >
                 <FaPlus /> Add Customer
               </button>
+              }
             </div>
           </div>
 
@@ -194,20 +209,20 @@ const Customer = ({ onLogout }) => {
                     </div>
 
                     <div className="customer-actions">
-                      <button
+                      {canView && <button
                         className="action-btn view"
                         onClick={() => navigate(`/customers/view/${customer._id}`)}
                         title="View Details"
                       >
                         <FaEye />
-                      </button>
-                      <button
+                      </button>}
+                      {canAddEdit && <button
                         className="action-btn edit"
                         onClick={() => navigate(`/customers/edit/${customer._id}`)}
                         title="Edit Customer"
                       >
                         <FaEdit />
-                      </button>
+                      </button>}
                     </div>
                   </div>
                 ))}
