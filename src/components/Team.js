@@ -40,7 +40,7 @@ const Team = ({ onLogout }) => {
 
       setStaff(staffList);
     } catch (err) {
-      console.error('Error fetching staff:', err);
+      // console.error('Error fetching staff:', err);
       setStaffError(err.response.data.Message || 'Failed to fetch staff');
     } finally {
       setStaffLoading(false);
@@ -57,7 +57,7 @@ const Team = ({ onLogout }) => {
       await fetchStaff();
       return savedStaff;
     } catch (err) {
-      console.error('Error saving staff:', err);
+      // console.error('Error saving staff:', err);
       throw err;
     }
   };
@@ -68,7 +68,7 @@ const Team = ({ onLogout }) => {
       await fetchStaff();
       return deletedStaff;
     } catch (err) {
-      console.error('Error deleting staff:', err);
+      // console.error('Error deleting staff:', err);
       throw err;
     }
   };

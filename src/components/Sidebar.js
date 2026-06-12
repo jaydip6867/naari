@@ -8,16 +8,16 @@ const Sidebar = ({ onLogout }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <FiLayout /> },
-    { id: 'customers', label: 'Customers', icon: <FiUser /> },
-    { id: 'products', label: 'Products', icon: <FiPackage /> },
-    { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
-    { id: 'team', label: 'Team', icon: <FiUsers /> },
-    { id: 'tasks', label: 'Tasks', icon: <FiFileText /> },
-    { id: 'chat', label: 'Chat', icon: <FiMessageSquare /> },
-    { id: 'settings', label: 'Settings', icon: <FiSettings /> }
-  ];
+  // const navItems = [
+  //   { id: 'dashboard', label: 'Dashboard', icon: <FiLayout /> },
+  //   { id: 'customers', label: 'Customers', icon: <FiUser /> },
+  //   { id: 'products', label: 'Products', icon: <FiPackage /> },
+  //   { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
+  //   { id: 'team', label: 'Team', icon: <FiUsers /> },
+  //   { id: 'tasks', label: 'Tasks', icon: <FiFileText /> },
+  //   { id: 'chat', label: 'Chat', icon: <FiMessageSquare /> },
+  //   { id: 'settings', label: 'Settings', icon: <FiSettings /> }
+  // ];
 
   // Get current active item based on route
   const getActiveItem = () => {
@@ -34,6 +34,88 @@ const Sidebar = ({ onLogout }) => {
   };
 
   const activeItem = getActiveItem();
+
+  // Permission condition start
+  const permissions = JSON.parse(
+    localStorage.getItem("naari_permissions") || "[]"
+  );
+
+  const hasPermission = (collectionName) => {
+    const permission = permissions.find(
+      (p) => p.collectionName === collectionName
+    );
+
+    return permission?.view === true;
+  };
+
+  const canViewSettings = [
+    "roles",
+    "worktypes",
+    "measurements",
+    "addons",
+    "incometypes",
+    "expensetypes",
+    "accounting",
+    "bankdetails",
+    "expensealerts",
+  ].some(hasPermission);
+
+  const navItems = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <FiLayout />,
+    },
+    {
+      id: "customers",
+      label: "Customers",
+      icon: <FiUser />,
+      permission: "customers",
+    },
+    {
+      id: "products",
+      label: "Products",
+      icon: <FiPackage />,
+      permission: "products",
+    },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: <FiShoppingBag />,
+      permission: "orders",
+    },
+    {
+      id: "team",
+      label: "Team",
+      icon: <FiUsers />,
+      permission: "staff",
+    },
+    {
+      id: "tasks",
+      label: "Tasks",
+      icon: <FiFileText />,
+      permission: "task",
+    },
+    {
+      id: "chat",
+      label: "Chat",
+      icon: <FiMessageSquare />,
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: <FiSettings />,
+      visible: canViewSettings,
+    }
+  ];
+
+  const visibleNavItems = navItems.filter(
+    (item) => !item.permission || hasPermission(item.permission)
+  );
+
+
+
+  //  permission condition end
 
   const handleNavClick = (itemId) => {
     navigate(`/${itemId}`);
@@ -53,7 +135,7 @@ const Sidebar = ({ onLogout }) => {
   return (
     <>
       {/* Mobile Menu Toggle */}
-      <button 
+      <button
         className="mobile-menu-toggle"
         onClick={toggleMobileMenu}
         aria-label="Toggle mobile menu"
@@ -63,8 +145,8 @@ const Sidebar = ({ onLogout }) => {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div 
-          className="mobile-menu-overlay" 
+        <div
+          className="mobile-menu-overlay"
           onClick={toggleMobileMenu}
         >
           <div className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
@@ -72,10 +154,10 @@ const Sidebar = ({ onLogout }) => {
             <div className="mobile-logo">
               <img src={require('../assets/naari-logo.png')} className='logo' alt="Naari Art" />
             </div>
-            
+
             {/* Mobile Navigation */}
             <nav className="mobile-nav">
-              {navItems.map(item => (
+              {/* {navItems.map(item => (
                 <a
                   key={item.id}
                   href={`#${item.id}`}
@@ -88,9 +170,24 @@ const Sidebar = ({ onLogout }) => {
                   <span className="nav-icon">{item.icon}</span>
                   <span>{item.label}</span>
                 </a>
+              ))} */}
+              {visibleNavItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`mobile-nav-item ${activeItem === item.id ? "active" : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(item.id);
+                  }}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span>{item.label}</span>
+                </a>
               ))}
             </nav>
-            
+
             {/* Mobile Logout */}
             <div className="mobile-logout">
               <a className="logout-btn" href='#logout' onClick={handleLogout}>
@@ -107,13 +204,27 @@ const Sidebar = ({ onLogout }) => {
         <div className="logo">
           <img src={require('../assets/naari-logo.png')} className='logo' alt="Naari Art" />
         </div>
-        
+
         <nav className="nav-menu">
-          {navItems.map(item => (
+          {/* {navItems.map(item => (
             <a
               key={item.id}
               href={`#${item.id}`}
               className={`nav-item ${activeItem === item.id ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavClick(item.id);
+              }}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          ))} */}
+          {visibleNavItems.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className={`nav-item ${activeItem === item.id ? "active" : ""}`}
               onClick={(e) => {
                 e.preventDefault();
                 handleNavClick(item.id);
