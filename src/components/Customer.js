@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FaPlus, FaSearch, FaSpinner, FaEdit, FaEye,
+  FaPlus, FaSpinner, FaEdit, FaEye,
   FaUser, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaUserTag
 } from 'react-icons/fa';
 import Sidebar from './Sidebar.js';
@@ -52,7 +52,7 @@ const Customer = ({ onLogout }) => {
 
   const canAddEdit = customerPermission?.insertUpdate || false;
   const canView = customerPermission?.view || false;
-  const canDelete = customerPermission?.delete || false;
+  // const canDelete = customerPermission?.delete || false;
 
   // console.log(customerPermission)
 

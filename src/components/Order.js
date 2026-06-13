@@ -46,7 +46,7 @@ const Order = ({ onLogout }) => {
   );
 
   const canAddEdit = orderPermission?.insertUpdate || false;
-  const canView = orderPermission?.view || false;
+  // const canView = orderPermission?.view || false;
   const canDelete = orderPermission?.delete || false;
 
   // console.log(orderPermission)
@@ -230,7 +230,14 @@ const Order = ({ onLogout }) => {
                         </td>
                         <td style={{ padding: '12px', textTransform: 'capitalize' }}>{order.orderType || '-'}</td>
                         <td >{getStatusBadge(order.status)}</td>
-                        <td >{order.deliveryDate || '-'}</td>
+                        <td >
+                          {/* {order.deliveryDate || '-'} */}
+                          {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : '-'}
+                          </td>
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button
@@ -241,7 +248,7 @@ const Order = ({ onLogout }) => {
                               <FiEye />
                             </button>
 
-                            {canAddEdit && (<button
+                            {canAddEdit && order.status !== 'cancelled' && (<button
                               className="edit-btn"
                               onClick={() => navigate(`/orders/edit/${order._id}`)}
                               title="Edit"

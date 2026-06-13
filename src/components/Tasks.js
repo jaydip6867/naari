@@ -16,9 +16,6 @@ const Tasks = ({ onLogout }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [selectedTaskLoading, setSelectedTaskLoading] = useState(false);
-  const [refImages, setRefImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [isEndingTask, setIsEndingTask] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -79,8 +76,6 @@ const Tasks = ({ onLogout }) => {
       setError('');
       const taskDetails = await loadTaskDetails(task._id);
       setSelectedTask(taskDetails || task);
-      setRefImages([]);
-      setImagePreviews([]);
       setShowTaskDetail(true);
     } catch (error) {
       setError(error.message || 'Failed to load task details');
@@ -89,77 +84,7 @@ const Tasks = ({ onLogout }) => {
     }
   };
 
-  const handleStartTask = async (taskId) => {
-    try {
-      await taskAPI.startTask(taskId);
-      alert('Task started successfully');
-      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
-      fetchTasks();
-    } catch (error) {
-      console.error('Error starting task:', error);
-      alert('Failed to start task: ' + error.message);
-    }
-  };
 
-  const handlePauseTask = async (taskId) => {
-    try {
-      await taskAPI.pauseTask(taskId);
-      alert('Task paused successfully');
-      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
-      fetchTasks();
-    } catch (error) {
-      console.error('Error pausing task:', error);
-      alert('Failed to pause task: ' + error.message);
-    }
-  };
-
-  const handleEndTask = async (taskId) => {
-    try {
-      await taskAPI.endTask(taskId, refImages);
-      alert('Task ended successfully');
-      await loadTaskDetails(taskId).then((updated) => setSelectedTask(updated));
-      fetchTasks();
-      setRefImages([]);
-      setImagePreviews([]);
-      setShowTaskDetail(false);
-    } catch (error) {
-      console.error('Error ending task:', error);
-      alert('Failed to end task: ' + error.message);
-    }
-  };
-
-
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    try {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append('files', file);
-      });
-
-      // For now, create preview URLs
-      const previews = files.map(file => URL.createObjectURL(file));
-      setImagePreviews(prev => [...prev, ...previews]);
-
-      // You can integrate with uploadAPI.uploadMultipleImages if needed
-      // const uploadedImages = await uploadAPI.uploadMultipleImages(files);
-      // setRefImages(uploadedImages);
-
-      // For now, store file names as refImages
-      const imageNames = files.map(file => file.name);
-      setRefImages(prev => [...prev, ...imageNames]);
-    } catch (error) {
-      console.error('Error uploading images:', error);
-      alert('Failed to upload images: ' + error.message);
-    }
-  };
-
-  const removeImage = (index) => {
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
-    setRefImages(prev => prev.filter((_, i) => i !== index));
-  };
 
   const normalizeStatus = (status) => {
     if (!status) return 'unknown';
@@ -653,149 +578,10 @@ const Tasks = ({ onLogout }) => {
                   </div>
                 )}
 
-                {/* Work Reference Images - Show only when task is in_progress or paused */}
-                {(isStartedStatus(selectedTaskDetailStatus) || isPausedStatus(selectedTaskDetailStatus)) && (
-                  <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-dark)', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ width: '4px', height: '20px', background: 'var(--secondary-color)', borderRadius: '2px' }}></span>
-                      Work Reference Images
-                    </h3>
-                    <div style={{ marginBottom: '16px' }}>
-                      <input
-                        type="file"
-                        id="refImageUpload"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        style={{ display: 'none' }}
-                      />
-                      <label
-                        htmlFor="refImageUpload"
-                        style={{
-                          display: 'inline-block',
-                          padding: '8px 16px',
-                          background: 'var(--primary-color)',
-                          color: 'white',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          border: 'none',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
-                        onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
-                      >
-                        + Upload Reference Images
-                      </label>
-                    </div>
-
-                    {imagePreviews.length > 0 && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                        {imagePreviews.map((preview, index) => (
-                          <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                            <img
-                              src={preview}
-                              alt={`Preview ${index + 1}`}
-                              style={{ width: '100%', height: '120px', objectFit: 'cover' }}
-                            />
-                            <button
-                              onClick={() => removeImage(index)}
-                              style={{
-                                position: 'absolute',
-                                top: '4px',
-                                right: '4px',
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '24px',
-                                height: '24px',
-                                cursor: 'pointer',
-                                fontSize: '16px',
-                                color: 'var(--alert-color)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {imagePreviews.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-color)', background: 'var(--background-light)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                        No reference images uploaded yet
-                      </div>
-                    )}
-                  </div>
-                )}
 
               </div>
 
               <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                {isPendingStatus(selectedTaskDetailStatus) && (
-                  <button
-                    onClick={() => handleStartTask(selectedTask._id)}
-                    style={{
-                      padding: '8px 16px',
-                      background: 'var(--success-color)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--success-color)'}
-                  >
-                    Start Task
-                  </button>
-                )}
-                {isStartedStatus(selectedTaskDetailStatus) && (
-                  <button
-                    onClick={() => handlePauseTask(selectedTask._id)}
-                    style={{
-                      padding: '8px 16px',
-                      background: 'var(--warn-color)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = '#e0a800'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--warn-color)'}
-                  >
-                    Pause Task
-                  </button>
-                )}
-                {(isStartedStatus(selectedTaskDetailStatus) || isPausedStatus(selectedTaskDetailStatus)) && (
-                  <button
-                    onClick={() => handleEndTask(selectedTask._id)}
-                    style={{
-                      padding: '8px 16px',
-                      background: 'var(--primary-color)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary-color)'}
-                  >
-                    End Task
-                  </button>
-                )}
                 <button
                   onClick={() => setShowTaskDetail(false)}
                   style={{
