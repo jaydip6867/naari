@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
@@ -16,6 +16,11 @@ const Order = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "asc",
+  });
 
   const fetchOrders = async () => {
     try {
@@ -50,6 +55,93 @@ const Order = ({ onLogout }) => {
   const canDelete = orderPermission?.delete || false;
 
   // console.log(orderPermission)
+
+  // sorting function
+  const handleSort = (key) => {
+    let direction = "asc";
+
+    if (
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+
+    setSortConfig({ key, direction });
+
+    const sortedOrders = [...orders].sort((a, b) => {
+      let valueA;
+      let valueB;
+
+      switch (key) {
+        case "orderId":
+          valueA = a.orderId || "";
+          valueB = b.orderId || "";
+          break;
+
+        case "customer":
+          valueA =
+            typeof a.customerId === "object"
+              ? a.customerId?.fullName || ""
+              : a.customerId || "";
+          valueB =
+            typeof b.customerId === "object"
+              ? b.customerId?.fullName || ""
+              : b.customerId || "";
+          break;
+
+        case "orderType":
+          valueA = a.orderType || "";
+          valueB = b.orderType || "";
+          break;
+
+        case "status":
+          valueA = a.status || "";
+          valueB = b.status || "";
+          break;
+
+        case "createdAt":
+          valueA = new Date(a.createdAt || 0);
+          valueB = new Date(b.createdAt || 0);
+          break;
+
+        case "deliveryDate":
+          valueA = new Date(a.deliveryDate || 0);
+          valueB = new Date(b.deliveryDate || 0);
+          break;
+
+        default:
+          return 0;
+      }
+
+      if (valueA < valueB) {
+        return direction === "asc" ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setOrders(sortedOrders);
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return "⇅";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
+
+  const sortedOrders = useMemo(() => {
+    let sortableOrders = [...orders];
+
+    if (sortConfig.key) {
+      sortableOrders.sort((a, b) => {
+        // sorting logic
+      });
+    }
+
+    return sortableOrders;
+  }, [orders, sortConfig]);
 
   // local permission get logic end
 
@@ -117,7 +209,11 @@ const Order = ({ onLogout }) => {
   const indexOfLastOrder = currentPage * itemsPerPage;
   const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
 
-  const currentOrders = orders.slice(
+  // const currentOrders = orders.slice(
+  //   indexOfFirstOrder,
+  //   indexOfLastOrder
+  // );
+  const currentOrders = sortedOrders.slice(
     indexOfFirstOrder,
     indexOfLastOrder
   );
@@ -190,12 +286,49 @@ const Order = ({ onLogout }) => {
                   <thead>
                     <tr>
                       <th>Image</th>
-                      <th>Order ID</th>
-                      <th>Order Date</th>
-                      <th>Customer</th>
-                      <th>Order Type</th>
-                      <th>Status</th>
-                      <th>Delivery Date</th>
+
+                      <th
+                        onClick={() => handleSort("orderId")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Order ID {getSortIcon("orderId")}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort("createdAt")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Order Date {getSortIcon("createdAt")}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort("customer")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Customer {getSortIcon("customer")}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort("orderType")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Order Type {getSortIcon("orderType")}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort("status")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Status {getSortIcon("status")}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort("deliveryDate")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Delivery Date {getSortIcon("deliveryDate")}
+                      </th>
+
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -237,7 +370,7 @@ const Order = ({ onLogout }) => {
                             month: 'short',
                             day: 'numeric'
                           }) : '-'}
-                          </td>
+                        </td>
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button

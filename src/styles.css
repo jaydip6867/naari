@@ -3401,6 +3401,7 @@ textarea.input-field {
   text-align: left;
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .table-container table td {

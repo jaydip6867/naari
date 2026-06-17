@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
@@ -15,6 +15,11 @@ const Product = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
 
   const fetchProducts = async (search = '') => {
     try {
@@ -41,13 +46,80 @@ const Product = ({ onLogout }) => {
 
   const canAddEdit = productPermission?.insertUpdate || false;
   const canView = productPermission?.view || false;
-  
+
 
   // local permission get logic end
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // sorting code
+  const handleSort = (key) => {
+    let direction = 'asc';
+
+    if (
+      sortConfig.key === key &&
+      sortConfig.direction === 'asc'
+    ) {
+      direction = 'desc';
+    }
+
+    setSortConfig({ key, direction });
+  };
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return '⇅';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
+  const sortedProducts = useMemo(() => {
+    const sortableItems = [...products];
+
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        let valueA = '';
+        let valueB = '';
+
+        switch (sortConfig.key) {
+          case 'name':
+            valueA = a.name || '';
+            valueB = b.name || '';
+            break;
+
+          case 'outfitTypeName':
+            valueA = a.outfitTypeName || '';
+            valueB = b.outfitTypeName || '';
+            break;
+
+          case 'subCategoryName':
+            valueA = a.subCategoryName || '';
+            valueB = b.subCategoryName || '';
+            break;
+
+          default:
+            return 0;
+        }
+
+        valueA = valueA.toString().toLowerCase();
+        valueB = valueB.toString().toLowerCase();
+
+        if (valueA < valueB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+
+        if (valueA > valueB) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+
+        return 0;
+      });
+    }
+
+    return sortableItems;
+  }, [products, sortConfig]);
+
+
+  // search code
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -80,9 +152,15 @@ const Product = ({ onLogout }) => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
-  const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  // const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+  const currentProducts = sortedProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(
+    sortedProducts.length / itemsPerPage
+  );
+  // const totalPages = Math.ceil(products.length / itemsPerPage);
 
   return (
     <div className="settings-container">
@@ -142,9 +220,28 @@ const Product = ({ onLogout }) => {
                   <thead>
                     <tr>
                       <th>Image</th>
-                      <th>Name</th>
-                      <th>Outfit Type</th>
-                      <th>Subcategory</th>
+
+                      <th
+                        onClick={() => handleSort('name')}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Name {getSortIcon('name')}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort('outfitTypeName')}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Outfit Type {getSortIcon('outfitTypeName')}
+                      </th>
+
+                      <th
+                        onClick={() => handleSort('subCategoryName')}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Subcategory {getSortIcon('subCategoryName')}
+                      </th>
+
                       <th>Actions</th>
                     </tr>
                   </thead>
