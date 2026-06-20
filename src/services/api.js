@@ -47,7 +47,7 @@ export const authAPI = {
       userId,
       password
     });
-    
+
     // Handle the actual API response structure
     if (response.data.IsSuccess && response.data.Status === 200) {
       return {
@@ -67,7 +67,7 @@ export const userRoleAPI = {
     const response = await api.post('/user/role', {
       search
     });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -77,7 +77,7 @@ export const userRoleAPI = {
 
   saveRole: async (roleData) => {
     const response = await api.post('/user/role/save', roleData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -87,7 +87,7 @@ export const userRoleAPI = {
 
   getPermission: async () => {
     const response = await api.get('/user/role/getpermission');
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -100,7 +100,7 @@ export const userRoleAPI = {
 export const skillsAPI = {
   getSkills: async () => {
     const response = await api.get('/user/skills');
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data.skills;
     } else {
@@ -110,7 +110,7 @@ export const skillsAPI = {
 
   saveSkill: async (skillData) => {
     const response = await api.post('/user/skills/save', skillData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -124,7 +124,7 @@ export const skillsAPI = {
 export const workTypeAPI = {
   getWorkTypes: async () => {
     const response = await api.get('/user/worktype');
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data.worktypes || response.data.Data;
     } else {
@@ -134,7 +134,7 @@ export const workTypeAPI = {
 
   saveWorkType: async (workTypeData) => {
     const response = await api.post('/user/worktype/save', workTypeData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -147,7 +147,7 @@ export const workTypeAPI = {
 export const measurementsAPI = {
   getOutfitTypes: async (search = '') => {
     const response = await api.post('/user/outfittype', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -157,7 +157,7 @@ export const measurementsAPI = {
 
   saveOutfitType: async (outfitTypeData) => {
     const response = await api.post('/user/outfittype/save', outfitTypeData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -167,7 +167,7 @@ export const measurementsAPI = {
 
   saveOutfitTypeField: async (fieldData) => {
     const response = await api.post('/user/outfittype/saveField', fieldData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -177,7 +177,7 @@ export const measurementsAPI = {
 
   deleteOutfitType: async (outfitTypeId) => {
     const response = await api.post('/user/outfittype/delete', { outfitTypeId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -187,7 +187,7 @@ export const measurementsAPI = {
 
   deleteSubcategory: async (outfitTypeId, subcategoryName) => {
     const response = await api.post('/user/outfittype/deleteSubCategory', { outfitTypeId, name: subcategoryName });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -198,7 +198,7 @@ export const measurementsAPI = {
   // Staff API calls
   saveStaff: async (staffData) => {
     const response = await api.post('/user/staff/save', staffData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -208,7 +208,7 @@ export const measurementsAPI = {
 
   getStaffList: async (search = '', page = 1, limit = 10) => {
     const response = await api.post('/user/staff/list', { search, page, limit });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       console.log(response.data.Data);
       return response.data.Data;
@@ -219,7 +219,7 @@ export const measurementsAPI = {
 
   getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
     const response = await api.post('/user/staff/list', { search, page, limit });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -229,7 +229,7 @@ export const measurementsAPI = {
 
   getStaffById: async (staffId) => {
     const response = await api.post('/user/staff/getone', { staffId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -242,7 +242,7 @@ export const measurementsAPI = {
 export const staffAPI = {
   saveStaff: async (staffData) => {
     const response = await api.post('/user/staff/save', staffData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -252,7 +252,7 @@ export const staffAPI = {
 
   deleteStaff: async (staffId) => {
     const response = await api.post('/user/staff/save', { staffId, type: 'Remove' });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -262,7 +262,7 @@ export const staffAPI = {
 
   getStaff: async (search = '') => {
     const response = await api.post('/user/staff', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -272,7 +272,7 @@ export const staffAPI = {
 
   getStaffListWithPagination: async (search = '', page = 1, limit = 10) => {
     const response = await api.post('/user/staff/list', { search, page, limit });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -282,7 +282,7 @@ export const staffAPI = {
 
   getStaffById: async (staffId) => {
     const response = await api.post('/user/staff/getone', { staffId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -295,7 +295,7 @@ export const staffAPI = {
 export const customerAPI = {
   saveCustomer: async (customerData) => {
     const response = await api.post('/user/customers/save', customerData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -305,7 +305,7 @@ export const customerAPI = {
 
   getCustomers: async (search = '') => {
     const response = await api.post('/user/customers', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       // console.log(response.data.Data)
       return response.data.Data;
@@ -316,7 +316,7 @@ export const customerAPI = {
 
   getCustomersWithPagination: async (page = 1, limit = 10, search = '') => {
     const response = await api.post('/user/customers/list', { page, limit, search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -326,7 +326,7 @@ export const customerAPI = {
 
   getCustomerById: async (customerId) => {
     const response = await api.post('/user/customers/getone', { customerId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -340,13 +340,13 @@ export const uploadAPI = {
   uploadImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post('/user/upload/image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -359,13 +359,13 @@ export const uploadAPI = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    
+
     const response = await api.post('/user/upload/multiple/images', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -378,7 +378,7 @@ export const uploadAPI = {
 export const addonsAPI = {
   saveAddon: async (addonData) => {
     const response = await api.post('/user/addons/save', addonData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -388,7 +388,7 @@ export const addonsAPI = {
 
   getAddons: async (search = '', outfitTypeId = '') => {
     const response = await api.post('/user/addons', { search, outfitTypeId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -398,7 +398,7 @@ export const addonsAPI = {
 
   getAddonsWithPagination: async (page = 1, limit = 10, search = '') => {
     const response = await api.post('/user/addons/list', { page, limit, search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -408,7 +408,7 @@ export const addonsAPI = {
 
   getAddonById: async (addonsId) => {
     const response = await api.post('/user/addons/getone', { addonsId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -418,7 +418,7 @@ export const addonsAPI = {
 
   deleteAddon: async (addonsId) => {
     const response = await api.post('/user/addons/delete', { addonsId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -431,7 +431,7 @@ export const addonsAPI = {
 export const productAPI = {
   createProduct: async (productData) => {
     const response = await api.post('/user/products/add', productData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -441,7 +441,7 @@ export const productAPI = {
 
   getProducts: async (search = '') => {
     const response = await api.post('/user/products', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -451,7 +451,7 @@ export const productAPI = {
 
   getProductById: async (productId) => {
     const response = await api.post('/user/products/getone', { productId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -461,7 +461,7 @@ export const productAPI = {
 
   updateProduct: async (productData) => {
     const response = await api.post('/user/products/update', productData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -471,7 +471,7 @@ export const productAPI = {
 
   deleteProduct: async (productId) => {
     const response = await api.post('/user/products/delete', { productId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -483,7 +483,7 @@ export const productAPI = {
 export const orderAPI = {
   createOrder: async (orderData) => {
     const response = await api.post('/user/orders/add', orderData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -493,7 +493,7 @@ export const orderAPI = {
 
   getOrders: async (search = '') => {
     const response = await api.post('/user/orders', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -503,7 +503,7 @@ export const orderAPI = {
 
   getOrderById: async (orderId) => {
     const response = await api.post('/user/orders/getone', { orderId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -513,7 +513,7 @@ export const orderAPI = {
 
   updateOrder: async (orderData) => {
     const response = await api.post('/user/orders/update', orderData);
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -523,7 +523,7 @@ export const orderAPI = {
 
   cancelOrder: async (orderId) => {
     const response = await api.post('/user/orders/cancel', { orderId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -536,7 +536,7 @@ export const orderAPI = {
 export const taskAPI = {
   getTasks: async (search = '') => {
     const response = await api.post('/user/task', { search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -546,7 +546,7 @@ export const taskAPI = {
 
   getTaskById: async (orderId) => {
     const response = await api.post('/user/task/getone', { orderId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -556,7 +556,7 @@ export const taskAPI = {
 
   startTask: async (orderId) => {
     const response = await api.post('/user/task/start', { orderId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -566,7 +566,7 @@ export const taskAPI = {
 
   pauseTask: async (orderId) => {
     const response = await api.post('/user/task/pause', { orderId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -576,7 +576,7 @@ export const taskAPI = {
 
   endTask: async (orderId, refImages = []) => {
     const response = await api.post('/user/task/end', { orderId, refImages });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -631,6 +631,187 @@ export const expenseTypeAPI = {
   },
 };
 
+// Expense Alert API calls
+export const expenseAlertAPI = {
+  // Save Expense Alert
+  saveExpenseAlert: async (expenseAlertData) => {
+    const response = await api.post(
+      '/user/expensealert/save',
+      expenseAlertData
+    );
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to save expense alert'
+      );
+    }
+  },
+
+  // List Without Pagination
+  getExpenseAlerts: async (search = '') => {
+    const response = await api.post('/user/expensealert', {
+      search,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch expense alerts'
+      );
+    }
+  },
+
+  // List With Pagination
+  getExpenseAlertsPaginated: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+  }) => {
+    const response = await api.post('/user/expensealert/list', {
+      page,
+      limit,
+      search,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch expense alerts'
+      );
+    }
+  },
+
+  // Mark as Paid
+  markExpenseAlertPaid: async (expenseAlertId) => {
+    const response = await api.post('/user/expensealert/paid', {
+      expenseAlertId,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to mark expense alert as paid'
+      );
+    }
+  },
+
+  // Delete Expense Alert
+  deleteExpenseAlert: async (expenseAlertId) => {
+    const response = await api.post('/user/expensealert/delete', {
+      expenseAlertId,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to delete expense alert'
+      );
+    }
+  },
+};
+
+// Reports API calls
+export const reportsAPI = {
+  // Fabric Analytics - Without Pagination
+  getFabricAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/fabric-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch fabric analytics'
+      );
+    }
+  },
+
+  // Fabric Analytics - With Pagination
+  getFabricAnalyticsPaginated: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/fabric-analytics/list', {
+      page,
+      limit,
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch fabric analytics'
+      );
+    }
+  },
+
+  // Outfit Analytics - Without Pagination
+  getOutfitAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/outfit-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch outfit analytics'
+      );
+    }
+  },
+
+  // Outfit Analytics - With Pagination
+  getOutfitAnalyticsPaginated: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/outfit-analytics/list', {
+      page,
+      limit,
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch outfit analytics'
+      );
+    }
+  },
+};
+
+
 // Accounting API calls
 export const accountingAPI = {
   saveAccounting: async (accountingData) => {
@@ -680,7 +861,7 @@ export const accountingAPI = {
 export const chatAPI = {
   getChats: async () => {
     const response = await api.post('/user/chat');
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -690,7 +871,7 @@ export const chatAPI = {
 
   getChatsWithPagination: async (page = 1, limit = 10, search = '') => {
     const response = await api.post('/user/chat/list', { page, limit, search });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -700,7 +881,7 @@ export const chatAPI = {
 
   getChatDetailsWithPagination: async (groupId, page = 1, limit = 10) => {
     const response = await api.post('/user/chat/details/list', { groupId, page, limit });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -710,7 +891,7 @@ export const chatAPI = {
 
   getChatDetails: async (groupId) => {
     const response = await api.post('/user/chat/details', { groupId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -720,7 +901,7 @@ export const chatAPI = {
 
   addUserToGroup: async (groupId, userId) => {
     const response = await api.post('/user/chat/add-user', { groupId, userId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -730,7 +911,7 @@ export const chatAPI = {
 
   removeUserFromGroup: async (groupId, userId) => {
     const response = await api.post('/user/chat/remove-user', { groupId, userId });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {
@@ -740,7 +921,7 @@ export const chatAPI = {
 
   sendMessage: async (groupId, message, attachments = []) => {
     const response = await api.post('/user/chat/send-message', { groupId, message, attachments });
-    
+
     if (response.data.IsSuccess && response.data.Status === 200) {
       return response.data.Data;
     } else {

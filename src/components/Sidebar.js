@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles.css';
-import { FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
 
 const Sidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -29,6 +29,8 @@ const Sidebar = ({ onLogout }) => {
     if (path === '/team' || path.startsWith('/team/')) return 'team';
     if (path === '/tasks' || path.startsWith('/tasks/')) return 'tasks';
     if (path === '/chat' || path.startsWith('/chat/')) return 'chat';
+    if (path === '/alert' || path.startsWith('/alert/')) return 'alert';
+    if (path === '/reports' || path.startsWith('/reports/')) return 'reports';
     if (path === '/settings' || path.startsWith('/settings/')) return 'settings';
     return 'dashboard'; // default
   };
@@ -99,6 +101,16 @@ const Sidebar = ({ onLogout }) => {
       id: "chat",
       label: "Chat",
       icon: <FiMessageSquare />,
+    },
+    {
+      id: "reports",
+      label: "Reports",
+      icon: <FiFileText />,
+    },
+    {
+      id: "alert",
+      label: "Alert",
+      icon: <FiAlertCircle />,
     },
     {
       id: "settings",

@@ -499,6 +499,10 @@ body {
   border-top: 1px solid var(--border-color);
   padding-top: 1rem;
 }
+.tabs.reports{
+  border: 0;
+  padding: 0;
+}
 
 .tab-button {
   padding: 10px 20px;
@@ -563,6 +567,10 @@ body {
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 16px;
 }
+.reports + .section-header{
+  padding: 0;
+}
+
 
 .section-header.sticky {
   position: sticky;

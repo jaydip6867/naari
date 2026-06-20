@@ -16,6 +16,8 @@ import ViewProduct from './components/ViewProduct.js';
 import AddEditOrder from './components/AddEditOrder.js';
 import ViewOrder from './components/ViewOrder.js';
 import Chat from './components/Chat.js';
+import ExpenseAlert from './components/ExpenseAlert.js';
+import Reports from './components/Reports.js';
 import './styles.css';
 import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
@@ -272,6 +274,22 @@ function App() {
               element={
                 isLoggedIn ?
                   <Chat onLogout={handleLogout} /> :
+                  <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/alert"
+              element={
+                isLoggedIn ?
+                  <ExpenseAlert onLogout={handleLogout} /> :
+                  <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                isLoggedIn ?
+                  <Reports onLogout={handleLogout} /> :
                   <Navigate to="/" replace />
               }
             />
