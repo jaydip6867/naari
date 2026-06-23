@@ -166,7 +166,7 @@ const TaskDetail = ({ onLogout }) => {
                 status: detail
                     ? normalizeStatus(detail.status)
                     : 'todo',
-
+                assignStatus: assignment.status,
                 taskDetailId: detail?._id || null,
             };
         });
@@ -177,6 +177,7 @@ const TaskDetail = ({ onLogout }) => {
             setError('');
             const response = await taskAPI.getTaskById(orderId);
             const mergedTasks = mergeTaskData(response);
+            console.log(mergedTasks)
             setTaskData(response);
             setTasks(mergedTasks);
         } catch (error) {
@@ -323,7 +324,11 @@ const TaskDetail = ({ onLogout }) => {
         <div className="task-card" key={task.uid || task._id || index}>
             <div className="task-title">
                 <div>
-                    <strong>{task.description || task.orderId || 'No description'}</strong>
+                    {getTaskTags(task).map((tag, index) => (
+                    // <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
+                    <div className="tag" key={index}>{task.assignStatus}</div>
+                ))}
+                    {/* <strong>{task.description || task.orderId || 'No description'}</strong> */}
                     {/* <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>
                         {task.workerId?.fullName || task.workerId || task.orderId || 'Worker'}
                     </div> */}
@@ -371,14 +376,16 @@ const TaskDetail = ({ onLogout }) => {
 
                 </div>
             </div>
-            <div className="task-date">
+            <div className='task-desc'>{task?.description || task?.description == "" ? "No Description" : task?.description}</div>
+            <div className="task-date" style={{marginBottom: 0}}>
                 <FiCalendar /> <span>{formatDate(task.deliveryDate || task.createdAt)}</span>
             </div>
-            <div className="bottom-row">
+            {/* <div className="bottom-row">
                 {getTaskTags(task).map((tag, index) => (
-                    <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
+                    // <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
+                    <div className="tag" key={index}>{task.assignStatus}</div>
                 ))}
-            </div>
+            </div> */}
         </div>
     );
 

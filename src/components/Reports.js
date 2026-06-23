@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { reportsAPI } from '../services/api';
+import { FiEye } from 'react-icons/fi';
 
 const Reports = ({ onLogout }) => {
     const navigate = useNavigate();
@@ -160,6 +161,19 @@ const Reports = ({ onLogout }) => {
         navigate('/');
     };
 
+    const [showModal, setShowModal] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState(null);
+
+    const handleView = (record) => {
+        setSelectedRecord(record);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setSelectedRecord(null);
+        setShowModal(false);
+    };
+
     return (
         <div className="settings-container">
             <Sidebar onLogout={handleLogout} />
@@ -263,6 +277,7 @@ const Reports = ({ onLogout }) => {
                                                 <th>Revenue</th>
                                                 <th>Customers</th>
                                                 <th>Average Revenue</th>
+                                                <th>View</th>
                                             </tr>
                                         ) : activeTab === 'outfit' ? (
                                             <tr>
@@ -274,6 +289,7 @@ const Reports = ({ onLogout }) => {
                                                 <th>Average Time</th>
                                                 <th>Repairing Rate</th>
                                                 <th>Cancellation Rate</th>
+                                                <th>View</th>
                                             </tr>
                                         ) : activeTab === 'worktype' ? (
                                             <tr>
@@ -281,6 +297,7 @@ const Reports = ({ onLogout }) => {
                                                 <th>No. Of Orders</th>
                                                 <th>No. Of Customers</th>
                                                 <th>Avg Work Time</th>
+                                                <th>View</th>
                                             </tr>
                                         ) : activeTab === 'worker' ? (
                                             <tr>
@@ -288,6 +305,7 @@ const Reports = ({ onLogout }) => {
                                                 <th>Assigned Orders</th>
                                                 <th>Avg Complete Time</th>
                                                 <th>Repairing Rate</th>
+                                                <th>View</th>
                                             </tr>
                                         ) : (
                                             <tr>
@@ -295,6 +313,7 @@ const Reports = ({ onLogout }) => {
                                                 <th>Total Delayed Deliveries</th>
                                                 <th>On Time %</th>
                                                 <th>Delayed %</th>
+                                                <th>View</th>
                                             </tr>
                                         )}
                                     </thead>
@@ -319,6 +338,7 @@ const Reports = ({ onLogout }) => {
                                                             <td>₹ {item.totalRevenue}</td>
                                                             <td>{item.noOfCustomers}</td>
                                                             <td>₹ {item.avgRevenue}</td>
+                                                            <td><button className="edit-btn" title="View" onClick={() => handleView(item)}><FiEye /></button></td>
                                                         </tr>
                                                     );
                                                 }
@@ -338,6 +358,7 @@ const Reports = ({ onLogout }) => {
                                                                     : '0%'}
                                                             </td>
                                                             <td>{item.cancelPercentage}%</td>
+                                                            <td><button className="edit-btn" title="View" onClick={() => handleView(item)}><FiEye /></button></td>
                                                         </tr>
                                                     );
                                                 }
@@ -349,6 +370,7 @@ const Reports = ({ onLogout }) => {
                                                             <td>{item.noOfOrders}</td>
                                                             <td>{item.noOfCustomers}</td>
                                                             <td>{item.avgWorkTypeTime}</td>
+                                                            <td><button className="edit-btn" title="View" onClick={() => handleView(item)}><FiEye /></button></td>
                                                         </tr>
                                                     );
                                                 }
@@ -360,6 +382,7 @@ const Reports = ({ onLogout }) => {
                                                             <td>{item.noOfAssignedOrders}</td>
                                                             <td>{item.avgTimeToCompleteOrder}</td>
                                                             <td>{item.repairingRatePercentage}</td>
+                                                            <td><button className="edit-btn" title="View" onClick={() => handleView(item)}><FiEye /></button></td>
                                                         </tr>
                                                     );
                                                 }
@@ -405,6 +428,169 @@ const Reports = ({ onLogout }) => {
                                         )}
                                     </tbody> */}
                                 </table>
+                                {showModal && selectedRecord && (
+                                    <div className="modal-overlay">
+                                        <div
+                                            className="modal-content"
+                                            style={{
+                                                maxWidth: '700px',
+                                                width: '90%',
+                                            }}
+                                        >
+                                            <div className="modal-header">
+                                                <h3>
+                                                    {activeTab === 'fabric'
+                                                        ? 'Fabric Details'
+                                                        : activeTab === 'outfit'
+                                                            ? 'Outfit Details'
+                                                            : activeTab === 'worktype'
+                                                                ? 'Work Type Details'
+                                                                : 'Worker Details'}
+                                                </h3>
+
+                                                <button
+                                                    onClick={closeModal}
+                                                    style={{
+                                                        border: 'none',
+                                                        background: 'none',
+                                                        fontSize: '20px',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+
+                                            <div className="modal-body">
+                                                {activeTab === 'fabric' && (
+                                                    <>
+                                                        <p>
+                                                            <strong>Fabric Name:</strong>{' '}
+                                                            {selectedRecord.fabricName}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Orders:</strong>{' '}
+                                                            {selectedRecord.noOfOrders}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Customers:</strong>{' '}
+                                                            {selectedRecord.noOfCustomers}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Total Revenue:</strong> ₹
+                                                            {selectedRecord.totalRevenue}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Revenue:</strong> ₹
+                                                            {selectedRecord.avgRevenue}
+                                                        </p>
+                                                    </>
+                                                )}
+
+                                                {activeTab === 'outfit' && (
+                                                    <>
+                                                        <p>
+                                                            <strong>Outfit Name:</strong>{' '}
+                                                            {selectedRecord.outfitName}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Orders:</strong>{' '}
+                                                            {selectedRecord.noOfOrders}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Customers:</strong>{' '}
+                                                            {selectedRecord.noOfCustomers}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Total Revenue:</strong> ₹
+                                                            {selectedRecord.totalRevenue}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Revenue:</strong> ₹
+                                                            {selectedRecord.avgRevenue}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Time:</strong>{' '}
+                                                            {selectedRecord.avgOutfitTime}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Repair Rate:</strong>{' '}
+                                                            {selectedRecord.repairPercentage}%
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Cancel Rate:</strong>{' '}
+                                                            {selectedRecord.cancelPercentage}%
+                                                        </p>
+                                                    </>
+                                                )}
+
+                                                {activeTab === 'worktype' && (
+                                                    <>
+                                                        <p>
+                                                            <strong>Work Type:</strong>{' '}
+                                                            {selectedRecord.workTypeName}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Orders:</strong>{' '}
+                                                            {selectedRecord.noOfOrders}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Customers:</strong>{' '}
+                                                            {selectedRecord.noOfCustomers}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Work Time:</strong>{' '}
+                                                            {selectedRecord.avgWorkTypeTime}
+                                                        </p>
+                                                    </>
+                                                )}
+
+                                                {activeTab === 'worker' && (
+                                                    <>
+                                                        <p>
+                                                            <strong>Worker Name:</strong>{' '}
+                                                            {selectedRecord.workerName}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Assigned Orders:</strong>{' '}
+                                                            {selectedRecord.noOfAssignedOrders}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Complete Time:</strong>{' '}
+                                                            {selectedRecord.avgTimeToCompleteOrder}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Repairing Rate:</strong>{' '}
+                                                            {selectedRecord.repairingRatePercentage}%
+                                                        </p>
+
+                                                        {/* <p>
+                                                            <strong>Worker ID:</strong>{' '}
+                                                            {selectedRecord.workerId}
+                                                        </p> */}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

@@ -4050,6 +4050,11 @@ textarea.input-field {
   flex-wrap: wrap;
 }
 
+.task-desc{
+  font-size: 14px;
+  margin: 6px 0;
+}
+
 .tag {
   background: #dff3fb;
   color: #0096c7;
