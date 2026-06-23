@@ -809,6 +809,119 @@ export const reportsAPI = {
       );
     }
   },
+
+  // Worktype Analytics - Without Pagination
+  getWorktypeAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/worktype-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch worktype analytics'
+      );
+    }
+  },
+
+  // Worktype Analytics - With Pagination
+  getWorktypeAnalyticsPaginated: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/worktype-analytics/list', {
+      page,
+      limit,
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch worktype analytics'
+      );
+    }
+  },
+
+  // Worker Analytics - Without Pagination
+  getWorkerAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/worker-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch worker analytics'
+      );
+    }
+  },
+
+  // Worker Analytics - With Pagination
+  getWorkerAnalyticsPaginated: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/worker-analytics/list', {
+      page,
+      limit,
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch worker analytics'
+      );
+    }
+  },
+
+  // Delivery Analytics
+  getDeliveryAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/delivery-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch delivery analytics'
+      );
+    }
+  },
 };
 
 

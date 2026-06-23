@@ -61,11 +61,96 @@ const Reports = ({ onLogout }) => {
         }
     };
 
+    const fetchWorktypeAnalytics = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const response =
+                await reportsAPI.getWorktypeAnalytics({
+                    search: '',
+                    startdate: '2026-03-01',
+                    enddate: '2026-06-30',
+                });
+
+            setReportData(Array.isArray(response) ? response : []);
+        } catch (err) {
+            setError(
+                err.message || 'Failed to fetch worktype analytics'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchWorkerAnalytics = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const response =
+                await reportsAPI.getWorkerAnalytics({
+                    search: '',
+                    startdate: '2026-03-01',
+                    enddate: '2026-06-30',
+                });
+
+            setReportData(Array.isArray(response) ? response : []);
+        } catch (err) {
+            setError(
+                err.message || 'Failed to fetch worker analytics'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchDeliveryAnalytics = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const response =
+                await reportsAPI.getDeliveryAnalytics({
+                    search: '',
+                    startdate: '2026-03-01',
+                    enddate: '2026-06-30',
+                });
+
+            setReportData(response || {});
+        } catch (err) {
+            setError(
+                err.message || 'Failed to fetch delivery analytics'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        if (activeTab === 'fabric') {
-            fetchFabricAnalytics();
-        } else {
-            fetchOutfitAnalytics();
+        switch (activeTab) {
+            case 'fabric':
+                fetchFabricAnalytics();
+                break;
+
+            case 'outfit':
+                fetchOutfitAnalytics();
+                break;
+
+            case 'worktype':
+                fetchWorktypeAnalytics();
+                break;
+
+            case 'worker':
+                fetchWorkerAnalytics();
+                break;
+
+            case 'delivery':
+                fetchDeliveryAnalytics();
+                break;
+
+            default:
+                break;
         }
     }, [activeTab]);
 
@@ -108,13 +193,43 @@ const Reports = ({ onLogout }) => {
                         >
                             Outfit
                         </button>
+
+                        <button
+                            className={`tab tab-button ${activeTab === 'worktype' ? 'active' : ''
+                                }`}
+                            onClick={() => setActiveTab('worktype')}
+                        >
+                            Work Type
+                        </button>
+
+                        <button
+                            className={`tab tab-button ${activeTab === 'worker' ? 'active' : ''
+                                }`}
+                            onClick={() => setActiveTab('worker')}
+                        >
+                            Worker
+                        </button>
+
+                        <button
+                            className={`tab tab-button ${activeTab === 'delivery' ? 'active' : ''
+                                }`}
+                            onClick={() => setActiveTab('delivery')}
+                        >
+                            Delivery
+                        </button>
                     </div>
 
                     <div className="section-header">
                         <h2 className="section-title">
                             {activeTab === 'fabric'
                                 ? 'Fabric Analytics'
-                                : 'Outfit Analytics'}
+                                : activeTab === 'outfit'
+                                    ? 'Outfit Analytics'
+                                    : activeTab === 'worktype'
+                                        ? 'Work Type Analytics'
+                                        : activeTab === 'worker'
+                                            ? 'Worker Analytics'
+                                            : 'Delivery Analytics'}
                         </h2>
                     </div>
 
@@ -127,7 +242,11 @@ const Reports = ({ onLogout }) => {
                         >
                             Loading...
                         </div>
-                    ) : reportData.length > 0 ? (
+                    ) : (
+                        activeTab === 'delivery'
+                            ? Object.keys(reportData || {}).length > 0
+                            : reportData.length > 0
+                    ) ? (
                         <div className="table-container">
                             <div className="table-scroll-wrapper">
                                 <table
@@ -140,15 +259,15 @@ const Reports = ({ onLogout }) => {
                                         {activeTab === 'fabric' ? (
                                             <tr>
                                                 <th>Fabric Name</th>
-                                                <th>Sales</th>
+                                                <th>Orders</th>
                                                 <th>Revenue</th>
                                                 <th>Customers</th>
                                                 <th>Average Revenue</th>
                                             </tr>
-                                        ) : (
+                                        ) : activeTab === 'outfit' ? (
                                             <tr>
                                                 <th>Outfit Name</th>
-                                                <th>Sales</th>
+                                                <th>Orders</th>
                                                 <th>Revenue</th>
                                                 <th>Customers</th>
                                                 <th>Average Revenue</th>
@@ -156,10 +275,108 @@ const Reports = ({ onLogout }) => {
                                                 <th>Repairing Rate</th>
                                                 <th>Cancellation Rate</th>
                                             </tr>
+                                        ) : activeTab === 'worktype' ? (
+                                            <tr>
+                                                <th>Work Type</th>
+                                                <th>No. Of Orders</th>
+                                                <th>No. Of Customers</th>
+                                                <th>Avg Work Time</th>
+                                            </tr>
+                                        ) : activeTab === 'worker' ? (
+                                            <tr>
+                                                <th>Worker Name</th>
+                                                <th>Assigned Orders</th>
+                                                <th>Avg Complete Time</th>
+                                                <th>Repairing Rate</th>
+                                            </tr>
+                                        ) : (
+                                            <tr>
+                                                <th>Total On Time Deliveries</th>
+                                                <th>Total Delayed Deliveries</th>
+                                                <th>On Time %</th>
+                                                <th>Delayed %</th>
+                                            </tr>
                                         )}
                                     </thead>
 
-                                    <tbody>
+                                    {activeTab === 'delivery' ? (
+                                        <tbody>
+                                            <tr>
+                                                <td>{reportData.totalOnTimeDeliveries}</td>
+                                                <td>{reportData.totalDelayedDeliveries}</td>
+                                                <td>{reportData.onTimeDeliveryPercentage}%</td>
+                                                <td>{reportData.delayedDeliveryPercentage}%</td>
+                                            </tr>
+                                        </tbody>
+                                    ) : (
+                                        <tbody>
+                                            {reportData.map((item, index) => {
+                                                if (activeTab === 'fabric') {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td>{item.fabricName}</td>
+                                                            <td>{item.noOfOrders}</td>
+                                                            <td>₹ {item.totalRevenue}</td>
+                                                            <td>{item.noOfCustomers}</td>
+                                                            <td>₹ {item.avgRevenue}</td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                if (activeTab === 'outfit') {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td>{item.outfitName}</td>
+                                                            <td>{item.noOfOrders}</td>
+                                                            <td>₹ {item.totalRevenue}</td>
+                                                            <td>{item.noOfCustomers}</td>
+                                                            <td>₹ {item.avgRevenue}</td>
+                                                            <td>{item.avgOutfitTime}</td>
+                                                            <td>
+                                                                {item.repairPercentage
+                                                                    ? `${item.repairPercentage}%`
+                                                                    : '0%'}
+                                                            </td>
+                                                            <td>{item.cancelPercentage}%</td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                if (activeTab === 'worktype') {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td>{item.workTypeName}</td>
+                                                            <td>{item.noOfOrders}</td>
+                                                            <td>{item.noOfCustomers}</td>
+                                                            <td>{item.avgWorkTypeTime}</td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                if (activeTab === 'worker') {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td>{item.workerName}</td>
+                                                            <td>{item.noOfAssignedOrders}</td>
+                                                            <td>{item.avgTimeToCompleteOrder}</td>
+                                                            <td>{item.repairingRatePercentage}</td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <tr key={index}>
+                                                        <td>{item.deliveryType}</td>
+                                                        <td>{item.noOfOrders}</td>
+                                                        <td>₹ {item.totalRevenue}</td>
+                                                        <td>{item.noOfCustomers}</td>
+                                                        <td>₹ {item.avgRevenue}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    )}
+                                    {/* <tbody>
                                         {reportData.map((item, index) =>
                                             activeTab === 'fabric' ? (
                                                 <tr key={index}>
@@ -186,7 +403,7 @@ const Reports = ({ onLogout }) => {
                                                 </tr>
                                             )
                                         )}
-                                    </tbody>
+                                    </tbody> */}
                                 </table>
                             </div>
                         </div>
