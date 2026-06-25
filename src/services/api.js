@@ -902,6 +902,52 @@ export const reportsAPI = {
     }
   },
 
+  // Customer Analytics - Without Pagination
+  getCustomerAnalytics: async ({
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/customer-analytics', {
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch customer analytics'
+      );
+    }
+  },
+
+  // Customer Analytics - With Pagination
+  getCustomerAnalyticsList: async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    startdate,
+    enddate,
+  }) => {
+    const response = await api.post('/user/customer-analytics/list', {
+      page,
+      limit,
+      search,
+      startdate,
+      enddate,
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(
+        response.data.Message || 'Failed to fetch customer analytics list'
+      );
+    }
+  },
+
   // Delivery Analytics
   getDeliveryAnalytics: async ({
     search = '',

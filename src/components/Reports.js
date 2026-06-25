@@ -106,6 +106,28 @@ const Reports = ({ onLogout }) => {
         }
     };
 
+    const fetchCustomerAnalytics = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const response =
+                await reportsAPI.getCustomerAnalytics({
+                    search: '',
+                    startdate: '2026-03-01',
+                    enddate: '2026-06-30',
+                });
+
+            setReportData(Array.isArray(response) ? response : []);
+        } catch (err) {
+            setError(
+                err.message || 'Failed to fetch customer analytics'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchDeliveryAnalytics = async () => {
         try {
             setLoading(true);
@@ -144,6 +166,10 @@ const Reports = ({ onLogout }) => {
 
             case 'worker':
                 fetchWorkerAnalytics();
+                break;
+
+            case 'customer':
+                fetchCustomerAnalytics();
                 break;
 
             case 'delivery':
@@ -225,6 +251,14 @@ const Reports = ({ onLogout }) => {
                         </button>
 
                         <button
+                            className={`tab tab-button ${activeTab === 'customer' ? 'active' : ''
+                                }`}
+                            onClick={() => setActiveTab('customer')}
+                        >
+                            Customer
+                        </button>
+
+                        <button
                             className={`tab tab-button ${activeTab === 'delivery' ? 'active' : ''
                                 }`}
                             onClick={() => setActiveTab('delivery')}
@@ -243,7 +277,9 @@ const Reports = ({ onLogout }) => {
                                         ? 'Work Type Analytics'
                                         : activeTab === 'worker'
                                             ? 'Worker Analytics'
-                                            : 'Delivery Analytics'}
+                                            : activeTab === 'customer'
+                                                ? 'Customer Analytics'
+                                                : 'Delivery Analytics'}
                         </h2>
                     </div>
 
@@ -305,6 +341,17 @@ const Reports = ({ onLogout }) => {
                                                 <th>Assigned Orders</th>
                                                 <th>Avg Complete Time</th>
                                                 <th>Repairing Rate</th>
+                                                <th>View</th>
+                                            </tr>
+                                        ) : activeTab === 'customer' ? (
+                                            <tr>
+                                                <th>Customer Name</th>
+                                                <th>No. Of Orders</th>
+                                                <th>Total Revenue</th>
+                                                <th>Due Amount</th>
+                                                <th>Avg Revenue / Order</th>
+                                                <th>Repairing Rate</th>
+                                                <th>Cancellation Rate</th>
                                                 <th>View</th>
                                             </tr>
                                         ) : (
@@ -387,6 +434,29 @@ const Reports = ({ onLogout }) => {
                                                     );
                                                 }
 
+                                                if (activeTab === 'customer') {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td>{item.customerName}</td>
+                                                            <td>{item.noOfOrders}</td>
+                                                            <td>₹ {item.totalRevenue}</td>
+                                                            <td>₹ {item.totalDueAmount}</td>
+                                                            <td>₹ {item.avgRevenuePerOrder}</td>
+                                                            <td>{item.repairingRatePercentage}%</td>
+                                                            <td>{item.cancelPercentage}%</td>
+                                                            <td>
+                                                                <button
+                                                                    className="edit-btn"
+                                                                    title="View"
+                                                                    onClick={() => handleView(item)}
+                                                                >
+                                                                    <FiEye />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+
                                                 return (
                                                     <tr key={index}>
                                                         <td>{item.deliveryType}</td>
@@ -445,7 +515,11 @@ const Reports = ({ onLogout }) => {
                                                             ? 'Outfit Details'
                                                             : activeTab === 'worktype'
                                                                 ? 'Work Type Details'
-                                                                : 'Worker Details'}
+                                                                : activeTab === 'worker'
+                                                                    ? 'Worker Details'
+                                                                    : activeTab === 'customer'
+                                                                        ? 'Customer Details'
+                                                                        : 'Delivery Details'}
                                                 </h3>
 
                                                 <button
@@ -585,6 +659,50 @@ const Reports = ({ onLogout }) => {
                                                             <strong>Worker ID:</strong>{' '}
                                                             {selectedRecord.workerId}
                                                         </p> */}
+                                                    </>
+                                                )}
+
+                                                {activeTab === 'customer' && (
+                                                    <>
+                                                        <p>
+                                                            <strong>Customer Name:</strong>{' '}
+                                                            {selectedRecord.customerName}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Customer ID:</strong>{' '}
+                                                            {selectedRecord.customerId}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>No Of Orders:</strong>{' '}
+                                                            {selectedRecord.noOfOrders}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Total Revenue:</strong> ₹
+                                                            {selectedRecord.totalRevenue}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Total Due Amount:</strong> ₹
+                                                            {selectedRecord.totalDueAmount}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Average Revenue Per Order:</strong> ₹
+                                                            {selectedRecord.avgRevenuePerOrder}
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Repairing Rate:</strong>{' '}
+                                                            {selectedRecord.repairingRatePercentage}%
+                                                        </p>
+
+                                                        <p>
+                                                            <strong>Cancellation Rate:</strong>{' '}
+                                                            {selectedRecord.cancelPercentage}%
+                                                        </p>
                                                     </>
                                                 )}
                                             </div>

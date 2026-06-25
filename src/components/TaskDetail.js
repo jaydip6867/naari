@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI, uploadAPI } from '../services/api';
-import { FiEye, FiEdit, FiCalendar, FiPlay, FiPause, FiCheckCircle, FiUploadCloud } from 'react-icons/fi';
+import { FiCalendar, FiPlay, FiPause, FiCheckCircle, FiUploadCloud } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 
 const TaskDetail = ({ onLogout }) => {
