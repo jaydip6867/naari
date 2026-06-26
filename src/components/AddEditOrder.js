@@ -9,6 +9,8 @@ import { FiPlus, FiTrash2, FiUpload, FiX, FiArrowLeft } from 'react-icons/fi';
 import { useLoading } from '../contexts/LoadingContext.js';
 
 const AddEditOrder = ({ onLogout }) => {
+  const user = JSON.parse(localStorage.getItem("naari_user"));
+  const isAdmin = user?.type === "admin";
   const navigate = useNavigate();
   const { orderId } = useParams();
   const isEditMode = Boolean(orderId);
@@ -111,8 +113,8 @@ const AddEditOrder = ({ onLogout }) => {
     { id: 'worktype', label: 'Art Work' },
     { id: 'embroidery', label: 'Stitching' },
     { id: 'otherwork', label: 'Other Work' },
-    { id: 'assignworker', label: 'Assign Worker' },
-    { id: 'timeline', label: 'Time & Pricing' }
+    { id: 'assignworker', label: 'Assign Worker', adminOnly: true },
+    { id: 'timeline', label: 'Time & Pricing', adminOnly: true }
   ] : [
     { id: 'basic', label: 'Basic' },
     { id: 'measurements', label: 'Measurements' },
@@ -1092,16 +1094,17 @@ const AddEditOrder = ({ onLogout }) => {
   const renderTabNavigation = () => (
     <div className="tabs">
       <div className="order-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs
+          .filter(tab => isAdmin || !tab.adminOnly)
+          .map((tab) => (
+            <button
+              key={tab.id}
+              className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => handleTabChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
       </div>
     </div>
   );

@@ -5,16 +5,18 @@ import ImagePreview from './ImagePreview.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { orderAPI } from '../services/api';
-import { FiArrowLeft, FiEdit2, FiPackage } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
 
 const ViewOrder = ({ onLogout }) => {
+  const user = JSON.parse(localStorage.getItem("naari_user"));
+  const isAdmin = user?.type === "admin";
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
-  
+
   // Helper functions
   const formatValue = (value) => {
     if (value === null || value === undefined || value === '') {
@@ -57,9 +59,9 @@ const ViewOrder = ({ onLogout }) => {
     // { id: 'fusing', label: 'Fusing' },
     { id: 'worktype', label: 'Art Work' },
     { id: 'embroidery', label: 'Stitching' },
-    { id: 'assignworker', label: 'Assign Worker' },
+    { id: 'assignworker', label: 'Assign Worker', adminOnly: true },
     { id: 'otherwork', label: 'Other Work' },
-    { id: 'timeline', label: 'Time & Pricing' }
+    { id: 'timeline', label: 'Time & Pricing', adminOnly: true },
   ];
 
   // Tab change handler
@@ -109,7 +111,7 @@ const ViewOrder = ({ onLogout }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!imagePreview.isOpen) return;
-      
+
       switch (e.key) {
         case 'Escape':
           closeImagePreview();
@@ -210,7 +212,7 @@ const ViewOrder = ({ onLogout }) => {
       <div className="main-content">
         <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button 
+            <button
               className="btn btn-secondary"
               onClick={() => navigate('/orders')}
               style={{ padding: '8px 12px' }}
@@ -219,7 +221,7 @@ const ViewOrder = ({ onLogout }) => {
             </button>
             <h1 className="page-title">Order Details</h1>
           </div>
-          <button 
+          <button
             className="btn btn-primary"
             onClick={() => navigate(`/orders/edit/${orderId}`)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -231,16 +233,17 @@ const ViewOrder = ({ onLogout }) => {
         {/* Tab Navigation */}
         <div className="tabs">
           <div className="order-tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => handleTabChange(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {tabs
+              .filter(tab => isAdmin || !tab.adminOnly)
+              .map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`tab tab-button ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => handleTabChange(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
           </div>
         </div>
 
@@ -307,37 +310,41 @@ const ViewOrder = ({ onLogout }) => {
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Total Price</label>
                     <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.totalPrice || 0}</p>
                   </div> */}
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Selling Price</label>
-                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.sellingPrice || 0}</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Paid Amount</label>
-                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.advanceAmount || 0}</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Pending Amount</label>
-                    <p style={{ fontWeight: '600', fontSize: '18px', color: 'var(--alert-color)', marginTop: '4px' }}>₹{order.sellingPrice - order.advanceAmount || 0}</p>
-                  </div>
-                  <div className="view-item">
-                    <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Diff Percentage (%)</label>
-                    <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.diffPercentage || 0} %</p>
-                  </div>
+                  {isAdmin && (<>
+
+
+                    <div className="view-item">
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Selling Price</label>
+                      <p style={{ fontWeight: '600', fontSize: '18px', color: '#1e40af', marginTop: '4px' }}>₹{order.sellingPrice || 0}</p>
+                    </div>
+                    <div className="view-item">
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Paid Amount</label>
+                      <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.advanceAmount || 0}</p>
+                    </div>
+                    <div className="view-item">
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Pending Amount</label>
+                      <p style={{ fontWeight: '600', fontSize: '18px', color: 'var(--alert-color)', marginTop: '4px' }}>₹{order.sellingPrice - order.advanceAmount || 0}</p>
+                    </div>
+                    <div className="view-item">
+                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Diff Percentage (%)</label>
+                      <p style={{ fontWeight: '600', fontSize: '18px', color: '#065f46', marginTop: '4px' }}>₹{order.diffPercentage || 0} %</p>
+                    </div>
+                  </>)}
                 </div>
-                
+
                 {/* Reference Images */}
                 {order.outfitStyleRefImg && order.outfitStyleRefImg.length > 0 && (
                   <div style={{ marginTop: '24px' }}>
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.outfitStyleRefImg.map((img, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            borderRadius: '8px', 
-                            overflow: 'hidden', 
+                        <div
+                          key={index}
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
                             border: '2px solid var(--border-color)',
                             cursor: 'pointer',
                             transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -345,15 +352,15 @@ const ViewOrder = ({ onLogout }) => {
                           onClick={() => openImagePreview(order.outfitStyleRefImg, index)}
                           title={`Click to view image ${index + 1}`}
                         >
-                          <img 
-                            src={img} 
-                            alt={`Reference ${index + 1}`} 
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
+                          <img
+                            src={img}
+                            alt={`Reference ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
                               objectFit: 'cover',
                               transition: 'transform 0.2s ease'
-                            }} 
+                            }}
                           />
                         </div>
                       ))}
@@ -423,20 +430,20 @@ const ViewOrder = ({ onLogout }) => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Fabric Reference Images */}
                 {order.fabricRefImg && order.fabricRefImg.length > 0 && (
                   <div style={{ marginTop: '24px' }}>
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Fabric Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.fabricRefImg.map((img, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            borderRadius: '8px', 
-                            overflow: 'hidden', 
+                        <div
+                          key={index}
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
                             border: '2px solid var(--border-color)',
                             cursor: 'pointer',
                             transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -444,15 +451,15 @@ const ViewOrder = ({ onLogout }) => {
                           onClick={() => openImagePreview(order.fabricRefImg, index)}
                           title={`Click to view fabric image ${index + 1}`}
                         >
-                          <img 
-                            src={img} 
-                            alt={`Fabric ${index + 1}`} 
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
+                          <img
+                            src={img}
+                            alt={`Fabric ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
                               objectFit: 'cover',
                               transition: 'transform 0.2s ease'
-                            }} 
+                            }}
                           />
                         </div>
                       ))}
@@ -486,20 +493,20 @@ const ViewOrder = ({ onLogout }) => {
                         </span>
                       ))}
                     </div>
-                    
+
                     {/* Work Type Reference Images */}
                     {order.workTypeRefImg && order.workTypeRefImg.length > 0 && (
                       <div>
                         <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Work Type Reference Images</h4>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                           {order.workTypeRefImg.map((img, index) => (
-                            <div 
-                              key={index} 
-                              style={{ 
-                                width: '100px', 
-                                height: '100px', 
-                                borderRadius: '8px', 
-                                overflow: 'hidden', 
+                            <div
+                              key={index}
+                              style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
                                 border: '2px solid var(--border-color)',
                                 cursor: 'pointer',
                                 transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -507,15 +514,15 @@ const ViewOrder = ({ onLogout }) => {
                               onClick={() => openImagePreview(order.workTypeRefImg, index)}
                               title={`Click to view work type image ${index + 1}`}
                             >
-                              <img 
-                                src={img} 
-                                alt={`Work Type ${index + 1}`} 
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
+                              <img
+                                src={img}
+                                alt={`Work Type ${index + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
                                   objectFit: 'cover',
                                   transition: 'transform 0.2s ease'
-                                }} 
+                                }}
                               />
                             </div>
                           ))}
@@ -523,11 +530,11 @@ const ViewOrder = ({ onLogout }) => {
                       </div>
                     )}
                     {order.embroideryWorkNotes && (
-                    <div className="view-item" style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Art Work Notes</label>
-                      <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.embroideryWorkNotes}</p>
-                    </div>
-                  )}
+                      <div className="view-item" style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Art Work Notes</label>
+                        <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.embroideryWorkNotes}</p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>No work types specified.</p>
@@ -542,7 +549,7 @@ const ViewOrder = ({ onLogout }) => {
               <div className="form-section">
                 <h3 className="section-title form-section-title">Stitching</h3>
                 <div className="view-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                  
+
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Stitching Style</label>
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.stitichingStyle || '-'}</p>
@@ -554,21 +561,21 @@ const ViewOrder = ({ onLogout }) => {
                     </div>
                   )}
                 </div>
-                
-                
+
+
                 {/* Embroidery Reference Images */}
                 {order.embroideryRefImg && order.embroideryRefImg.length > 0 && (
                   <div style={{ marginTop: '24px' }}>
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Embroidery Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.embroideryRefImg.map((img, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            borderRadius: '8px', 
-                            overflow: 'hidden', 
+                        <div
+                          key={index}
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
                             border: '2px solid var(--border-color)',
                             cursor: 'pointer',
                             transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -576,35 +583,35 @@ const ViewOrder = ({ onLogout }) => {
                           onClick={() => openImagePreview(order.embroideryRefImg, index)}
                           title={`Click to view embroidery image ${index + 1}`}
                         >
-                          <img 
-                            src={img} 
-                            alt={`Embroidery ${index + 1}`} 
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
+                          <img
+                            src={img}
+                            alt={`Embroidery ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
                               objectFit: 'cover',
                               transition: 'transform 0.2s ease'
-                            }} 
+                            }}
                           />
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Stitching Reference Images */}
                 {order.stitichingRefImg && order.stitichingRefImg.length > 0 && (
                   <div style={{ marginTop: '24px' }}>
                     <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Stitching Reference Images</h4>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       {order.stitichingRefImg.map((img, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            borderRadius: '8px', 
-                            overflow: 'hidden', 
+                        <div
+                          key={index}
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
                             border: '2px solid var(--border-color)',
                             cursor: 'pointer',
                             transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -612,15 +619,15 @@ const ViewOrder = ({ onLogout }) => {
                           onClick={() => openImagePreview(order.stitichingRefImg, index)}
                           title={`Click to view stitching image ${index + 1}`}
                         >
-                          <img 
-                            src={img} 
-                            alt={`Stitching ${index + 1}`} 
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
+                          <img
+                            src={img}
+                            alt={`Stitching ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
                               objectFit: 'cover',
                               transition: 'transform 0.2s ease'
-                            }} 
+                            }}
                           />
                         </div>
                       ))}
@@ -655,14 +662,14 @@ const ViewOrder = ({ onLogout }) => {
                                 : (assignment.workerId || '-')}
                             </td>
                             <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
-                              <span style={{ 
+                              <span style={{
                                 padding: '4px 8px',
                                 borderRadius: '4px',
                                 fontSize: '12px',
-                                backgroundColor: assignment.status === 'completed' ? 'var(--success-color)' : 
-                                                assignment.status === 'in-progress' ? 'var(--warning-color)' : 
-                                                assignment.status === 'dying' ? '#ff9800' :
-                                                assignment.status === 'packing' ? '#2196f3' : 'var(--gray-color)',
+                                backgroundColor: assignment.status === 'completed' ? 'var(--success-color)' :
+                                  assignment.status === 'in-progress' ? 'var(--warning-color)' :
+                                    assignment.status === 'dying' ? '#ff9800' :
+                                      assignment.status === 'packing' ? '#2196f3' : 'var(--gray-color)',
                                 color: 'white',
                                 textTransform: 'capitalize'
                               }}>
@@ -697,20 +704,20 @@ const ViewOrder = ({ onLogout }) => {
                       <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Other Work Details</label>
                       <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.otherWork}</p>
                     </div>
-                    
+
                     {/* Other Work Reference Images */}
                     {order.otherWorkRefImg && order.otherWorkRefImg.length > 0 && (
                       <div style={{ marginTop: '24px' }}>
                         <h4 style={{ fontSize: '14px', color: 'var(--gray-color)', textTransform: 'uppercase', marginBottom: '12px' }}>Other Work Reference Images</h4>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                           {order.otherWorkRefImg.map((img, index) => (
-                            <div 
-                              key={index} 
-                              style={{ 
-                                width: '100px', 
-                                height: '100px', 
-                                borderRadius: '8px', 
-                                overflow: 'hidden', 
+                            <div
+                              key={index}
+                              style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
                                 border: '2px solid var(--border-color)',
                                 cursor: 'pointer',
                                 transition: 'transform 0.2s ease, border-color 0.2s ease'
@@ -718,15 +725,15 @@ const ViewOrder = ({ onLogout }) => {
                               onClick={() => openImagePreview(order.otherWorkRefImg, index)}
                               title={`Click to view other work image ${index + 1}`}
                             >
-                              <img 
-                                src={img} 
-                                alt={`Other Work ${index + 1}`} 
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
+                              <img
+                                src={img}
+                                alt={`Other Work ${index + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
                                   objectFit: 'cover',
                                   transition: 'transform 0.2s ease'
-                                }} 
+                                }}
                               />
                             </div>
                           ))}
@@ -746,7 +753,7 @@ const ViewOrder = ({ onLogout }) => {
             <div className="tab-content">
               <div className="form-section">
                 <h3 className="section-title form-section-title">Timeline & Pricing</h3>
-                
+
                 <div className="card">
 
                   <div className="table">
@@ -830,7 +837,7 @@ const ViewOrder = ({ onLogout }) => {
                       <label>Diff Percentage (%)</label>
                       <div className="value-box">{order.diffPercentage || 0}</div>
                     </div>
-                    
+
                   </div>
 
                   <div className="form-row">
@@ -846,8 +853,8 @@ const ViewOrder = ({ onLogout }) => {
                       <label>Delivery Date</label>
                       <div className="value-box">{order.deliveryDate || 'mm/dd/yyyy'}</div>
                     </div>
-                    
-                    
+
+
                   </div>
                 </div>
 
@@ -865,7 +872,7 @@ const ViewOrder = ({ onLogout }) => {
           )}
         </div>
       </div>
-      
+
       {/* Image Preview Modal */}
       <ImagePreview
         isOpen={imagePreview.isOpen}

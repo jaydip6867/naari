@@ -168,6 +168,8 @@ const TaskDetail = ({ onLogout }) => {
                     : 'todo',
                 assignStatus: assignment.status,
                 taskDetailId: detail?._id || null,
+                durationInSeconds:
+                detail?.sessions?.[0]?.durationInSeconds || 0,
             };
         });
     };
@@ -378,7 +380,8 @@ const TaskDetail = ({ onLogout }) => {
             </div>
             <div className='task-desc'>{task?.description || task?.description == "" ? "No Description" : task?.description}</div>
             <div className="task-date" style={{marginBottom: 0}}>
-                <FiCalendar /> <span>{formatDate(task.deliveryDate || task.createdAt)}</span>
+                {/* <FiCalendar /> <span>{formatDate(task.deliveryDate || task.createdAt)}</span> */}
+                <FiCalendar /> <span>{task.durationInSeconds} Seconds</span>
             </div>
             {/* <div className="bottom-row">
                 {getTaskTags(task).map((tag, index) => (

@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { IoLogoWechat } from 'react-icons/io5';
 
 const Chat = ({ onLogout }) => {
+  const user = JSON.parse(localStorage.getItem("naari_user"));
+  const isAdmin = user?.type === "admin";
   const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -28,6 +30,7 @@ const Chat = ({ onLogout }) => {
   const [socketStatus, setSocketStatus] = useState('disconnected');
   const [notification, setNotification] = useState('');
   const [activeRoom, setActiveRoom] = useState(null);
+  const [members, setMembers] = useState([]);
   const socketRef = useRef(null);
   const selectedChatRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -52,12 +55,42 @@ const Chat = ({ onLogout }) => {
     }
   };
 
+  // const fetchMessages = async (groupId) => {
+  //   try {
+  //     setLoading(true);
+  //     setError('');
+  //     const messagesData = await chatAPI.getChatDetails(groupId);
+  //     setMessages(normalizeMessages(messagesData));
+  //   } catch (err) {
+  //     console.error('Error fetching messages:', err);
+  //     setError(err.response.data.Message || 'Failed to fetch messages');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchMessages = async (groupId) => {
     try {
       setLoading(true);
       setError('');
+
       const messagesData = await chatAPI.getChatDetails(groupId);
-      setMessages(normalizeMessages(messagesData));
+
+      const normalizedMessages = normalizeMessages(messagesData);
+      setMessages(normalizedMessages);
+
+      // Unique Members
+      const uniqueMembers = [
+        ...new Map(
+          normalizedMessages.map(item => [
+            item.senderId?._id,
+            item.senderId
+          ])
+        ).values()
+      ];
+
+      setMembers(uniqueMembers);
+
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError(err.response.data.Message || 'Failed to fetch messages');
@@ -97,7 +130,7 @@ const Chat = ({ onLogout }) => {
     setSelectedChat(chat);
     setShowHeaderMenu(false);
     fetchMessages(chat._id || chat.groupId);
-    
+
     // Clear unread count from local state
     const groupId = chat._id || chat.groupId;
     setChats((prevChats) =>
@@ -244,12 +277,12 @@ const Chat = ({ onLogout }) => {
   }, [successMessage]);
 
   const filteredChats = searchTerm.trim()
-  ? chats.filter((chat) =>
+    ? chats.filter((chat) =>
       (chat.name || chat.groupName || '')
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     )
-  : chats;
+    : chats;
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -288,7 +321,7 @@ const Chat = ({ onLogout }) => {
   const requestBrowserNotificationPermission = () => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
+      Notification.requestPermission().catch(() => { });
     }
   };
 
@@ -560,11 +593,37 @@ const Chat = ({ onLogout }) => {
                     </button>
                     <div style={{ position: 'relative', cursor: 'pointer' }}>
                       <FiMoreVertical className="chat-more-icon" onClick={handleHeaderMenuToggle} />
-                      {showHeaderMenu && (
+                      {/* {showHeaderMenu && (
                         <div className="chat-header-dropdown" onMouseLeave={closeHeaderMenu}>
                           <button type="button" className="add-btn chat-header-dropdown-item" onClick={removeCurrentUserFromGroup}>
                             Leave Group
                           </button>
+                        </div>
+                      )} */}
+                      {showHeaderMenu && (
+                        <div
+                          className="chat-header-dropdown"
+                          onMouseLeave={closeHeaderMenu}
+                        >
+                          {isAdmin ? (
+                            members.map(member => (
+                              <button
+                                key={member._id}
+                                type="button"
+                                className="add-btn chat-header-dropdown-item"
+                              >
+                                {member.fullName}
+                              </button>
+                            ))
+                          ) : (
+                            <button
+                              type="button"
+                              className="add-btn chat-header-dropdown-item"
+                              onClick={removeCurrentUserFromGroup}
+                            >
+                              Leave Group
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
