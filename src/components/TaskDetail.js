@@ -343,7 +343,8 @@ const TaskDetail = ({ onLogout }) => {
                             type="button"
                             className="task_view-btn start"
                             onClick={handleStartTask}
-                            disabled={isTaskActionLoading || isAdminUser}
+                            // disabled={isTaskActionLoading || isAdminUser}
+                            disabled={isTaskActionLoading}
                             title={isAdminUser ? 'Admin users cannot start tasks' : 'Start Task'}
                         >
                             <FiPlay />
@@ -356,7 +357,8 @@ const TaskDetail = ({ onLogout }) => {
                             type="button"
                             className="task_view-btn pause"
                             onClick={handlePauseTask}
-                            disabled={isTaskActionLoading || isAdminUser}
+                            // disabled={isTaskActionLoading || isAdminUser}
+                            disabled={isTaskActionLoading}
                             title={isAdminUser ? 'Admin users cannot pause tasks' : 'Pause Task'}
                         >
                             <FiPause />
@@ -369,7 +371,8 @@ const TaskDetail = ({ onLogout }) => {
                             type="button"
                             className="task_view-btn complete"
                             onClick={openEndTaskModal}
-                            disabled={isTaskActionLoading || isUploadingImages || isAdminUser}
+                            // disabled={isTaskActionLoading || isUploadingImages || isAdminUser}
+                            disabled={isTaskActionLoading || isUploadingImages}
                             title={isAdminUser ? 'Admin users cannot end tasks' : 'End Task'}
                         >
                             <FiCheckCircle />

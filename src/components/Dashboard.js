@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { orderAPI } from "../services/api"; // તમારી path પ્રમાણે
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import "../styles.css";
 import { storage } from "../utils/storage";
@@ -218,7 +218,7 @@ const Dashboard = ({ onLogout }) => {
                     <th>Outfit</th>
                     <th>Delivery Date</th>
                     <th>Status</th>
-                    <th>Total</th>
+                    <th>Due Total</th>
                   </tr>
                 )}
 
@@ -229,7 +229,7 @@ const Dashboard = ({ onLogout }) => {
                     <th>Outfit</th>
                     <th>Delivery Date</th>
                     <th>Status</th>
-                    <th>Total</th>
+                    <th>Due Total</th>
                   </tr>
                 )}
 
@@ -240,7 +240,7 @@ const Dashboard = ({ onLogout }) => {
                     <th>Outfit</th>
                     <th>Delivery Date</th>
                     <th>Status</th>
-                    <th>Total</th>
+                    <th>Due Total</th>
                   </tr>
                 )}
               </thead>
@@ -269,7 +269,7 @@ const Dashboard = ({ onLogout }) => {
 
                     <tr key={item._id}>
 
-                      <td>{item.orderId}</td>
+                      <td ><Link to={`/orders/view/${item._id}`} className="link">{item.orderId}</Link></td>
 
                       <td>{item.customerId?.fullName}</td>
 
@@ -285,7 +285,7 @@ const Dashboard = ({ onLogout }) => {
 
                       </td>
 
-                      <td>₹ {item.totalPrice}</td>
+                      <td>₹ {item.sellingPrice - item.advanceAmount}</td>
 
                     </tr>
 

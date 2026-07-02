@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { orderAPI } from '../services/api';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage } from 'react-icons/fi';
+import { orderAPI, bankDetailsAPI } from '../services/api';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage, FiDownload } from 'react-icons/fi';
 import Pagination from './Pagination.js';
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import Invoice from "./Invoice";
+import { createRoot } from "react-dom/client";
+
 
 const Order = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -21,6 +26,31 @@ const Order = ({ onLogout }) => {
     key: null,
     direction: "asc",
   });
+
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceMode, setInvoiceMode] = useState("invoice");
+
+  const [quotationData, setQuotationData] = useState({
+    invoiceNumber: "",
+    gstPercent: "",   // ⭐ NEW ADD
+    bank: "",
+  });
+
+  const [bankList, setBankList] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await bankDetailsAPI.getBankDetails();
+        setBankList(res || []);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchBanks();
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -222,6 +252,196 @@ const Order = ({ onLogout }) => {
     orders.length / itemsPerPage
   );
 
+
+
+  // const handleDownloadInvoice = async (order) => {
+  //   const input = document.getElementById("invoice-print-area");
+
+  //   // clone invoice component render કરવા માટે temp div
+  //   const tempDiv = document.createElement("div");
+  //   tempDiv.style.position = "absolute";
+  //   tempDiv.style.left = "-9999px";
+  //   document.body.appendChild(tempDiv);
+
+  //   // render invoice inside hidden div
+  //   const { createRoot } = await import("react-dom/client");
+  //   const root = createRoot(tempDiv);
+
+  //   const invoiceData = {
+  //     invoice_no: order.orderId,
+  //     date: new Date().toLocaleDateString("en-IN"),
+  //     customer_name: order.customerId?.fullName,
+  //     customer_phone: order.customerId?.mobile,
+  //     customer_city: order.customerId?.address,
+  //     total_amount: order.sellingPrice,
+  //     advance_amount: order.advanceAmount,
+  //     due_amount: (order.sellingPrice || 0) - (order.advanceAmount || 0),
+  //     items: [
+  //       {
+  //         item_name: "Fabric",
+  //         qty: 1,
+  //         price: order.fabricPurchasePrice || 0,
+  //         total: order.fabricPurchasePrice || 0,
+  //       },
+  //       {
+  //         item_name: "Dyeing",
+  //         qty: 1,
+  //         price: order.dyeingPrice || 0,
+  //         total: order.dyeingPrice || 0,
+  //       },
+  //       {
+  //         item_name: "Stitching",
+  //         qty: 1,
+  //         price: order.stitichingPrice || 0,
+  //         total: order.stitichingPrice || 0,
+  //       },
+  //     ],
+  //   };
+
+  //   root.render(<Invoice selectedInvoice={invoiceData} />);
+
+  //   setTimeout(async () => {
+  //     const element = tempDiv;
+
+  //     const canvas = await html2canvas(element, {
+  //       scale: 2,
+  //       useCORS: true,
+  //     });
+
+  //     const imgData = canvas.toDataURL("image/png");
+
+  //     const pdf = new jsPDF("p", "mm", "a4");
+
+  //     const pdfWidth = pdf.internal.pageSize.getWidth();
+  //     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+  //     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+  //     pdf.save(`Invoice-${order.orderId}.pdf`);
+
+  //     document.body.removeChild(tempDiv);
+  //   }, 500);
+  // };
+
+ const handleDownloadInvoice = async () => {
+  try {
+    const order = selectedOrder;
+    const isQuotation = invoiceMode === "quotation";
+
+    const invoiceData = buildInvoiceData(order, isQuotation);
+
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "absolute";
+    tempDiv.style.left = "-9999px";
+    document.body.appendChild(tempDiv);
+
+    const { createRoot } = await import("react-dom/client");
+    const root = createRoot(tempDiv);
+
+    root.render(<Invoice selectedInvoice={invoiceData} />);
+
+    // wait for render + layout
+    await new Promise((r) => setTimeout(r, 800));
+
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    pdf.save(`Invoice-${invoiceData.invoice_no}.pdf`);
+
+    // CLEANUP
+    root.unmount();
+    document.body.removeChild(tempDiv);
+
+    // CLOSE MODAL SAFELY
+    setShowInvoiceModal(false);
+    setSelectedOrder(null);
+    setInvoiceMode("invoice");
+    setQuotationData({
+      invoiceNumber: "",
+      gstPercent: "",
+      bank: "",
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    setShowInvoiceModal(false);
+    setSelectedOrder(null);
+  }
+};
+
+  const buildInvoiceData = (order, isQuotation) => {
+    const selectedBank = bankList.find(
+      (b) => b._id === quotationData.bank
+    );
+
+    return {
+      invoice_no: isQuotation
+        ? quotationData.invoiceNumber
+        : order.orderId,
+
+      date: new Date().toLocaleDateString("en-IN"),
+
+      due_date: order.deliveryDate || "",
+
+      customer_name: order.customerId?.fullName || "",
+      customer_phone: order.customerId?.mobile || "",
+      customer_city: order.customerId?.address || "",
+      customer_state: order.customerId?.state || "",
+
+      // ✅ ITEMS DYNAMIC
+      items: [
+        {
+          item_name: "Fabric",
+          qty: 1,
+          price: order.fabricPurchasePrice || 0,
+          total: order.fabricPurchasePrice || 0,
+        },
+        {
+          item_name: "Dyeing",
+          qty: 1,
+          price: order.dyeingPrice || 0,
+          total: order.dyeingPrice || 0,
+        },
+        {
+          item_name: "Embroidery",
+          qty: 1,
+          price: order.embroideryPrice || 0,
+          total: order.embroideryPrice || 0,
+        },
+        {
+          item_name: "Stitching",
+          qty: 1,
+          price: order.stitichingPrice || 0,
+          total: order.stitichingPrice || 0,
+        },
+      ].filter(i => i.price > 0),
+
+      // ✅ TOTALS DYNAMIC
+      sub_total: order.sellingPrice || 0,
+      discount: order.discount || 0,
+      total_amount: order.sellingPrice || 0,
+      advance_paid: order.advanceAmount || 0,
+      net_due:
+        (order.sellingPrice || 0) - (order.advanceAmount || 0),
+
+      // ✅ QUOTATION ONLY DATA
+      gstPercent: isQuotation ? Number(quotationData.gstPercent || 0) : 0,
+
+      bank: isQuotation ? selectedBank : null,
+    };
+  };
+
   return (
     <div className="settings-container">
       <Sidebar onLogout={handleLogout} />
@@ -398,6 +618,23 @@ const Order = ({ onLogout }) => {
                                 <FiTrash2 />
                               </button>
                             )}
+                            {canDelete && order.status !== 'cancelled' && (
+                              <button
+                                className="edit-btn download-btn"
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setInvoiceMode("invoice"); // default
+                                  setQuotationData({
+                                    invoiceNumber: "",
+                                    gstNumber: "",
+                                    bank: "",
+                                  });
+                                  setShowInvoiceModal(true);
+                                }}
+                              >
+                                <FiDownload />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -425,6 +662,120 @@ const Order = ({ onLogout }) => {
           )}
         </div>
       </div>
+      {showInvoiceModal && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: "#fff",
+            padding: 20,
+            width: 400,
+            borderRadius: 10
+          }}>
+
+            <h3>Select Invoice Type</h3>
+
+            {/* RADIO */}
+            <div style={{ marginTop: 10 }}>
+              <label>
+                <input
+                  type="radio"
+                  value="invoice"
+                  checked={invoiceMode === "invoice"}
+                  onChange={(e) => setInvoiceMode(e.target.value)}
+                />
+                {" "}Invoice
+              </label>
+
+              <br />
+
+              <label>
+                <input
+                  type="radio"
+                  value="quotation"
+                  checked={invoiceMode === "quotation"}
+                  onChange={(e) => setInvoiceMode(e.target.value)}
+                />
+                {" "}Quotation Invoice
+              </label>
+            </div>
+
+            {/* QUOTATION FIELDS */}
+            {invoiceMode === "quotation" && (
+              <div style={{ marginTop: 15 }}>
+
+                <input
+                  placeholder="Invoice Number"
+                  value={quotationData.invoiceNumber}
+                  onChange={(e) =>
+                    setQuotationData({
+                      ...quotationData,
+                      invoiceNumber: e.target.value
+                    })
+                  }
+                  style={{ width: "100%", marginBottom: 10 }}
+                />
+
+                <input
+                  type="number"
+                  placeholder="GST %"
+                  value={quotationData.gstPercent}
+                  onChange={(e) =>
+                    setQuotationData({
+                      ...quotationData,
+                      gstPercent: e.target.value,
+                    })
+                  }
+                  style={{ width: "100%", marginBottom: 10 }}
+                />
+
+                {/* BANK DROPDOWN */}
+                <select
+                  value={quotationData.bank}
+                  onChange={(e) =>
+                    setQuotationData({
+                      ...quotationData,
+                      bank: e.target.value
+                    })
+                  }
+                  style={{ width: "100%", padding: 8 }}
+                >
+                  <option value="">Select Bank</option>
+                  {bankList.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.bankName}
+                    </option>
+                  ))}
+                </select>
+
+              </div>
+            )}
+
+            {/* BUTTONS */}
+            <div style={{
+              marginTop: 20,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10
+            }}>
+              <button onClick={() => setShowInvoiceModal(false)}>
+                Cancel
+              </button>
+
+              <button className="add-btn" onClick={handleDownloadInvoice}>
+                Generate
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
