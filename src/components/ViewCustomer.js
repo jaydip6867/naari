@@ -248,12 +248,6 @@ const ViewCustomer = ({ onLogout }) => {
                 >
                   Measurement
                 </button>
-                <button
-                  onClick={() => setActiveTab('finance')}
-                  className={`customer-tab-button ${activeTab === 'finance' ? 'active' : ''}`}
-                >
-                  Finance
-                </button>
               </div>
 
               {/* Tab Content */}
@@ -415,12 +409,6 @@ const ViewCustomer = ({ onLogout }) => {
                   </div>
                 )}
 
-                {activeTab === 'finance' && (
-                  <div className="coming-soon-section">
-                    <FiFileText className="coming-soon-icon" />
-                    <p className="coming-soon-text">Finance details coming soon</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>

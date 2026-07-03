@@ -1,471 +1,423 @@
-import React from "react";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import '../styles.css';
+import { storage } from '../utils/storage';
+import { legalAPI } from '../services/api';
+import { FiDownload, FiEdit2 } from 'react-icons/fi';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-const Invoice = ({ selectedInvoice }) => {
+const Invoice = ({ onLogout }) => {
+    const navigate = useNavigate();
 
-    if (!selectedInvoice) return null;
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [legalList, setLegalList] = useState([]);
 
-    const isQuotation = selectedInvoice?.invoiceType === "quotation";
-
-    const gstPercent = parseFloat(selectedInvoice?.gstPercent || 0);
-    const subTotal = Number(selectedInvoice?.sub_total || 0);
-    
-    // GST CALCULATION (MINUS)
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal - gstAmount;
-    
-    console.log(selectedInvoice, "selectedInvoice");
-
-    const invoice = {
-        invoice_no:
-            selectedInvoice?.invoice_no ||
-            selectedInvoice?.orderId ||
-            "N/A",
-
-        date: selectedInvoice?.date || new Date().toLocaleDateString("en-IN"),
-
-        due_date: selectedInvoice?.due_date || selectedInvoice?.deliveryDate || "",
-
-        customer_name:
-            selectedInvoice?.customer_name ||
-            selectedInvoice?.customerId?.fullName ||
-            "",
-
-        customer_phone:
-            selectedInvoice?.customer_phone ||
-            selectedInvoice?.customerId?.mobile ||
-            "",
-
-        customer_address:
-            selectedInvoice?.customer_address ||
-            selectedInvoice?.customerId?.address ||
-            "",
-
-        gst: selectedInvoice?.gstPercent || "",
-
-        bank: selectedInvoice?.bank || null,
-
-        sub_total: subTotal,
-
-        gst_amount: gstAmount,
-
-        discount: selectedInvoice?.discount || 0,
-
-        total_amount: finalTotal,
-
-        advance_paid: selectedInvoice?.advance_paid || 0,
-
-        net_due: finalTotal - (selectedInvoice?.advance_paid || 0),
-
-        items: Array.isArray(selectedInvoice?.items)
-            ? selectedInvoice.items
-            : [],
+    const handleLogout = () => {
+        storage.clearAuthData();
+        onLogout();
+        navigate('/');
     };
 
+    useEffect(() => {
+        fetchLegalList();
+    }, []);
 
-    const handlePrint = () => {
-        window.print();
+    const fetchLegalList = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const data = await legalAPI.getLegalList({}); // filter હોય તો અહીં આપજો
+
+            console.log("Legal List Response :", data);
+
+            setLegalList(data || []);
+        } catch (err) {
+            console.error(err);
+            setError(err.message || 'Failed to fetch legal list');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const [showModal, setShowModal] = useState(false);
+
+    const [editData, setEditData] = useState({
+        _id: "",
+        amount: "",
+        percentage: "",
+        bankdetailsid: "",
+        orderId: "",
+    });
+
+    const handleEdit = (item) => {
+        setEditData({
+            _id: item._id,
+            amount: item.amount,
+            percentage: item.percentage,
+            bankdetailsid: item.bankdetailsid?._id,
+            orderId: item.orderId?._id,
+        });
+
+        setShowModal(true);
+    };
+
+    const handleUpdate = async () => {
+        try {
+            setLoading(true);
+
+            const payload = {
+                _id: editData._id,
+                percentage: Number(editData.percentage),
+                amount: Number(editData.amount),
+                bankdetailsid: editData.bankdetailsid,
+                orderId: editData.orderId,
+            };
+
+            await legalAPI.saveLegal(payload);
+
+            setShowModal(false);
+
+            fetchLegalList();
+        } catch (err) {
+            console.log(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDownload = (data) => {
+        const doc = new jsPDF("p", "mm", "a4");
+
+        const order = data.orderId;
+        const customer = order.customerId;
+
+        const total = order.totalPrice;
+        const advance = order.advanceAmount;
+        const gst = data.amount;
+        const subTotal = total + gst;
+        const netDue = subTotal - advance;
+
+        const primary = [236, 154, 120];
+
+        // ======================
+        // Header
+        // ======================
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.setTextColor(...primary);
+        doc.text("Naari House", 14, 18);
+
+        doc.setFontSize(10);
+        doc.setTextColor(60);
+
+        doc.text("24, Ugameshwar Bunglow", 14, 26);
+        doc.text("Nr Taapi Arcade", 14, 32);
+        doc.text("Nr Opel Gold", 14, 38);
+        doc.text("Mota Varachha", 14, 44);
+        doc.text("Surat - 394101", 14, 50);
+
+        doc.setFontSize(22);
+        doc.setTextColor(...primary);
+        doc.text("INVOICE", 150, 18);
+
+        doc.setFontSize(10);
+        doc.setTextColor(0);
+
+        doc.text(`Invoice No : ${data.legalid}`, 150, 28);
+        doc.text(
+            `Date : ${new Date(data.createdAt).toLocaleDateString()}`,
+            150,
+            34
+        );
+        doc.text(`Delivery : ${order.deliveryDate}`, 150, 40);
+
+        doc.setDrawColor(...primary);
+        doc.line(10, 58, 200, 58);
+
+        // ======================
+        // Bill To
+        // ======================
+
+        doc.setTextColor(...primary);
+        doc.setFontSize(14);
+        doc.text("BILL TO", 10, 76);
+
+        doc.setFontSize(11);
+        doc.setTextColor(0);
+
+        doc.setFont("helvetica", "bold");
+        doc.text(customer.fullName.toUpperCase(), 10, 84);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(customer.mobile, 10, 90);
+
+        // ======================
+        // Item Table
+        // ======================
+
+        const rows = [];
+
+        rows.push([
+            1,
+            "Fabric",
+            1,
+            `₹ ${order.fabricPurchasePrice}`,
+            `₹ ${order.fabricPurchasePrice}`,
+        ]);
+
+        rows.push([
+            2,
+            "Embroidery",
+            1,
+            `₹ ${order.embroideryPrice}`,
+            `₹ ${order.embroideryPrice}`,
+        ]);
+
+        rows.push([
+            3,
+            "Stitching",
+            1,
+            `₹ ${order.stitichingPrice}`,
+            `₹ ${order.stitichingPrice}`,
+        ]);
+
+        rows.push([
+            4,
+            "Other Work",
+            1,
+            `₹ ${order.otherWorkPrice}`,
+            `₹ ${order.otherWorkPrice}`,
+        ]);
+
+        autoTable(doc, {
+            startY: 100,
+
+            head: [["#", "Description", "Qty", "Unit Price", "Total"]],
+
+            body: rows,
+
+            headStyles: {
+                fillColor: primary,
+                textColor: 255,
+                halign: "center",
+            },
+
+            bodyStyles: {
+                fontSize: 10,
+            },
+
+            columnStyles: {
+                0: { halign: "center", cellWidth: 15 },
+                2: { halign: "center", cellWidth: 20 },
+                3: { halign: "right" },
+                4: { halign: "right" },
+            },
+        });
+
+        // ======================
+        // Summary Table
+        // ======================
+
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 18,
+
+            margin: { left: 120 },
+
+            body: [
+                ["Total Amount", `₹ ${total}`],
+                ["Discount", "₹ 0"],
+                [`GST ${data.percentage}%`, `₹ ${gst}`],
+                ["Sub Total", `₹ ${subTotal}`],
+                ["Advance Paid", `₹ ${advance}`],
+                ["Net Due", `₹ ${netDue}`],
+            ],
+
+            styles: {
+                fontSize: 10,
+            },
+
+            columnStyles: {
+                0: { fontStyle: "bold" },
+                1: {
+                    halign: "right",
+                    fontStyle: "bold",
+                },
+            },
+        });
+
+        // ======================
+        // Footer
+        // ======================
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+
+        doc.text(
+            "Thank you for your business.",
+            14,
+            doc.lastAutoTable.finalY + 20
+        );
+
+        doc.save(`Invoice-${data.legalid}.pdf`);
     };
 
     return (
-        <>
-            <style>{`
-
-      *{
-        box-sizing:border-box;
-      }
-
-      body{
-        margin:0;
-        padding:0;
-        font-family:Arial, Helvetica, sans-serif;
-        background:#f5f5f5;
-      }
-
-      .invoice-container{
-
-        width:900px;
-
-        margin:20px auto;
-
-        background:#fff;
-
-        padding:35px;
-
-        border-radius:8px;
-
-        box-shadow:0 0 8px rgba(0,0,0,.15);
-
-      }
-
-      .header{
-
-        display:flex;
-
-        justify-content:space-between;
-
-        align-items:flex-start;
-
-        border-bottom:2px solid #EA9D81;
-
-        padding-bottom:20px;
-
-      }
-
-      .company-name{
-
-        font-size:32px;
-
-        font-weight:bold;
-
-        color:#EA9D81;
-
-      }
-
-      .company-address{
-
-        margin-top:8px;
-
-        font-size:14px;
-
-        line-height:24px;
-
-        color:#444;
-
-      }
-
-      .invoice-title{
-
-        text-align:right;
-
-      }
-
-      .invoice-title h1{
-
-        margin:0;
-
-        color:#EA9D81;
-
-        font-size:42px;
-
-      }
-
-      .invoice-title p{
-
-        margin:5px 0;
-
-        font-size:14px;
-
-      }
-
-      .customer-section{
-
-        display:flex;
-
-        justify-content:space-between;
-
-        margin-top:35px;
-
-      }
-
-      .bill-box{
-
-        width:48%;
-
-      }
-
-      .bill-box h3{
-
-        margin-bottom:12px;
-
-        color:#EA9D81;
-
-      }
-
-      .bill-box p{
-
-        margin:6px 0;
-
-        font-size:14px;
-
-      }
-
-      table{
-
-        width:100%;
-
-        border-collapse:collapse;
-
-        margin-top:35px;
-
-      }
-
-      th{
-
-        background:#EA9D81;
-
-        color:#fff;
-
-        padding:12px;
-
-        font-size:14px;
-
-      }
-
-      td{
-
-        border:1px solid #ddd;
-
-        padding:12px;
-
-        font-size:14px;
-
-      }
-
-      .text-right{
-
-        text-align:right;
-
-      }
-
-      .text-center{
-
-        text-align:center;
-
-      }
-
-      @media print{
-
-        .no-print{
-
-          display:none;
-
-        }
-
-        body{
-
-          background:#fff;
-
-        }
-
-      }
-
-      `}</style>
-
-            <div id="invoice-print-area" className="invoice-container">
-
-                <div className="header">
-
-                    <div>
-
-                        <div className="company-name">
-
-                            Naari House
-
-                        </div>
-
-                        <div className="company-address">
-
-                            24, Ugameshwar Bunglow
-                            <br />
-
-                            Nr Taapi Arcade
-
-                            <br />
-
-                            Nr Opel Gold
-
-                            <br />
-
-                            Mota Varachha
-
-                            <br />
-
-                            Surat - 394101
-
-                        </div>
-
-                    </div>
-
-                    <div className="invoice-title">
-
-                        <h1>INVOICE</h1>
-
-                        <p>
-
-                            <b>Invoice No :</b>
-
-                            {invoice.invoice_no}
-
-                        </p>
-
-                        <p>
-
-                            <b>Date :</b>
-
-                            {invoice.date}
-
-                        </p>
-
-                        <p>
-
-                            <b>Delivery :</b>
-
-                            {invoice.due_date}
-
-                        </p>
-
-                    </div>
-
+        <div className="settings-container">
+            <Sidebar onLogout={handleLogout} />
+
+            <div className="main-content">
+                <div className="page-header">
+                    <h1 className="page-title">Invoice</h1>
                 </div>
 
-                <div className="customer-section">
+                <div className="content-section">
 
-                    <div className="bill-box">
+                    <h2 className="section-title">Invoice List</h2>
+                    {loading && <p>Loading...</p>}
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
 
-                        <h3>BILL TO</h3>
+                    {!loading && (
+                        <div className="table-container">
+                            <div className="table-scroll-wrapper">
+                                <table className="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Legal ID</th>
+                                            <th>Customer</th>
+                                            <th>Mobile</th>
+                                            <th>Product</th>
+                                            <th>Amount</th>
+                                            <th>GST %</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th width="170">Action</th>
+                                        </tr>
+                                    </thead>
 
-                        <p>
+                                    <tbody>
+                                        {legalList.length > 0 ? (
+                                            legalList.map((item) => (
+                                                <tr key={item._id}>
+                                                    <td>{item.legalid}</td>
 
-                            <b>{invoice.customer_name}</b>
+                                                    <td>{item.orderId?.customerId?.fullName}</td>
 
-                        </p>
+                                                    <td>{item.orderId?.customerId?.mobile}</td>
 
-                        <p>
+                                                    <td>{item.orderId?.productName}</td>
 
-                            {invoice.customer_phone}
+                                                    <td>₹ {item.amount}</td>
 
-                        </p>
+                                                    <td>{item.percentage}%</td>
 
-                        <p>
+                                                    <td>
+                                                        ₹
+                                                        {(
+                                                            Number(item.amount) +
+                                                            (Number(item.amount) * Number(item.percentage)) /
+                                                            100
+                                                        ).toFixed(2)}
+                                                    </td>
 
-                            {invoice.customer_address}
+                                                    <td>{item.orderId?.status}</td>
 
-                        </p>
+                                                    <td>
+                                                        <button
+                                                            className="edit-btn"
+                                                            onClick={() => handleEdit(item)}
+                                                        >
+                                                            <FiEdit2 />
+                                                        </button>
 
-                    </div>
-
-                </div>
-                {invoice.bank ? (
-                    <div style={{ marginTop: 20 }}>
-
-                        {/* BANK */}
-                        {invoice.bank && (
-                            <div style={{ marginTop: 10 }}>
-                                <p>
-                                    <b>Bank Name:</b> {invoice.bank?.bankName || "-"}
-                                </p>
-                                <p>
-                                    <b>Account:</b> {invoice.bank?.accountNumber || "-"}
-                                </p>
-                                <p>
-                                    <b>IFSC:</b> {invoice.bank?.ifscCode || "-"}
-                                </p>
+                                                        <button
+                                                            className="edit-btn download-btn"
+                                                            onClick={() => handleDownload(item)}
+                                                        >
+                                                            <FiDownload />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="9" className="text-center">
+                                                    No Data Found
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
-                    </div>
-                ) : null}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Description</th>
-                            <th className="text-center">Qty</th>
-                            <th className="text-right">Unit Price</th>
-                            <th className="text-right">Total</th>
-                        </tr>
-                    </thead>
+                        </div>
+                    )}
 
-                    <tbody>
-                        {invoice.items?.length > 0 ? (
-                            invoice.items.map((item, index) => (
-                                <tr key={index}>
-                                    <td className="text-center">{index + 1}</td>
-                                    <td>{item.name || item.item_name || "-"}</td>
-                                    <td className="text-center">{item.qty}</td>
-                                    <td className="text-right">₹ {item.price}</td>
-                                    <td className="text-right">₹ {item.total}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" className="text-center">
-                                    No Items
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                </div>
+            </div>
 
+            {showModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-header">
+                            <h2 className="modal-title">Edit Invoice</h2>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label>Amount</label>
 
-                {/* TOTAL SECTION */}
-                <div style={{ marginTop: "30px", display: "flex", justifyContent: "flex-end" }}>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={editData.amount}
+                                    onChange={(e) =>
+                                        setEditData({
+                                            ...editData,
+                                            amount: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div className="form-group mt-3">
+                                <label>GST %</label>
 
-                    <div style={{ width: "350px" }}>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={editData.percentage}
+                                    onChange={(e) =>
+                                        setEditData({
+                                            ...editData,
+                                            percentage: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
 
-                        <table style={{ width: "100%" }}>
-
-                            <tbody>
-
-                                <tr>
-                                    <td><b>Total Amount</b></td>
-                                    <td className="text-right"><b>₹ {invoice.total_amount}</b></td>
-                                </tr>
-
-                                <tr>
-                                    <td>Discount</td>
-                                    <td className="text-right">₹ {invoice.discount}</td>
-                                </tr>
-                                {(invoice.gst && invoice.gst !== "") && (
-                                    <tr>
-                                        <td>GST {invoice.gst}%</td>
-                                        <td className="text-right">₹ {invoice.gst_amount}</td>
-                                    </tr>
-                                )}
-
-                                <tr>
-                                    <td>Sub Total</td>
-                                    <td className="text-right">₹ {invoice.sub_total}</td>
-                                </tr>
-
-                                <tr>
-                                    <td>Advance Paid</td>
-                                    <td className="text-right">₹ {invoice.advance_paid}</td>
-                                </tr>
-
-                                <tr>
-                                    <td><b>Net Due</b></td>
-                                    <td className="text-right"><b>₹ {invoice.net_due}</b></td>
-                                </tr>
-
-                            </tbody>
-
-                        </table>
+                            <button
+                                className="btn"
+                                onClick={() => setShowModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-save"
+                                onClick={handleUpdate}
+                            >
+                                Save
+                            </button>
+                        </div>
 
                     </div>
                 </div>
-
-                {/* PRINT BUTTON */}
-                {/* <div className="no-print" style={{ textAlign: "center", marginTop: "40px" }}>
-
-                    <button
-                        onClick={handlePrint}
-                        style={{
-                            padding: "12px 25px",
-                            background: "#EA9D81",
-                            color: "#fff",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: "16px",
-                            borderRadius: "6px"
-                        }}
-                    >
-                        Print / Save PDF
-                    </button>
-
-                </div> */}
-
-            </div>
-        </>
+            )}
+        </div>
     );
 };
 

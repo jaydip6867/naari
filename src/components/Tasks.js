@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
@@ -67,20 +67,6 @@ const Tasks = ({ onLogout }) => {
     } catch (error) {
       console.error('Error loading task details:', error);
       throw error;
-    }
-  };
-
-  const handleTaskClick = async (task) => {
-    try {
-      setSelectedTaskLoading(true);
-      setError('');
-      const taskDetails = await loadTaskDetails(task._id);
-      setSelectedTask(taskDetails || task);
-      setShowTaskDetail(true);
-    } catch (error) {
-      setError(error.message || 'Failed to load task details');
-    } finally {
-      setSelectedTaskLoading(false);
     }
   };
 
@@ -299,11 +285,8 @@ const Tasks = ({ onLogout }) => {
                   {todoTasks.length > 0 ? todoTasks.map((task) => (
                     <div className="task-card" key={task._id}>
                       <div className="task-title">
-                        {getTaskCardTitle(task)}
+                        <Link to={`/orders/view/${task._id}`} className='link'>{getTaskCardTitle(task)}</Link>
                         <div className="task-actions">
-                          <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
-                            <FiEye />
-                          </div>
                           <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
                             <FiEdit />
                           </div>
@@ -340,9 +323,6 @@ const Tasks = ({ onLogout }) => {
                     <div className="task-title">
                       {getTaskCardTitle(task)}
                       <div className="task-actions">
-                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
-                          <FiEye />
-                        </div>
                         <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
                           <FiEdit />
                         </div>
@@ -372,9 +352,6 @@ const Tasks = ({ onLogout }) => {
                     <div className="task-title">
                       {getTaskCardTitle(task)}
                       <div className="task-actions">
-                        <div className="task_view-btn" onClick={() => handleTaskClick(task)} title="View Task">
-                          <FiEye />
-                        </div>
                         <div className="task_view-btn" onClick={() => navigate(`/tasks/${task._id}`)} title="Edit Task">
                           <FiEdit />
                         </div>

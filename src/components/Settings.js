@@ -836,7 +836,7 @@ const Settings = ({ onLogout }) => {
     { id: 'addons', label: 'Addons', permission: 'addons' },
     { id: 'rolls', label: 'Rolls', permission: 'roles' },
     { id: 'skills', label: 'Skills', permission: 'skills' },
-    { id: 'worktype', label: 'Work Type', permission: 'worktypes' },
+    { id: 'worktype', label: 'Collection', permission: 'worktypes' },
     { id: 'finance', label: 'Finance', permission: 'accounting' },
     { id: 'bank', label: 'Bank', permission: 'bank' },
   ];
@@ -1750,10 +1750,10 @@ const Settings = ({ onLogout }) => {
         {activeTab === 'worktype' && (
           <div className="content-section">
             <div className="section-header">
-              <h2 className="section-title">Work Types <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0' + workTypes.length : workTypes.length} Work Types</span></h2>
+              <h2 className="section-title">Collections <span className='fields-tag'>{workTypes.length > 0 && workTypes.length <= 10 ? '0' + workTypes.length : workTypes.length} Collection</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {/* <button className="add-btn" onClick={fetchWorkTypes}><FiRefreshCw /> Refresh</button> */}
-                <button className="add-btn" onClick={() => openWorkTypeModal()}>+ Add New Work Type</button>
+                <button className="add-btn" onClick={() => openWorkTypeModal()}>+ Add New Collection</button>
               </div>
             </div>
 
@@ -1772,7 +1772,7 @@ const Settings = ({ onLogout }) => {
 
             {workTypesLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--primary-color)' }}>
-                Loading work types...
+                Loading collections...
               </div>
             ) : workTypes.length > 0 ? (
               <div className="skills-list">

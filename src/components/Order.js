@@ -8,7 +8,7 @@ import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage, FiDownload } fro
 import Pagination from './Pagination.js';
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import Invoice from "./Invoice";
+import Invoice from "./InvoiceGenerate.js";
 import { createRoot } from "react-dom/client";
 
 
@@ -690,7 +690,7 @@ const Order = ({ onLogout }) => {
                   checked={invoiceMode === "invoice"}
                   onChange={(e) => setInvoiceMode(e.target.value)}
                 />
-                {" "}Invoice
+                {" "}Quatation
               </label>
 
               <br />
@@ -702,7 +702,7 @@ const Order = ({ onLogout }) => {
                   checked={invoiceMode === "quotation"}
                   onChange={(e) => setInvoiceMode(e.target.value)}
                 />
-                {" "}Quotation Invoice
+                {" "}Invoice
               </label>
             </div>
 

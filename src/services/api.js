@@ -716,6 +716,53 @@ export const expenseAlertAPI = {
   },
 };
 
+// Legal API calls
+export const legalAPI = {
+  // Save Legal
+  saveLegal: async (legalData) => {
+    const response = await api.post('/user/legal/save', legalData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to save legal');
+    }
+  },
+
+  // Get Legal List (Without Pagination)
+  getLegalList: async (filterData) => {
+    const response = await api.post('/user/legal', filterData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch legal list');
+    }
+  },
+
+  // Get Legal List (With Pagination)
+  getLegalListPagination: async (paginationData) => {
+    const response = await api.post('/user/legal/list', paginationData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch legal list');
+    }
+  },
+
+  // Get One Legal
+  getOneLegal: async (idData) => {
+    const response = await api.post('/user/legal/getone', idData);
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch legal details');
+    }
+  },
+};
+
 // Reports API calls
 export const reportsAPI = {
   // Fabric Analytics - Without Pagination

@@ -72,7 +72,7 @@ const WorkTypeModal = ({ isOpen, onClose, onSave, editingWorkType }) => {
       <div className="modal small">
         <div className="modal-header">
           <h3 className="modal-title">
-            {editingWorkType ? 'Edit Work Type' : 'Add New Work Type'}
+            {editingWorkType ? 'Edit Collection' : 'Add New Collection'}
           </h3>
         </div>
         
@@ -93,13 +93,13 @@ const WorkTypeModal = ({ isOpen, onClose, onSave, editingWorkType }) => {
             )}
 
             <div className="form-group">
-              <label className="form-label">Work Type Name</label>
+              <label className="form-label">Collection Name</label>
               <input
                 type="text"
                 className="form-input"
                 value={workTypeName}
                 onChange={(e) => setWorkTypeName(e.target.value)}
-                placeholder="Enter work type name"
+                placeholder="Enter collection name"
                 disabled={isSubmitting}
                 required
                 autoFocus
@@ -121,7 +121,7 @@ const WorkTypeModal = ({ isOpen, onClose, onSave, editingWorkType }) => {
               className="btn btn-save"
               disabled={!workTypeName.trim() || isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : (editingWorkType?.type === 'Remove' ? 'Remove Work Type' : 'Add Work Type')}
+              {isSubmitting ? 'Saving...' : (editingWorkType?.type === 'Remove' ? 'Remove Collection' : 'Add Collection')}
             </button>
           </div>
         </form>

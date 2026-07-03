@@ -1796,6 +1796,7 @@ const AddEditOrder = ({ onLogout }) => {
                                 <option value="ready_to_delivery">Ready to Delivery</option>
                                 <option value="delivery_complete">Delivery Complete</option>
                                 <option value="repairing">Repairing</option>
+                                <option value="delivery">Delivery</option>
                               </select>
                               <button
                                 type="button"

@@ -21,6 +21,7 @@ import Reports from './components/Reports.js';
 import './styles.css';
 import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
+import Invoice from './components/Invoice.js';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -290,6 +291,14 @@ function App() {
               element={
                 isLoggedIn ?
                   <Reports onLogout={handleLogout} /> :
+                  <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/invoice"
+              element={
+                isLoggedIn ?
+                  <Invoice onLogout={handleLogout} /> :
                   <Navigate to="/" replace />
               }
             />
