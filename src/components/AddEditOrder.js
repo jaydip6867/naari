@@ -309,12 +309,16 @@ const AddEditOrder = ({ onLogout }) => {
     }
   };
 
+
+
   const fetchOrder = async () => {
     try {
       const response = await orderAPI.getOrderById(orderId);
+      console.log('Fetched order data:', response);
       if (response) {
         const order = response.Data || response;
         setFormData({
+          orderId: order.orderId || '',
           customerId: order.customerId?._id || order.customerId || '',
           orderType: order.orderType || 'product',
           productId: order.productId?._id || order.productId || '',
@@ -764,6 +768,7 @@ const AddEditOrder = ({ onLogout }) => {
         payload.stitichingNotes = formData.stitichingNotes;
         payload.otherWork = formData.otherWork;
 
+        // console.log(payload)
         await orderAPI.updateOrder(payload);
         navigate('/orders');
       } else {
@@ -1138,7 +1143,7 @@ const AddEditOrder = ({ onLogout }) => {
           >
             <FiArrowLeft />
           </button>
-          <h1 className="page-title">{isEditMode ? 'Edit Order' : 'Add New Order'}</h1>
+          <h1 className="page-title">{isEditMode ? `Edit Order - ${formData.orderId}` : 'Add New Order'}</h1>
         </div>
 
         {error && (

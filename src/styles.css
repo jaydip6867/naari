@@ -542,7 +542,7 @@ body {
   top: 10px;
   z-index: 1;
   max-height: calc(100vh - 100px);
-  overflow-y: auto;
+  /* overflow-y: auto; */;
   min-width: 0;
   flex-grow: 1;
 }
@@ -4095,6 +4095,12 @@ textarea.input-field {
   color: white;
 }
 
+.task-worker{
+  font-size: 12px;
+  color: var(--primary-dark);
+  margin-top: 6px;
+}
+
 .kanban-board {
   display: flex;
   margin-top: 20px;
@@ -5735,7 +5741,7 @@ textarea.input-field {
 }
 
 .table-container {
-    margin-top: 30px;
+    margin-top: 12px;
     background: white;
     padding: 20px;
     border-radius: 10px;
@@ -5830,6 +5836,13 @@ textarea.input-field {
 }
 .link:hover{
   color: var(--primary-color);
+}
+.link.underline{
+  text-decoration: underline;
+}
+.link.underline:hover{
+  text-decoration: none;
+  color: var(--gray-color);
 }
 
 .invoice-container {

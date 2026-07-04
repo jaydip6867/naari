@@ -7,6 +7,7 @@ import { legalAPI } from '../services/api';
 import { FiDownload, FiEdit2 } from 'react-icons/fi';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logo from '../assets/naari-logo.png';
 
 const Invoice = ({ onLogout }) => {
     const navigate = useNavigate();
@@ -96,11 +97,12 @@ const Invoice = ({ onLogout }) => {
         const order = data.orderId;
         const customer = order.customerId;
 
-        const total = order.totalPrice;
+        const total = order.sellingPrice;
         const advance = order.advanceAmount;
-        const gst = data.amount;
-        const subTotal = total + gst;
-        const netDue = subTotal - advance;
+        const gstpercentage = data.percentage;
+        const subTotal = total / (1 + gstpercentage / 100);
+        const gst = total - subTotal;
+        const netDue = total - advance;
 
         const primary = [236, 154, 120];
 
@@ -108,19 +110,25 @@ const Invoice = ({ onLogout }) => {
         // Header
         // ======================
 
+        // logo on top-left
+        doc.addImage(logo, 'PNG', 10, 8, 28, 28);
+
+        // move header text to the right of the logo to avoid overlap
+        const headerX = 46; // logo x (10) + logo width (28) + 8px padding
+
         doc.setFont("helvetica", "bold");
         doc.setFontSize(20);
         doc.setTextColor(...primary);
-        doc.text("Naari House", 14, 18);
+        doc.text("Naari House", headerX, 18);
 
         doc.setFontSize(10);
         doc.setTextColor(60);
 
-        doc.text("24, Ugameshwar Bunglow", 14, 26);
-        doc.text("Nr Taapi Arcade", 14, 32);
-        doc.text("Nr Opel Gold", 14, 38);
-        doc.text("Mota Varachha", 14, 44);
-        doc.text("Surat - 394101", 14, 50);
+        doc.text("24, Ugameshwar Bunglow", headerX, 26);
+        doc.text("Nr Taapi Arcade, Opel Gold", headerX, 32);
+        doc.text("Mota Varachha, Surat - 394101", headerX, 38);
+        // doc.text("Mota Varachha", 14, 44);
+        // doc.text("Surat - 394101", 14, 50);
 
         doc.setFontSize(22);
         doc.setTextColor(...primary);
@@ -130,12 +138,13 @@ const Invoice = ({ onLogout }) => {
         doc.setTextColor(0);
 
         doc.text(`Invoice No : ${data.legalid}`, 150, 28);
+        doc.text(`Order ID : ${data.orderId.orderId}`, 150, 34);
         doc.text(
             `Date : ${new Date(data.createdAt).toLocaleDateString()}`,
             150,
-            34
+            40
         );
-        doc.text(`Delivery : ${order.deliveryDate}`, 150, 40);
+        doc.text(`Delivery : ${order.deliveryDate}`, 150, 46);
 
         doc.setDrawColor(...primary);
         doc.line(10, 58, 200, 58);
@@ -191,14 +200,12 @@ const Invoice = ({ onLogout }) => {
             4,
             "Other Work",
             1,
-            `₹ ${order.otherWorkPrice}`,
-            `₹ ${order.otherWorkPrice}`,
         ]);
 
         autoTable(doc, {
             startY: 100,
 
-            head: [["#", "Description", "Qty", "Unit Price", "Total"]],
+            head: [["#", "Description", "Qty"]],
 
             body: rows,
 
@@ -230,12 +237,12 @@ const Invoice = ({ onLogout }) => {
             margin: { left: 120 },
 
             body: [
-                ["Total Amount", `₹ ${total}`],
-                ["Discount", "₹ 0"],
-                [`GST ${data.percentage}%`, `₹ ${gst}`],
-                ["Sub Total", `₹ ${subTotal}`],
-                ["Advance Paid", `₹ ${advance}`],
-                ["Net Due", `₹ ${netDue}`],
+                ["Sub Total", subTotal.toFixed(2)],
+                // ["Discount", "0"],
+                [`GST ${gstpercentage}%`, gst.toFixed(2)],
+                ["Total Amount", total.toFixed(2)],
+                // ["Advance Paid", advance.toFixed(2)],
+                ["Net Due", netDue.toFixed(2)],
             ],
 
             styles: {
@@ -289,13 +296,12 @@ const Invoice = ({ onLogout }) => {
                                     <thead>
                                         <tr>
                                             <th>Legal ID</th>
+                                            <th>Order ID</th>
                                             <th>Customer</th>
                                             <th>Mobile</th>
-                                            <th>Product</th>
-                                            <th>Amount</th>
-                                            <th>GST %</th>
-                                            <th>Total</th>
-                                            <th>Status</th>
+                                            <th>Bank Amount</th>
+                                            <th>Order Amount</th>
+                                            <th>Cash Amount</th>
                                             <th width="170">Action</th>
                                         </tr>
                                     </thead>
@@ -306,26 +312,26 @@ const Invoice = ({ onLogout }) => {
                                                 <tr key={item._id}>
                                                     <td>{item.legalid}</td>
 
+                                                    <td>{item.orderId?.orderId}</td>
+
                                                     <td>{item.orderId?.customerId?.fullName}</td>
 
                                                     <td>{item.orderId?.customerId?.mobile}</td>
 
-                                                    <td>{item.orderId?.productName}</td>
-
                                                     <td>₹ {item.amount}</td>
 
-                                                    <td>{item.percentage}%</td>
+                                                    {/* <td>{item.percentage}%</td> */}
+                                                    <td>-</td>
 
-                                                    <td>
+                                                    {/* <td>
                                                         ₹
                                                         {(
                                                             Number(item.amount) +
                                                             (Number(item.amount) * Number(item.percentage)) /
                                                             100
                                                         ).toFixed(2)}
-                                                    </td>
-
-                                                    <td>{item.orderId?.status}</td>
+                                                    </td> */}
+                                                    <td>-</td>
 
                                                     <td>
                                                         <button

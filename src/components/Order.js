@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
-import { orderAPI, bankDetailsAPI } from '../services/api';
+import { orderAPI, bankDetailsAPI, legalAPI } from "../services/api";
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage, FiDownload } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import Invoice from "./InvoiceGenerate.js";
-import { createRoot } from "react-dom/client";
+import autoTable from "jspdf-autotable";
 
 
 const Order = ({ onLogout }) => {
@@ -27,30 +25,18 @@ const Order = ({ onLogout }) => {
     direction: "asc",
   });
 
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [invoiceMode, setInvoiceMode] = useState("invoice");
-
-  const [quotationData, setQuotationData] = useState({
-    invoiceNumber: "",
-    gstPercent: "",   // ⭐ NEW ADD
-    bank: "",
-  });
 
   const [bankList, setBankList] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        const res = await bankDetailsAPI.getBankDetails();
-        setBankList(res || []);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    fetchBanks();
-  }, []);
+  const fetchBanks = async () => {
+    try {
+      const res = await bankDetailsAPI.getBankDetails();
+      setBankList(res || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -70,7 +56,218 @@ const Order = ({ onLogout }) => {
 
   useEffect(() => {
     fetchOrders();
+    fetchBanks();
   }, []);
+
+
+  // legal pdf generate & invoice API call
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalType, setLegalType] = useState("quotation");
+
+  const [invoiceAmount, setInvoiceAmount] = useState(0);
+  const [gstPercentage, setGstPercentage] = useState("");
+  const [selectedBank, setSelectedBank] = useState("");
+
+  const handleLegalSubmit = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      if (legalType === "quotation") {
+        generateQuotationPDF(selectedOrder);
+
+        setShowLegalModal(false);
+        return;
+      }
+
+      if (!gstPercentage) {
+        alert("Please select GST Percentage");
+        return;
+      }
+
+      if (!selectedBank) {
+        alert("Please select Bank");
+        return;
+      }
+
+      console.log(selectedOrder);
+
+      const payload = {
+        percentage: Number(gstPercentage),
+        amount: Number(invoiceAmount),
+        bankdetailsid: selectedBank,
+        orderId: selectedOrder._id,
+      };
+
+      await legalAPI.saveLegal(payload);
+
+      alert("Invoice created successfully");
+
+      setShowLegalModal(false);
+      fetchOrders();
+
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Something went wrong");
+    }
+  };
+
+  const generateQuotationPDF = (order) => {
+    const doc = new jsPDF("p", "mm", "a4");
+
+    // ================= HEADER =================
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(226, 155, 125);
+    doc.setFontSize(22);
+    doc.text("Naari House", 15, 18);
+
+    doc.setTextColor(0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+
+    doc.text("24, Ugameshwar Bunglow", 15, 26);
+    doc.text("Nr Taapi Arcade", 15, 32);
+    doc.text("Nr Opel Gold", 15, 38);
+    doc.text("Mota Varachha", 15, 44);
+    doc.text("Surat - 394101", 15, 50);
+
+    // ================= RIGHT =================
+
+    doc.setTextColor(226, 155, 125);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("QUOTATION", 195, 18, { align: "right" });
+
+    doc.setTextColor(0);
+    doc.setFontSize(10);
+
+    doc.text(`Quotation No : ${order.orderId}`, 195, 28, {
+      align: "right",
+    });
+
+    doc.text(
+      `Date : ${new Date(order.createdAt).toLocaleDateString("en-GB")}`,
+      195,
+      34,
+      { align: "right" }
+    );
+
+    doc.text(
+      `Delivery : ${new Date(order.deliveryDate).toLocaleDateString("en-GB")}`,
+      195,
+      40,
+      { align: "right" }
+    );
+
+    doc.line(10, 56, 200, 56);
+
+    // ================= CUSTOMER =================
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Customer Details", 15, 66);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    doc.text(`Name : ${order.customerId?.fullName}`, 15, 74);
+    doc.text(`Mobile : ${order.customerId?.mobile}`, 15, 80);
+    doc.text(`Address : ${order.customerId?.address}`, 15, 86);
+
+    // ================= TABLE =================
+
+    const rows = [];
+
+    const addRow = (title, price) => {
+      if (Number(price) > 0) {
+        rows.push([
+          rows.length + 1,
+          title,
+          1,
+          `${price}`,
+          `${price}`,
+        ]);
+      }
+    };
+
+    addRow("Fabric Purchase", order.fabricPurchasePrice);
+    addRow("Dyeing", order.dyeingPrice);
+    addRow("Embroidery", order.embroideryPrice);
+    addRow("Stitching", order.stitichingPrice);
+    addRow("Other Work", order.otherWorkPrice);
+    addRow("Packing", order.packingPrice);
+    addRow("Fusing", order.fusingPrice);
+    addRow("Khakha", order.khakhaPrice);
+    addRow("Art Work", order.artWorkPrice);
+
+    autoTable(doc, {
+      startY: 95,
+      head: [["#", "Description", "Qty", "Unit Price", "Total"]],
+      body: rows,
+      theme: "grid",
+      headStyles: {
+        fillColor: [226, 155, 125],
+        textColor: [255, 255, 255],
+        halign: "center",
+      },
+      styles: {
+        fontSize: 10,
+        halign: "center",
+      },
+      columnStyles: {
+        1: {
+          halign: "left",
+        },
+      },
+    });
+
+    // ================= SUMMARY =================
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    const subTotal = Number(order.totalPrice);
+    const sellingPrice = Number(order.sellingPrice);
+    const advance = Number(order.advanceAmount);
+    const netDue = sellingPrice - advance;
+
+    autoTable(doc, {
+      startY: finalY,
+      margin: {
+        left: 120,
+      },
+      body: [
+        ["Sub Total", `${subTotal}`],
+        ["Selling Price", `${sellingPrice}`],
+        ["Advance Paid", `${advance}`],
+        ["Net Due", `${netDue}`],
+      ],
+      theme: "grid",
+      styles: {
+        fontSize: 10,
+      },
+      columnStyles: {
+        0: {
+          fontStyle: "bold",
+        },
+        1: {
+          halign: "right",
+        },
+      },
+    });
+
+    // ================= FOOTER =================
+
+    const footerY = doc.lastAutoTable.finalY + 20;
+
+    doc.setFont("helvetica", "italic");
+    doc.text(
+      `Created By : ${order.createdBy?.fullName}`,
+      15,
+      285
+    );
+
+    doc.save(`Quotation_${order.orderId}.pdf`);
+  };
 
   // local permission get logic start
 
@@ -239,10 +436,6 @@ const Order = ({ onLogout }) => {
   const indexOfLastOrder = currentPage * itemsPerPage;
   const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
 
-  // const currentOrders = orders.slice(
-  //   indexOfFirstOrder,
-  //   indexOfLastOrder
-  // );
   const currentOrders = sortedOrders.slice(
     indexOfFirstOrder,
     indexOfLastOrder
@@ -251,196 +444,6 @@ const Order = ({ onLogout }) => {
   const totalPages = Math.ceil(
     orders.length / itemsPerPage
   );
-
-
-
-  // const handleDownloadInvoice = async (order) => {
-  //   const input = document.getElementById("invoice-print-area");
-
-  //   // clone invoice component render કરવા માટે temp div
-  //   const tempDiv = document.createElement("div");
-  //   tempDiv.style.position = "absolute";
-  //   tempDiv.style.left = "-9999px";
-  //   document.body.appendChild(tempDiv);
-
-  //   // render invoice inside hidden div
-  //   const { createRoot } = await import("react-dom/client");
-  //   const root = createRoot(tempDiv);
-
-  //   const invoiceData = {
-  //     invoice_no: order.orderId,
-  //     date: new Date().toLocaleDateString("en-IN"),
-  //     customer_name: order.customerId?.fullName,
-  //     customer_phone: order.customerId?.mobile,
-  //     customer_city: order.customerId?.address,
-  //     total_amount: order.sellingPrice,
-  //     advance_amount: order.advanceAmount,
-  //     due_amount: (order.sellingPrice || 0) - (order.advanceAmount || 0),
-  //     items: [
-  //       {
-  //         item_name: "Fabric",
-  //         qty: 1,
-  //         price: order.fabricPurchasePrice || 0,
-  //         total: order.fabricPurchasePrice || 0,
-  //       },
-  //       {
-  //         item_name: "Dyeing",
-  //         qty: 1,
-  //         price: order.dyeingPrice || 0,
-  //         total: order.dyeingPrice || 0,
-  //       },
-  //       {
-  //         item_name: "Stitching",
-  //         qty: 1,
-  //         price: order.stitichingPrice || 0,
-  //         total: order.stitichingPrice || 0,
-  //       },
-  //     ],
-  //   };
-
-  //   root.render(<Invoice selectedInvoice={invoiceData} />);
-
-  //   setTimeout(async () => {
-  //     const element = tempDiv;
-
-  //     const canvas = await html2canvas(element, {
-  //       scale: 2,
-  //       useCORS: true,
-  //     });
-
-  //     const imgData = canvas.toDataURL("image/png");
-
-  //     const pdf = new jsPDF("p", "mm", "a4");
-
-  //     const pdfWidth = pdf.internal.pageSize.getWidth();
-  //     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-  //     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  //     pdf.save(`Invoice-${order.orderId}.pdf`);
-
-  //     document.body.removeChild(tempDiv);
-  //   }, 500);
-  // };
-
- const handleDownloadInvoice = async () => {
-  try {
-    const order = selectedOrder;
-    const isQuotation = invoiceMode === "quotation";
-
-    const invoiceData = buildInvoiceData(order, isQuotation);
-
-    const tempDiv = document.createElement("div");
-    tempDiv.style.position = "absolute";
-    tempDiv.style.left = "-9999px";
-    document.body.appendChild(tempDiv);
-
-    const { createRoot } = await import("react-dom/client");
-    const root = createRoot(tempDiv);
-
-    root.render(<Invoice selectedInvoice={invoiceData} />);
-
-    // wait for render + layout
-    await new Promise((r) => setTimeout(r, 800));
-
-    const canvas = await html2canvas(tempDiv, {
-      scale: 2,
-      useCORS: true,
-    });
-
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-    pdf.save(`Invoice-${invoiceData.invoice_no}.pdf`);
-
-    // CLEANUP
-    root.unmount();
-    document.body.removeChild(tempDiv);
-
-    // CLOSE MODAL SAFELY
-    setShowInvoiceModal(false);
-    setSelectedOrder(null);
-    setInvoiceMode("invoice");
-    setQuotationData({
-      invoiceNumber: "",
-      gstPercent: "",
-      bank: "",
-    });
-
-  } catch (err) {
-    console.log(err);
-
-    setShowInvoiceModal(false);
-    setSelectedOrder(null);
-  }
-};
-
-  const buildInvoiceData = (order, isQuotation) => {
-    const selectedBank = bankList.find(
-      (b) => b._id === quotationData.bank
-    );
-
-    return {
-      invoice_no: isQuotation
-        ? quotationData.invoiceNumber
-        : order.orderId,
-
-      date: new Date().toLocaleDateString("en-IN"),
-
-      due_date: order.deliveryDate || "",
-
-      customer_name: order.customerId?.fullName || "",
-      customer_phone: order.customerId?.mobile || "",
-      customer_city: order.customerId?.address || "",
-      customer_state: order.customerId?.state || "",
-
-      // ✅ ITEMS DYNAMIC
-      items: [
-        {
-          item_name: "Fabric",
-          qty: 1,
-          price: order.fabricPurchasePrice || 0,
-          total: order.fabricPurchasePrice || 0,
-        },
-        {
-          item_name: "Dyeing",
-          qty: 1,
-          price: order.dyeingPrice || 0,
-          total: order.dyeingPrice || 0,
-        },
-        {
-          item_name: "Embroidery",
-          qty: 1,
-          price: order.embroideryPrice || 0,
-          total: order.embroideryPrice || 0,
-        },
-        {
-          item_name: "Stitching",
-          qty: 1,
-          price: order.stitichingPrice || 0,
-          total: order.stitichingPrice || 0,
-        },
-      ].filter(i => i.price > 0),
-
-      // ✅ TOTALS DYNAMIC
-      sub_total: order.sellingPrice || 0,
-      discount: order.discount || 0,
-      total_amount: order.sellingPrice || 0,
-      advance_paid: order.advanceAmount || 0,
-      net_due:
-        (order.sellingPrice || 0) - (order.advanceAmount || 0),
-
-      // ✅ QUOTATION ONLY DATA
-      gstPercent: isQuotation ? Number(quotationData.gstPercent || 0) : 0,
-
-      bank: isQuotation ? selectedBank : null,
-    };
-  };
 
   return (
     <div className="settings-container">
@@ -618,23 +621,22 @@ const Order = ({ onLogout }) => {
                                 <FiTrash2 />
                               </button>
                             )}
-                            {canDelete && order.status !== 'cancelled' && (
-                              <button
-                                className="edit-btn download-btn"
-                                onClick={() => {
-                                  setSelectedOrder(order);
-                                  setInvoiceMode("invoice"); // default
-                                  setQuotationData({
-                                    invoiceNumber: "",
-                                    gstNumber: "",
-                                    bank: "",
-                                  });
-                                  setShowInvoiceModal(true);
-                                }}
-                              >
-                                <FiDownload />
-                              </button>
-                            )}
+                            {canDelete &&
+                              order.status !== "cancelled" && (
+                                <button
+                                  className="edit-btn download-btn"
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setLegalType("quotation");
+                                    setGstPercentage("");
+                                    setSelectedBank("");
+                                    setShowLegalModal(true);
+                                    console.log("Selected Order:", order); // Log the selected order
+                                  }}
+                                >
+                                  <FiDownload />
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -662,117 +664,101 @@ const Order = ({ onLogout }) => {
           )}
         </div>
       </div>
-      {showInvoiceModal && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: "#fff",
-            padding: 20,
-            width: 400,
-            borderRadius: 10
-          }}>
-
-            <h3>Select Invoice Type</h3>
-
-            {/* RADIO */}
-            <div style={{ marginTop: 10 }}>
-              <label>
-                <input
-                  type="radio"
-                  value="invoice"
-                  checked={invoiceMode === "invoice"}
-                  onChange={(e) => setInvoiceMode(e.target.value)}
-                />
-                {" "}Quatation
-              </label>
-
-              <br />
-
-              <label>
-                <input
-                  type="radio"
-                  value="quotation"
-                  checked={invoiceMode === "quotation"}
-                  onChange={(e) => setInvoiceMode(e.target.value)}
-                />
-                {" "}Invoice
-              </label>
+      {showLegalModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Generate Invoice</h2>
             </div>
 
-            {/* QUOTATION FIELDS */}
-            {invoiceMode === "quotation" && (
-              <div style={{ marginTop: 15 }}>
+            <div className="modal-body">
 
-                <input
-                  placeholder="Invoice Number"
-                  value={quotationData.invoiceNumber}
-                  onChange={(e) =>
-                    setQuotationData({
-                      ...quotationData,
-                      invoiceNumber: e.target.value
-                    })
-                  }
-                  style={{ width: "100%", marginBottom: 10 }}
-                />
+              <div className="mb-3">
+                <label>
+                  <input
+                    type="radio"
+                    value="quotation"
+                    checked={legalType === "quotation"}
+                    onChange={(e) => setLegalType(e.target.value)}
+                  />
+                  Quotation
+                </label>
 
-                <input
-                  type="number"
-                  placeholder="GST %"
-                  value={quotationData.gstPercent}
-                  onChange={(e) =>
-                    setQuotationData({
-                      ...quotationData,
-                      gstPercent: e.target.value,
-                    })
-                  }
-                  style={{ width: "100%", marginBottom: 10 }}
-                />
-
-                {/* BANK DROPDOWN */}
-                <select
-                  value={quotationData.bank}
-                  onChange={(e) =>
-                    setQuotationData({
-                      ...quotationData,
-                      bank: e.target.value
-                    })
-                  }
-                  style={{ width: "100%", padding: 8 }}
-                >
-                  <option value="">Select Bank</option>
-                  {bankList.map((b) => (
-                    <option key={b._id} value={b._id}>
-                      {b.bankName}
-                    </option>
-                  ))}
-                </select>
+                {selectedOrder && selectedOrder.legal_created == false ? (
+                  <>
+                    <label style={{ marginLeft: "20px" }}>
+                      <input
+                        type="radio"
+                        value="invoice"
+                        checked={legalType === "invoice"}
+                        onChange={(e) => setLegalType(e.target.value)}
+                      />
+                      Invoice
+                    </label>
+                  </>
+                ) : <div className='theme-color' style={{ marginTop: "12px" }}>Legal document already created for this order. <br /> <Link className='link underline' to={'/invoice'}>Click Here</Link> for show Legal Invoice</div>}
 
               </div>
-            )}
 
-            {/* BUTTONS */}
-            <div style={{
-              marginTop: 20,
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 10
-            }}>
-              <button onClick={() => setShowInvoiceModal(false)}>
+              {legalType === "invoice" && (
+                <>
+                  <div className="form-group" style={{ marginTop: "12px" }}>
+                    <label>Amount</label>
+
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="Enter Amount"
+                      value={invoiceAmount}
+                      onChange={(e) => setInvoiceAmount(e.target.value)}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginTop: "12px" }}>
+                    <label>GST Percentage</label>
+
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="Enter GST %"
+                      value={gstPercentage}
+                      onChange={(e) => setGstPercentage(e.target.value)}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: "12px" }}>
+                    <label>Bank</label>
+
+                    <select
+                      className="form-input"
+                      value={selectedBank}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                    >
+                      <option value="">Select Bank</option>
+
+                      {bankList.map((bank) => (
+                        <option key={bank._id} value={bank._id}>
+                          {bank.bankName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button onClick={() => setShowLegalModal(false)} className="btn btn-cancel">
                 Cancel
               </button>
 
-              <button className="add-btn" onClick={handleDownloadInvoice}>
-                Generate
+              <button onClick={handleLegalSubmit} className="btn btn-save">
+                Submit
               </button>
             </div>
-
           </div>
         </div>
       )}

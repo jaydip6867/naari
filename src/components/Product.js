@@ -227,6 +227,12 @@ const Product = ({ onLogout }) => {
                       >
                         Name {getSortIcon('name')}
                       </th>
+                      <th
+                        onClick={() => handleSort('name')}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Collection {getSortIcon('name')}
+                      </th>
 
                       <th
                         onClick={() => handleSort('outfitTypeName')}
@@ -262,6 +268,7 @@ const Product = ({ onLogout }) => {
                           </div>
                         </td>
                         <td >{product.name}</td>
+                        <td >{product.collection}</td>
                         <td >{product.outfitTypeName || '-'}</td>
                         <td >{product.subCategoryName || '-'}</td>
                         <td style={{ textAlign: 'center' }}>

@@ -169,7 +169,7 @@ const TaskDetail = ({ onLogout }) => {
                 assignStatus: assignment.status,
                 taskDetailId: detail?._id || null,
                 durationInSeconds:
-                detail?.sessions?.[0]?.durationInSeconds || 0,
+                    detail?.sessions?.[0]?.durationInSeconds || 0,
             };
         });
     };
@@ -321,15 +321,16 @@ const TaskDetail = ({ onLogout }) => {
     const todoTasks = tasks.filter((task) => isTodo(task.status));
     const inPendingTasks = tasks.filter((task) => isPending(task.status));
     const completedTasks = tasks.filter((task) => isCompleted(task.status));
+
     // console.log(todoTasks, inPendingTasks, completedTasks);
     const renderTaskCard = (task, index) => (
         <div className="task-card" key={task.uid || task._id || index}>
             <div className="task-title">
                 <div>
                     {getTaskTags(task).map((tag, index) => (
-                    // <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
-                    <div className="tag" key={index}>{task.assignStatus}</div>
-                ))}
+                        // <div className="tag" key={index}>{tag.replace(/_/g, ' ')}</div>
+                        <div className="tag" key={index}>{task.assignStatus}</div>
+                    ))}
                     {/* <strong>{task.description || task.orderId || 'No description'}</strong> */}
                     {/* <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>
                         {task.workerId?.fullName || task.workerId || task.orderId || 'Worker'}
@@ -339,20 +340,25 @@ const TaskDetail = ({ onLogout }) => {
 
                     {/* START BUTTON (pending, paused OR any unknown status) */}
                     {(task.status !== 'started' && task.status !== 'completed') && (
-                        <button
-                            type="button"
-                            className="task_view-btn start"
-                            onClick={handleStartTask}
-                            // disabled={isTaskActionLoading || isAdminUser}
-                            disabled={isTaskActionLoading}
-                            title={isAdminUser ? 'Admin users cannot start tasks' : 'Start Task'}
-                        >
-                            <FiPlay />
-                        </button>
+                        (!isAdminUser ||
+                            task.assignStatus?.toLowerCase() === 'delivery'
+                        ) && (
+                            <button
+                                type="button"
+                                className="task_view-btn start"
+                                onClick={handleStartTask}
+                                disabled={isTaskActionLoading}
+                                title={isAdminUser ? 'Admin can only start Delivery tasks' : 'Start Task'}
+                            >
+                                <FiPlay />
+                            </button>
+                        )
                     )}
 
                     {/* PAUSE BUTTON (only when started) */}
-                    {task.status === 'started' && (
+                    {task.status === 'started' && (!isAdminUser ||
+                            task.assignStatus?.toLowerCase() === 'delivery'
+                        ) && (
                         <button
                             type="button"
                             className="task_view-btn pause"
@@ -366,7 +372,9 @@ const TaskDetail = ({ onLogout }) => {
                     )}
 
                     {/* COMPLETE BUTTON (only hide when completed) */}
-                    {(task.status === 'started' || task.status === 'paused') && (
+                    {(task.status === 'started' || task.status === 'paused') && (!isAdminUser ||
+                            task.assignStatus?.toLowerCase() === 'delivery'
+                        ) && (
                         <button
                             type="button"
                             className="task_view-btn complete"
@@ -382,9 +390,12 @@ const TaskDetail = ({ onLogout }) => {
                 </div>
             </div>
             <div className='task-desc'>{task?.description || task?.description == "" ? "No Description" : task?.description}</div>
-            <div className="task-date" style={{marginBottom: 0}}>
+            <div className="task-date" style={{ marginBottom: 0 }}>
                 {/* <FiCalendar /> <span>{formatDate(task.deliveryDate || task.createdAt)}</span> */}
                 <FiCalendar /> <span>{task.durationInSeconds} Seconds</span>
+            </div>
+            <div className="task-worker">
+                {task.workerId.fullName}
             </div>
             {/* <div className="bottom-row">
                 {getTaskTags(task).map((tag, index) => (

@@ -13,6 +13,8 @@ const Reports = ({ onLogout }) => {
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
     const fetchFabricAnalytics = async () => {
         try {
@@ -22,8 +24,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getFabricAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(
@@ -46,8 +48,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getOutfitAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(
@@ -70,8 +72,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getWorktypeAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(Array.isArray(response) ? response : []);
@@ -92,8 +94,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getWorkerAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(Array.isArray(response) ? response : []);
@@ -114,8 +116,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getCustomerAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(Array.isArray(response) ? response : []);
@@ -136,8 +138,8 @@ const Reports = ({ onLogout }) => {
             const response =
                 await reportsAPI.getDeliveryAnalytics({
                     search: '',
-                    startdate: '2026-03-01',
-                    enddate: '2026-06-30',
+                    startdate: startDate,
+                    enddate: endDate,
                 });
 
             setReportData(response || {});
@@ -179,7 +181,7 @@ const Reports = ({ onLogout }) => {
             default:
                 break;
         }
-    }, [activeTab]);
+    }, [activeTab, startDate, endDate]);
 
     const handleLogout = () => {
         storage.clearAuthData();
@@ -216,6 +218,27 @@ const Reports = ({ onLogout }) => {
                 )}
 
                 <div className="content-section">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        <label style={{ fontWeight: '600', color: 'var(--text-color)' }}>
+                            Start Date
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                style={{ marginLeft: '8px', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                            />
+                        </label>
+                        <label style={{ fontWeight: '600', color: 'var(--text-color)' }}>
+                            End Date
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                style={{ marginLeft: '8px', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                            />
+                        </label>
+                    </div>
+
                     {/* Tabs */}
                     <div className="tabs reports">
                         <button

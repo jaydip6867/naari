@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { productAPI } from '../services/api';
-import { measurementsAPI, addonsAPI, uploadAPI, staffAPI } from '../services/api';
+import { measurementsAPI, addonsAPI, uploadAPI, staffAPI, workTypeAPI } from '../services/api';
 import { FiPlus, FiTrash2, FiUpload, FiX } from 'react-icons/fi';
 
 const AddEditProduct = ({ onLogout }) => {
@@ -21,6 +21,7 @@ const AddEditProduct = ({ onLogout }) => {
   const [outfitTypes, setOutfitTypes] = useState([]);
   const [availableAddons, setAvailableAddons] = useState([]);
   const [staffList, setStaffList] = useState([]);
+  const [collections, setCollections] = useState([]);
 
   // Form state - includes Create and Update Product API fields
   const [formData, setFormData] = useState({
@@ -29,6 +30,7 @@ const AddEditProduct = ({ onLogout }) => {
     outfitTypeId: '',
     subCategoryName: '',
     outfitStyleRefImg: [],
+    collection: [],
     measurement: [],
     addons: [],
     // Update Product additional fields
@@ -107,6 +109,7 @@ const AddEditProduct = ({ onLogout }) => {
   useEffect(() => {
     fetchOutfitTypes();
     fetchStaff();
+    fetchWorkTypes();
     if (isEditMode && productId) {
       fetchProduct();
     }
@@ -247,6 +250,18 @@ const AddEditProduct = ({ onLogout }) => {
     }
   };
 
+  const fetchWorkTypes = async () => {
+    try {
+      const data = await workTypeAPI.getWorkTypes();
+      const normalizedCollections = Array.isArray(data)
+        ? data.map(item => (typeof item === 'string' ? item : item?.name || item?.title || '')).filter(Boolean)
+        : [];
+      setCollections(normalizedCollections);
+    } catch (err) {
+      console.error('Error fetching work types:', err);
+    }
+  };
+
   const fetchAddons = async (outfitTypeId) => {
     try {
       const data = await addonsAPI.getAddons('', outfitTypeId);
@@ -287,12 +302,17 @@ const AddEditProduct = ({ onLogout }) => {
         // Merge saved measurements with outfit type/subcategory fields to ensure all fields are shown
         const mergedMeasurements = mergeMeasurementsWithOutfitType(outfitTypeId, data.measurement, data.subCategoryName);
 
+        const selectedCollection = Array.isArray(data.collection)
+          ? data.collection[0] || ''
+          : data.collection || '';
+
         setFormData({
           // Create Product fields
           name: data.name || '',
           outfitTypeId: outfitTypeId,
           subCategoryName: data.subCategoryName || '',
           outfitStyleRefImg: data.outfitStyleRefImg || [],
+          collection: selectedCollection,
           measurement: mergedMeasurements,
           addons: data.addons || [],
           // Update Product additional fields
@@ -676,6 +696,7 @@ const AddEditProduct = ({ onLogout }) => {
         outfitTypeId: formData.outfitTypeId,
         subCategoryName: formData.subCategoryName,
         outfitStyleRefImg: finalImageUrls,
+        collection: formData.collection ? [formData.collection] : [],
         measurement: formData.measurement,
         addons: selectedAddons
       };
@@ -724,6 +745,7 @@ const AddEditProduct = ({ onLogout }) => {
           sellingPrice: parseFloat(formData.sellingPrice) || 0,
           diffPercentage: parseFloat(formData.diffPercentage) || 0,
           totalDays: parseInt(formData.totalDays) || 0,
+          collection: formData.collection ? [formData.collection] : [],
           totalPrice: parseFloat(formData.totalPrice) || 0,
           quantity: parseInt(formData.quantity) || 0,
           price: parseFloat(formData.price) || 0
@@ -857,6 +879,20 @@ const AddEditProduct = ({ onLogout }) => {
                       </select>
                     </div>
                   )}
+                </div>
+
+                <div className="form-group" style={{ marginTop: '24px', maxWidth: '300px' }}>
+                  <label className="form-label">Collection <span className="required">*</span></label>
+                  <select
+                    className="input-field"
+                    value={formData.collection || ''}
+                    onChange={(e) => handleInputChange('collection', e.target.value)}
+                  >
+                    <option value="">Select Collection</option>
+                    {collections.map((item, index) => (
+                      <option key={`${item}-${index}`} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Outfit Style Reference Images */}
