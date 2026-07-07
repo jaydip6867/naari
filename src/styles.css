@@ -542,7 +542,7 @@ body {
   top: 10px;
   z-index: 1;
   max-height: calc(100vh - 100px);
-  /* overflow-y: auto; */;
+  /* overflow-y: auto; */
   min-width: 0;
   flex-grow: 1;
 }

@@ -170,42 +170,30 @@ const Invoice = ({ onLogout }) => {
         // Item Table
         // ======================
 
-        const rows = [];
+        const itemRows = Array.isArray(order?.items) && order.items.length > 0
+            ? order.items.map((item, index) => ({
+                description: item?.outfitTypeName || item?.name || order?.outfitTypeName || "Outfit",
+                amount: Number(item?.sub_total ?? item?.amount ?? order?.sub_total ?? order?.sellingPrice ?? data?.amount ?? 0),
+                index: index + 1,
+            }))
+            : [
+                {
+                    description: order?.outfitTypeName || "Outfit",
+                    amount: Number(data?.sub_total ?? order?.sub_total ?? order?.sellingPrice ?? data?.amount ?? 0),
+                    index: 1,
+                },
+            ];
 
-        rows.push([
-            1,
-            "Fabric",
-            1,
-            `₹ ${order.fabricPurchasePrice}`,
-            `₹ ${order.fabricPurchasePrice}`,
-        ]);
-
-        rows.push([
-            2,
-            "Embroidery",
-            1,
-            `₹ ${order.embroideryPrice}`,
-            `₹ ${order.embroideryPrice}`,
-        ]);
-
-        rows.push([
-            3,
-            "Stitching",
-            1,
-            `₹ ${order.stitichingPrice}`,
-            `₹ ${order.stitichingPrice}`,
-        ]);
-
-        rows.push([
-            4,
-            "Other Work",
-            1,
+        const rows = itemRows.map((item) => [
+            item.index,
+            item.description,
+            `${item.amount.toFixed(2)}`,
         ]);
 
         autoTable(doc, {
             startY: 100,
 
-            head: [["#", "Description", "Qty"]],
+            head: [["#", "Description", "Amount"]],
 
             body: rows,
 
@@ -221,9 +209,8 @@ const Invoice = ({ onLogout }) => {
 
             columnStyles: {
                 0: { halign: "center", cellWidth: 15 },
-                2: { halign: "center", cellWidth: 20 },
-                3: { halign: "right" },
-                4: { halign: "right" },
+                1: { cellWidth: 120 },
+                2: { halign: "right", cellWidth: 35 },
             },
         });
 

@@ -4,7 +4,7 @@ import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { taskAPI, uploadAPI } from '../services/api';
-import { FiCalendar, FiPlay, FiPause, FiCheckCircle, FiUploadCloud } from 'react-icons/fi';
+import { FiCalendar, FiPlay, FiPause, FiCheckCircle, FiUploadCloud, FiArrowLeft } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 
 const TaskDetail = ({ onLogout }) => {
@@ -357,35 +357,35 @@ const TaskDetail = ({ onLogout }) => {
 
                     {/* PAUSE BUTTON (only when started) */}
                     {task.status === 'started' && (!isAdminUser ||
-                            task.assignStatus?.toLowerCase() === 'delivery'
-                        ) && (
-                        <button
-                            type="button"
-                            className="task_view-btn pause"
-                            onClick={handlePauseTask}
-                            // disabled={isTaskActionLoading || isAdminUser}
-                            disabled={isTaskActionLoading}
-                            title={isAdminUser ? 'Admin users cannot pause tasks' : 'Pause Task'}
-                        >
-                            <FiPause />
-                        </button>
-                    )}
+                        task.assignStatus?.toLowerCase() === 'delivery'
+                    ) && (
+                            <button
+                                type="button"
+                                className="task_view-btn pause"
+                                onClick={handlePauseTask}
+                                // disabled={isTaskActionLoading || isAdminUser}
+                                disabled={isTaskActionLoading}
+                                title={isAdminUser ? 'Admin users cannot pause tasks' : 'Pause Task'}
+                            >
+                                <FiPause />
+                            </button>
+                        )}
 
                     {/* COMPLETE BUTTON (only hide when completed) */}
                     {(task.status === 'started' || task.status === 'paused') && (!isAdminUser ||
-                            task.assignStatus?.toLowerCase() === 'delivery'
-                        ) && (
-                        <button
-                            type="button"
-                            className="task_view-btn complete"
-                            onClick={openEndTaskModal}
-                            // disabled={isTaskActionLoading || isUploadingImages || isAdminUser}
-                            disabled={isTaskActionLoading || isUploadingImages}
-                            title={isAdminUser ? 'Admin users cannot end tasks' : 'End Task'}
-                        >
-                            <FiCheckCircle />
-                        </button>
-                    )}
+                        task.assignStatus?.toLowerCase() === 'delivery'
+                    ) && (
+                            <button
+                                type="button"
+                                className="task_view-btn complete"
+                                onClick={openEndTaskModal}
+                                // disabled={isTaskActionLoading || isUploadingImages || isAdminUser}
+                                disabled={isTaskActionLoading || isUploadingImages}
+                                title={isAdminUser ? 'Admin users cannot end tasks' : 'End Task'}
+                            >
+                                <FiCheckCircle />
+                            </button>
+                        )}
 
                 </div>
             </div>
@@ -411,7 +411,16 @@ const TaskDetail = ({ onLogout }) => {
             <Sidebar onLogout={handleLogout} />
             <div className="main-content">
                 <div className="page-header section-header">
-                    <h1 className="page-title">Task Details</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate('/tasks')}
+                            style={{ padding: '8px 12px' }}
+                        >
+                            <FiArrowLeft />
+                        </button>
+                        <h1 className="page-title">Task Details</h1>
+                    </div>
                 </div>
                 <div className="content-section task_details_div kanban-board" style={{ paddingTop: '0' }}>
                     {error && (
@@ -521,7 +530,7 @@ const TaskDetail = ({ onLogout }) => {
                                 <button type="button" className="btn btn-cancel" onClick={closeEndTaskModal} disabled={isEndingTask}>
                                     Cancel
                                 </button>
-                                <button type="button" className="btn btn-save" onClick={handleEndTask} disabled={isEndingTask || refImages.length === 0}>
+                                <button type="button" className="btn btn-save" onClick={handleEndTask} disabled={isEndingTask}>
                                     {isEndingTask ? 'Ending...' : 'End Task'}
                                 </button>
                             </div>

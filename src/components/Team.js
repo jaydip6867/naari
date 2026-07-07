@@ -109,10 +109,10 @@ const Team = ({ onLogout }) => {
         </div>
 
         {staffError && (
-            <div className="error-badge">
-              {staffError}
-            </div>
-          )}
+          <div className="error-badge">
+            {staffError}
+          </div>
+        )}
 
 
         <div className="content-section">
@@ -129,13 +129,17 @@ const Team = ({ onLogout }) => {
             </div>
           ) : Array.isArray(staff) && staff.length > 0 ? (
             <div className="roll-list">
+              {/* {staff
+                .filter((staffMember) => staffMember.roleid?.name !== "Admin Role")
+                .map((staffMember, index) => ( */}
               {staff.map((staffMember, index) => (
+
                 <div key={staffMember._id || index} className="roll-item">
                   <div className="roll-info">
                     <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
-                    <div className="roll-details">
+                    {staffMember.roleid?.name === "Admin Role" ? '' : <div className="roll-details">
                       <span className="roll-role theme-color">- {staffMember.roleid?.name || ''}</span>
-                    </div>
+                    </div>}
                   </div>
                   <div className="roll-actions">
                     <button
