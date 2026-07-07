@@ -129,30 +129,31 @@ const Team = ({ onLogout }) => {
             </div>
           ) : Array.isArray(staff) && staff.length > 0 ? (
             <div className="roll-list">
-              {/* {staff
+              {staff
                 .filter((staffMember) => staffMember.roleid?.name !== "Admin Role")
-                .map((staffMember, index) => ( */}
-              {staff.map((staffMember, index) => (
+                .map((staffMember, index) => (
+                  // {staff.map((staffMember, index) => (
 
-                <div key={staffMember._id || index} className="roll-item">
-                  <div className="roll-info">
-                    <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
-                    {staffMember.roleid?.name === "Admin Role" ? '' : <div className="roll-details">
+                  <div key={staffMember._id || index} className="roll-item">
+                    <div className="roll-info">
+                      <div className="roll-name">{staffMember.name || staffMember.fullName || 'Unknown'}</div>
+                      {/* {staffMember.roleid?.name === "Admin Role" ? '' : <div className="roll-details">
                       <span className="roll-role theme-color">- {staffMember.roleid?.name || ''}</span>
-                    </div>}
+                      </div>} */}
+                      <span className="roll-role theme-color">- {staffMember.roleid?.name || ''}</span>
+                    </div>
+                    <div className="roll-actions">
+                      <button
+                        className="edit-btn"
+                        onClick={() => openEditStaffModal(staffMember)}
+                        title="Edit Staff"
+                      >
+                        <FiEdit />
+                      </button>
+                      <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)} />
+                    </div>
                   </div>
-                  <div className="roll-actions">
-                    <button
-                      className="edit-btn"
-                      onClick={() => openEditStaffModal(staffMember)}
-                      title="Edit Staff"
-                    >
-                      <FiEdit />
-                    </button>
-                    <FiX className='delete-field-icon' onClick={() => deleteStaff(staffMember._id)} />
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>

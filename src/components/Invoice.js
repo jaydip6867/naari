@@ -307,18 +307,9 @@ const Invoice = ({ onLogout }) => {
 
                                                     <td>₹ {item.amount}</td>
 
-                                                    {/* <td>{item.percentage}%</td> */}
-                                                    <td>-</td>
-
-                                                    {/* <td>
-                                                        ₹
-                                                        {(
-                                                            Number(item.amount) +
-                                                            (Number(item.amount) * Number(item.percentage)) /
-                                                            100
-                                                        ).toFixed(2)}
-                                                    </td> */}
-                                                    <td>-</td>
+                                                    <td>₹ {item.orderId.totalPrice.toFixed(2)}</td>
+                                                    
+                                                    <td>₹ {item.amount - item.orderId.totalPrice.toFixed(2)}</td>
 
                                                     <td>
                                                         <button
