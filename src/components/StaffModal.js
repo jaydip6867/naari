@@ -476,7 +476,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
             </div>
           </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label className="form-label">Work Types</label>
             <div className="radio-group" style={{ display: 'flex', gap: '8px' }}>
               {workTypesList.map((workType) => (
@@ -496,7 +496,7 @@ const StaffModal = ({ isOpen, onClose, onSave, editingStaff, userRoles }) => {
                 <span style={{ color: '#888', fontSize: '14px' }}>No work types available</span>
               )}
             </div>
-          </div>
+          </div> */}
 
           <div className="form-group full-width">
             <label htmlFor="address" className="form-label">Address *</label>
