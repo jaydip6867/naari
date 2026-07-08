@@ -838,7 +838,7 @@ const Settings = ({ onLogout }) => {
     { id: 'skills', label: 'Skills', permission: 'skills' },
     { id: 'worktype', label: 'Collection', permission: 'worktypes' },
     { id: 'finance', label: 'Finance', permission: 'accounting' },
-    { id: 'bank', label: 'Bank', permission: 'bank' },
+    { id: 'bank', label: 'Bank', permission: 'accounting' },
   ];
 
   // permission condition start
