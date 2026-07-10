@@ -548,6 +548,11 @@ body {
   flex-grow: 1;
 }
 
+.content-section.outfit-types-section, .content-section.measurements-section, .content-section.rolls-section {
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+}
+
 .content-section.pt-0 {
   padding-top: 0;
 }
@@ -590,6 +595,7 @@ body {
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+  margin-top: 0;
 }
 
 .add-field-container {
@@ -966,13 +972,13 @@ body {
 }
 
 .subcategory_input {
-  border: 0;
+  /* border: 0; */
   outline: none;
   flex: 1 1 auto;
 }
 
 .subcategory_input:focus {
-  border: 0;
+  /* border: 0; */
   outline: none;
 }
 

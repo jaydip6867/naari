@@ -59,7 +59,7 @@ const CreateSubcategoryModal = ({ isOpen, onClose, onSave, outfitTypeId }) => {
                 type="text"
                 id="subcategory-name"
                 className="form-input"
-                placeholder="Zeels Kachhadiya"
+                placeholder="Enter Sub category Name"
                 value={subcategoryName}
                 onChange={(e) => setSubcategoryName(e.target.value)}
                 autoFocus

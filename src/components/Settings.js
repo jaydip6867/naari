@@ -1540,7 +1540,7 @@ const Settings = ({ onLogout }) => {
             </div>
 
             {/* Measurement Fields Section */}
-            <div className="content-section">
+            <div className="content-section measurements-section">
               <div className="section-header">
                 <h2 className="section-title">
                   {selectedOutfit}
@@ -1623,7 +1623,7 @@ const Settings = ({ onLogout }) => {
 
         {/* Other tabs (placeholder content) */}
         {activeTab === 'rolls' && (
-          <div className="content-section">
+          <div className="content-section rolls-section">
             <div className="section-header">
               <h2 className="section-title">Worker Rolls <span className='fields-tag'>{userRoles.length} Rolls</span></h2>
               <div style={{ display: 'flex', gap: '8px' }}>
