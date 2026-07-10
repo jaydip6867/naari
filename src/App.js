@@ -22,7 +22,6 @@ import './styles.css';
 import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
 import Invoice from './components/Invoice.js';
-import Finance from './components/Finance.js';
 
 
 // Error Boundary Component
@@ -285,14 +284,6 @@ function App() {
               element={
                 isLoggedIn ?
                   <ExpenseAlert onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/finance"
-              element={
-                isLoggedIn ?
-                  <Finance onLogout={handleLogout} /> :
                   <Navigate to="/" replace />
               }
             />

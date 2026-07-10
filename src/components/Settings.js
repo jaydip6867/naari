@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSubcategoryModal from './CreateSubcategoryModal.js';
 import RollModal from './RollModal.js';
@@ -641,6 +641,89 @@ const Settings = ({ onLogout }) => {
   const [isFinanceTypeModalOpen, setIsFinanceTypeModalOpen] = useState(false);
   const [isFinanceTransactionModalOpen, setIsFinanceTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+
+  const financeSummary = useMemo(() => {
+    const summary = {
+      cash: { income: 0, expense: 0, balance: 0 },
+      bank: {},
+    };
+
+    transactions.forEach((transaction) => {
+      const amount = Number(transaction.amount) || 0;
+      const isIncome = String(transaction.type).toLowerCase() === 'income';
+      const method = (transaction.paymentMethod || 'cash').toLowerCase();
+
+      if (method === 'bank' && transaction.bankDetails) {
+        const bankKey = transaction.bankDetails.custom || transaction.bankDetails.bankName || transaction.bankDetails.accountNumber || 'Unknown Bank';
+        if (!summary.bank[bankKey]) {
+          summary.bank[bankKey] = { income: 0, expense: 0, balance: 0, label: bankKey };
+        }
+        if (isIncome) {
+          summary.bank[bankKey].income += amount;
+        } else {
+          summary.bank[bankKey].expense += amount;
+        }
+        summary.bank[bankKey].balance = summary.bank[bankKey].income - summary.bank[bankKey].expense;
+      } else {
+        if (isIncome) {
+          summary.cash.income += amount;
+        } else {
+          summary.cash.expense += amount;
+        }
+        summary.cash.balance = summary.cash.income - summary.cash.expense;
+      }
+    });
+
+    return summary;
+  }, [transactions]);
+
+  const renderFinanceSummaryTable = () => {
+    const bankRows = Object.values(financeSummary.bank);
+
+    return (
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+          <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Cash Summary</h3>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Income</span><span>{Number(financeSummary.cash.income).toLocaleString('en-IN')}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Expense</span><span>{Number(financeSummary.cash.expense).toLocaleString('en-IN')}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}><span>Available Balance</span><span>{Number(financeSummary.cash.balance).toLocaleString('en-IN')}</span></div>
+            </div>
+          </div>
+          <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', minWidth: '280px' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Bank Summary</h3>
+            {bankRows.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--background-light)', borderBottom: '2px solid var(--border-color)' }}>
+                      <th style={{ padding: '10px', textAlign: 'left', fontWeight: '600', color: 'var(--primary-dark)' }}>Bank</th>
+                      <th style={{ padding: '10px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Income</th>
+                      <th style={{ padding: '10px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Expense</th>
+                      <th style={{ padding: '10px', textAlign: 'right', fontWeight: '600', color: 'var(--primary-dark)' }}>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankRows.map((bank) => (
+                      <tr key={bank.label} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '10px' }}>{bank.label}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>{Number(bank.income).toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>{Number(bank.expense).toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600 }}>{Number(bank.balance).toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: 'var(--gray-color)', fontSize: '14px' }}>No bank transactions yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const parseFinanceTypeList = (data) => {
     if (!data) return [];
@@ -2280,6 +2363,7 @@ const Settings = ({ onLogout }) => {
                   </div>
                 </div>
 
+                {renderFinanceSummaryTable()}
                 <div style={{ marginTop: '8px' }}>
                   <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Transactions</h3>
                   {transactions.length > 0 ? (
@@ -2375,8 +2459,9 @@ const Settings = ({ onLogout }) => {
                     </div>
                     <div style={{ fontSize: '13px', color: 'var(--gray-color)', lineHeight: '1.6' }}>
                       <div><strong>Type:</strong> {bank.bankType}</div>
-                      <div><strong>Account Holder:</strong> {bank.accountHolderName}</div>
+                      <div><strong>Bank:</strong> {bank.bankName}</div>
                       <div><strong>Account Number:</strong> {bank.accountNumber}</div>
+                      <div><strong>Account Holder:</strong> {bank.accountHolderName}</div>
                       <div><strong>Branch:</strong> {bank.branch}</div>
                       <div><strong>IFSC Code:</strong> {bank.ifscCode}</div>
                       {bank.custom && <div><strong>Custom:</strong> {bank.custom}</div>}

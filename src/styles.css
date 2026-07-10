@@ -542,15 +542,21 @@ body {
   position: sticky;
   top: 10px;
   z-index: 1;
-  max-height: calc(100vh - 100px);
+  /* max-height: calc(100vh - 100px); */
   /* overflow-y: auto; */
   min-width: 0;
   flex-grow: 1;
 }
 
-.content-section.outfit-types-section, .content-section.measurements-section, .content-section.rolls-section {
+.content-section.rolls-section {
   max-height: calc(100vh - 100px);
   overflow: auto;
+}
+
+.content-section .outfit-list{
+  max-height: calc(100vh - 200px);
+  /* overflow-X: auto; */
+  padding-top: 8px;
 }
 
 .content-section.pt-0 {

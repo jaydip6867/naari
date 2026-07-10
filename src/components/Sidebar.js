@@ -31,7 +31,6 @@ const Sidebar = ({ onLogout }) => {
     if (path === '/chat' || path.startsWith('/chat/')) return 'chat';
     if (path === '/alert' || path.startsWith('/alert/')) return 'alert';
     if (path === '/reports' || path.startsWith('/reports/')) return 'reports';
-    if (path === '/finance' || path.startsWith('/finance/')) return 'finance';
     if (path === '/invoice' || path.startsWith('/invoice/')) return 'invoice';
     if (path === '/settings' || path.startsWith('/settings/')) return 'settings';
     return 'dashboard'; // default
@@ -107,11 +106,6 @@ const Sidebar = ({ onLogout }) => {
     {
       id: "reports",
       label: "Reports",
-      icon: <FiFileText />,
-    },
-    {
-      id: "finance",
-      label: "Finance",
       icon: <FiFileText />,
     },
     {
