@@ -682,7 +682,7 @@ const Settings = ({ onLogout }) => {
 
     return (
       <div style={{ marginBottom: '24px' }}>
-        <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+        <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', alignItems: 'start' }}>
           <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
             <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>Cash Summary</h3>
             <div style={{ display: 'grid', gap: '8px' }}>
