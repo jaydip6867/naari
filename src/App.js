@@ -22,6 +22,7 @@ import './styles.css';
 import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
 import Invoice from './components/Invoice.js';
+import CalendarPage from './components/CalendarPage.js';
 
 
 // Error Boundary Component
@@ -300,6 +301,14 @@ function App() {
               element={
                 isLoggedIn ?
                   <Invoice onLogout={handleLogout} /> :
+                  <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                isLoggedIn ?
+                  <CalendarPage onLogout={handleLogout} /> :
                   <Navigate to="/" replace />
               }
             />

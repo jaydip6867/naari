@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles.css';
-import { FiAlertCircle, FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiCalendar, FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
 
 const Sidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -32,6 +32,7 @@ const Sidebar = ({ onLogout }) => {
     if (path === '/alert' || path.startsWith('/alert/')) return 'alert';
     if (path === '/reports' || path.startsWith('/reports/')) return 'reports';
     if (path === '/invoice' || path.startsWith('/invoice/')) return 'invoice';
+    if (path === '/calendar' || path.startsWith('/calendar/')) return 'calendar';
     if (path === '/settings' || path.startsWith('/settings/')) return 'settings';
     return 'dashboard'; // default
   };
@@ -112,6 +113,11 @@ const Sidebar = ({ onLogout }) => {
       id: "invoice",
       label: "Invoice",
       icon: <FiFileText />,
+    },
+    {
+      id: "calendar",
+      label: "Calendar",
+      icon: <FiCalendar />,
     },
     {
       id: "alert",
