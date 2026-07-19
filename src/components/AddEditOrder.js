@@ -21,7 +21,7 @@ const AddEditOrder = ({ onLogout }) => {
     orderType: 'product',
     productId: '',
     outfitTypeId: '',
-    subCategoryName: '',
+    subCategoryName: [],
     outfitStyleRefImg: [],
     measurement: [],
     addons: [],
@@ -245,12 +245,18 @@ const AddEditOrder = ({ onLogout }) => {
   const fetchProductDetails = async (productId) => {
     try {
       const product = await productAPI.getProductById(productId);
+
       if (product) {
         setSelectedProduct(product);
+
         setFormData(prev => ({
           ...prev,
           outfitTypeId: product.outfitTypeId?._id || product.outfitTypeId || '',
-          subCategoryName: product.subCategoryName || '',
+          subCategoryName: Array.isArray(product.subCategoryName)
+            ? product.subCategoryName
+            : product.subCategoryName
+              ? [product.subCategoryName]
+              : [],
           measurement: product.measurement || [],
           addons: product.addons || []
         }));
@@ -323,7 +329,11 @@ const AddEditOrder = ({ onLogout }) => {
           orderType: order.orderType || 'product',
           productId: order.productId?._id || order.productId || '',
           outfitTypeId: order.outfitTypeId?._id || order.outfitTypeId || '',
-          subCategoryName: order.subCategoryName || '',
+          subCategoryName: Array.isArray(order.subCategoryName)
+            ? order.subCategoryName
+            : order.subCategoryName
+              ? [order.subCategoryName]
+              : [],
           outfitStyleRefImg: order.outfitStyleRefImg || [],
           measurement: order.measurement || [],
           addons: order.addons || [],
@@ -384,40 +394,56 @@ const AddEditOrder = ({ onLogout }) => {
     }
   };
 
-  const populateMeasurementsFromOutfitType = async (outfitTypeId, subCategoryName = null) => {
+  const populateMeasurementsFromOutfitType = async (outfitTypeId, subCategoryNames = []) => {
     try {
       const outfitTypesList = await measurementsAPI.getOutfitTypes();
       const outfit = outfitTypesList.find(o => o._id === outfitTypeId);
-
       let fields = [];
-
       if (outfit) {
-        // If has subcategories and subcategory is selected, get fields from subcategory
-        if (outfit.hasSubCategories && subCategoryName && outfit.subCategories) {
-          const subCategory = outfit.subCategories.find(s => s.name === subCategoryName);
-          if (subCategory && subCategory.fields) {
-            fields = subCategory.fields;
-          }
+        // Multiple subcategories selected
+        if (
+          outfit.hasSubCategories &&
+          Array.isArray(subCategoryNames) &&
+          subCategoryNames.length > 0 &&
+          outfit.subCategories
+        ) {
+          const selectedSubCategories = outfit.subCategories.filter(
+            sub => subCategoryNames.includes(sub.name)
+          );
+          fields = selectedSubCategories.flatMap(
+            sub => sub.fields || []
+          );
         }
-        // Otherwise get fields from main outfit type
+        // No subcategory selected - use main outfit fields
         else if (outfit.fields && outfit.fields.length > 0) {
           fields = outfit.fields;
         }
       }
-
       if (fields.length > 0) {
         const measurements = fields.map(f => ({
           fieldLable: f.label || '',
           unit: f.unit || 'inch',
           fieldValue: ''
         }));
-        setFormData(prev => ({ ...prev, measurement: measurements }));
+        setFormData(prev => ({
+          ...prev,
+          measurement: measurements
+        }));
       } else {
-        setFormData(prev => ({ ...prev, measurement: [] }));
+        setFormData(prev => ({
+          ...prev,
+          measurement: []
+        }));
       }
     } catch (err) {
-      console.error('Error fetching outfit type measurements:', err);
-      setFormData(prev => ({ ...prev, measurement: [] }));
+      console.error(
+        'Error fetching outfit type measurements:',
+        err
+      );
+      setFormData(prev => ({
+        ...prev,
+        measurement: []
+      }));
     }
   };
 
@@ -1234,18 +1260,97 @@ const AddEditOrder = ({ onLogout }) => {
 
                         {selectedOutfit?.hasSubCategories && (
                           <div className="form-group">
-                            <label className="form-label">Subcategory <span className="required">*</span></label>
+                            <label className="form-label">
+                              Subcategory <span className="required">*</span>
+                            </label>
+
                             <select
                               className="input-field"
-                              value={formData.subCategoryName}
-                              onChange={(e) => handleInputChange('subCategoryName', e.target.value)}
-                              required={selectedOutfit?.hasSubCategories}
+                              value=""
+                              onChange={(e) => {
+                                const value = e.target.value;
+
+                                if (
+                                  value &&
+                                  !formData.subCategoryName.includes(value)
+                                ) {
+                                  handleInputChange(
+                                    'subCategoryName',
+                                    [...formData.subCategoryName, value]
+                                  );
+                                }
+                              }}
+                              required={
+                                selectedOutfit?.hasSubCategories &&
+                                formData.subCategoryName.length === 0
+                              }
                             >
-                              <option value="">Select Subcategory</option>
-                              {selectedOutfit?.subCategories?.map(sub => (
-                                <option key={sub.name} value={sub.name}>{sub.name}</option>
-                              ))}
+                              <option value="">
+                                Select Subcategory
+                              </option>
+
+                              {selectedOutfit?.subCategories
+                                ?.filter(
+                                  sub =>
+                                    !formData.subCategoryName.includes(sub.name)
+                                )
+                                .map(sub => (
+                                  <option key={sub.name} value={sub.name}>
+                                    {sub.name}
+                                  </option>
+                                ))}
                             </select>
+
+
+                            {/* Selected Subcategories */}
+                            {formData.subCategoryName.length > 0 && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: '8px',
+                                  marginTop: '12px'
+                                }}
+                              >
+                                {formData.subCategoryName.map((name) => (
+                                  <div
+                                    key={name}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      background: 'var(--primary-light)',
+                                      padding: '6px 10px',
+                                      borderRadius: '20px',
+                                      fontSize: '14px'
+                                    }}
+                                  >
+                                    <span>{name}</span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleInputChange(
+                                          'subCategoryName',
+                                          formData.subCategoryName.filter(
+                                            item => item !== name
+                                          )
+                                        );
+                                      }}
+                                      style={{
+                                        border: 'none',
+                                        background: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '16px',
+                                        lineHeight: 1
+                                      }}
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </>
@@ -2023,59 +2128,6 @@ const AddEditOrder = ({ onLogout }) => {
                             />
                           </div>
                         </div>
-
-                        {/* Individual Price Breakdown */}
-                        {/* <div style={{ 
-                        marginTop: '20px', 
-                        padding: '15px', 
-                        background: '#f8f9fa', 
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)'
-                      }}>
-                        <h4 style={{ 
-                          margin: '0 0 12px 0', 
-                          fontSize: '14px', 
-                          color: 'var(--gray-color)', 
-                          textTransform: 'uppercase',
-                          fontWeight: '600'
-                        }}>
-                          Price Breakdown
-                        </h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Fabric Purchase:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.fabricPurchasePrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Dyeing / Color:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.dyeingPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Embroidery / Art:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.embroideryPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Stitching:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.stitichingPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Other / Finishing:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.otherWorkPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>QC + Packing:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.packingPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Khakha:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.khakhaPrice) || 0}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e9ecef' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--gray-color)' }}>Art Work:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '600' }}>₹{parseFloat(formData.artWorkPrice) || 0}</span>
-                          </div>
-                        </div>
-                      </div> */}
 
                         <div className="total">
                           <span>TOTAL (Timeline)</span>
