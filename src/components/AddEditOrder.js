@@ -179,26 +179,37 @@ const AddEditOrder = ({ onLogout }) => {
   };
 
   useEffect(() => {
-    if (formData.outfitTypeId && formData.orderType === 'customized') {
-      const outfit = outfitTypes.find(o => o._id === formData.outfitTypeId);
+    if (
+      formData.outfitTypeId &&
+      formData.orderType === 'customized'
+    ) {
+      const outfit = outfitTypes.find(
+        o => o._id === formData.outfitTypeId
+      );
       setSelectedOutfit(outfit || null);
       fetchAddons(formData.outfitTypeId);
-
-      // Only populate measurements from outfit type in create mode, not edit mode
-      if (!isEditMode) {
-        populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
-      }
+      populateMeasurementsFromOutfitType(
+        formData.outfitTypeId,
+        formData.subCategoryName
+      );
     } else {
       setSelectedOutfit(null);
     }
-  }, [formData.outfitTypeId, formData.orderType, outfitTypes, isEditMode]);
+  }, [formData.outfitTypeId, formData.orderType, outfitTypes]);
 
   // Re-fetch measurements when subcategory changes (only in create mode)
   useEffect(() => {
-    if (formData.outfitTypeId && formData.orderType === 'customized' && formData.subCategoryName && !isEditMode) {
-      populateMeasurementsFromOutfitType(formData.outfitTypeId, formData.subCategoryName);
+    if (
+      formData.outfitTypeId &&
+      formData.orderType === 'customized' &&
+      Array.isArray(formData.subCategoryName)
+    ) {
+      populateMeasurementsFromOutfitType(
+        formData.outfitTypeId,
+        formData.subCategoryName
+      );
     }
-  }, [formData.outfitTypeId, formData.orderType, formData.subCategoryName, isEditMode]);
+  }, [formData.subCategoryName]);
 
   // Initialize customer search input when editing existing order
   useEffect(() => {
@@ -301,20 +312,39 @@ const AddEditOrder = ({ onLogout }) => {
       const response = await addonsAPI.getAddons('', outfitTypeId);
       const addons = Array.isArray(response) ? response : [];
       setAvailableAddons(addons);
-
       setFormData(prev => {
-        const existingAddons = prev.addons || [];
+        // edit mode માં existing addons preserve કરવા
+        const existingAddons = isEditMode ? (prev.addons || []) : [];
         const mergedAddons = addons.map(addon => {
-          const existing = existingAddons.find(a => a.title === addon.title || a._id === addon._id);
-          return existing ? { ...addon, ...existing } : { ...addon, isSelected: false, value: '' };
+          const existing = existingAddons.find(
+            a => a.title === addon.title || a._id === addon._id
+          );
+          if (existing) {
+            return {
+              ...addon,
+              ...existing
+            };
+          }
+          return {
+            ...addon,
+            isSelected: false,
+            value: ''
+          };
         });
-        return { ...prev, addons: mergedAddons };
+        return {
+          ...prev,
+          addons: mergedAddons
+        };
       });
     } catch (err) {
       console.error('Error fetching addons:', err);
+      setAvailableAddons([]);
+      setFormData(prev => ({
+        ...prev,
+        addons: []
+      }));
     }
   };
-
 
 
   const fetchOrder = async () => {
@@ -397,38 +427,58 @@ const AddEditOrder = ({ onLogout }) => {
   const populateMeasurementsFromOutfitType = async (outfitTypeId, subCategoryNames = []) => {
     try {
       const outfitTypesList = await measurementsAPI.getOutfitTypes();
-      const outfit = outfitTypesList.find(o => o._id === outfitTypeId);
+      const outfit = outfitTypesList.find(
+        o => o._id === outfitTypeId
+      );
       let fields = [];
       if (outfit) {
-        // Multiple subcategories selected
         if (
           outfit.hasSubCategories &&
           Array.isArray(subCategoryNames) &&
-          subCategoryNames.length > 0 &&
-          outfit.subCategories
+          subCategoryNames.length > 0
         ) {
-          const selectedSubCategories = outfit.subCategories.filter(
-            sub => subCategoryNames.includes(sub.name)
-          );
+          const selectedSubCategories =
+            outfit.subCategories.filter(
+              sub => subCategoryNames.includes(sub.name)
+            );
           fields = selectedSubCategories.flatMap(
-            sub => sub.fields || []
+            sub =>
+              (sub.fields || []).map(field => ({
+                ...field,
+                subCategoryName: sub.name
+              }))
           );
-        }
-        // No subcategory selected - use main outfit fields
-        else if (outfit.fields && outfit.fields.length > 0) {
-          fields = outfit.fields;
+        } else if (outfit.fields?.length) {
+          fields = outfit.fields.map(field => ({
+            ...field,
+            subCategoryName: ''
+          }));
         }
       }
       if (fields.length > 0) {
-        const measurements = fields.map(f => ({
-          fieldLable: f.label || '',
-          unit: f.unit || 'inch',
-          fieldValue: ''
-        }));
-        setFormData(prev => ({
-          ...prev,
-          measurement: measurements
-        }));
+        setFormData(prev => {
+          const measurements = fields.map(f => {
+            // OLD VALUE FIND
+            const oldMeasurement =
+              prev.measurement?.find(
+                m =>
+                  m.fieldLable === f.label
+              );
+            return {
+              fieldLable: f.label,
+              unit: f.unit || 'inch',
+              fieldValue:
+                oldMeasurement?.fieldValue || '',
+              // UI grouping mate only
+              subCategoryName:
+                f.subCategoryName || ''
+            };
+          });
+          return {
+            ...prev,
+            measurement: measurements
+          };
+        });
       } else {
         setFormData(prev => ({
           ...prev,
@@ -437,7 +487,7 @@ const AddEditOrder = ({ onLogout }) => {
       }
     } catch (err) {
       console.error(
-        'Error fetching outfit type measurements:',
+        "Error fetching outfit measurements:",
         err
       );
       setFormData(prev => ({
@@ -1156,6 +1206,18 @@ const AddEditOrder = ({ onLogout }) => {
     );
   }
 
+  const groupedMeasurements = formData.measurement.reduce(
+    (acc, item) => {
+      const category = item.subCategoryName || 'Measurement';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    },
+    {}
+  );
+
   return (
     <div className="settings-container">
       <Sidebar onLogout={handleLogout} />
@@ -1253,7 +1315,9 @@ const AddEditOrder = ({ onLogout }) => {
                               setFormData(prev => ({
                                 ...prev,
                                 outfitTypeId: outfitId,
-                                subCategoryName: [],   // old subcategory clear
+                                subCategoryName: [],
+                                measurement: [],
+                                addons: []
                               }));
                             }}
                             required={formData.orderType === 'customized'}
@@ -1396,39 +1460,131 @@ const AddEditOrder = ({ onLogout }) => {
             )}
 
             {/* Measurements Tab */}
-            {activeTab === 'measurements' && (formData.orderType === 'customized' || formData.orderType === 'product') && (
-              <div className="tab-content">
-                <div className="form-section">
-                  <h3 className="section-title form-section-title">Measurements</h3>
-                  {formData.measurement.length > 0 ? (
-                    <div className="measurements-grid">
-                      {formData.measurement.map((measure, index) => (
-                        <div key={index} className="measurement-item">
-                          <div className="form-group" style={{ flex: 1 }}>
-                            <label className="form-label">{measure.fieldLable} ({measure.unit})</label>
-                            <input
-                              type="text"
-                              className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                              value={measure.fieldValue}
-                              onChange={(e) => handleMeasurementChange(index, 'fieldValue', e.target.value)}
-                              placeholder={`Enter value in ${measure.unit}`}
-                              disabled={formData.orderType === 'product'}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ color: 'var(--gray-color)', fontStyle: 'italic' }}>
-                      {formData.orderType === 'product'
-                        ? (formData.productId ? 'No measurements available for this product.' : 'Select a product to see measurements.')
-                        : (formData.outfitTypeId ? 'No measurements available for this outfit type.' : 'Select an outfit type to see measurements.')
-                      }
-                    </p>
-                  )}
+            {activeTab === 'measurements' &&
+              (formData.orderType === 'customized' ||
+                formData.orderType === 'product') && (
+                <div className="tab-content">
+                  <div className="form-section">
+                    <h3 className="section-title form-section-title">
+                      Measurements
+                    </h3>
+                    {formData.measurement.length > 0 ? (
+                      <div>
+                        {(() => {
+                          // Group measurements by subCategoryName
+                          const groupedMeasurements =
+                            formData.measurement.reduce((acc, item) => {
+                              const key = item.subCategoryName || 'GENERAL';
+                              if (!acc[key]) {
+                                acc[key] = [];
+                              }
+                              acc[key].push(item);
+                              return acc;
+                            }, {});
+                          return Object.entries(groupedMeasurements).map(
+                            ([category, measurements]) => (
+                              <div
+                                key={category}
+                                style={{
+                                  marginBottom: '30px'
+                                }}
+                              >
+                                {/* Subcategory Heading */}
+                                {category !== 'GENERAL' && (
+                                  <h4
+                                    style={{
+                                      background:
+                                        'var(--primary-light)',
+                                      padding: '10px 14px',
+                                      borderRadius:
+                                        'var(--radius-md)',
+                                      marginBottom: '15px',
+                                      fontSize: '16px',
+                                      fontWeight: '600',
+                                      display: 'inline-block'
+                                    }}
+                                  >
+                                    {category}
+                                  </h4>
+                                )}
+                                <div className="measurements-grid">
+                                  {measurements.map(
+                                    (measure, index) => (
+                                      <div
+                                        key={index}
+                                        className="measurement-item"
+                                      >
+                                        <div
+                                          className="form-group"
+                                          style={{
+                                            flex: 1
+                                          }}
+                                        >
+                                          <label className="form-label">
+                                            {measure.fieldLable}
+                                            ({measure.unit})
+                                          </label>
+                                          <input
+                                            type="text"
+                                            className={`input-field ${formData.orderType === 'product'
+                                              ? 'input-disabled'
+                                              : ''
+                                              }`}
+                                            value={
+                                              measure.fieldValue || ''
+                                            }
+                                            onChange={(e) =>
+                                              handleMeasurementChange(
+                                                formData.measurement.indexOf(
+                                                  measure
+                                                ),
+                                                'fieldValue',
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder={
+                                              `Enter value in ${measure.unit}`
+                                            }
+                                            disabled={
+                                              formData.orderType ===
+                                              'product'
+                                            }
+
+                                          />
+                                        </div>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <p
+                        style={{
+                          color: 'var(--gray-color)',
+                          fontStyle: 'italic'
+                        }}
+                      >
+                        {formData.orderType === 'product'
+                          ? (
+                            formData.productId
+                              ? 'No measurements available for this product.'
+                              : 'Select a product to see measurements.'
+                          )
+                          : (
+                            formData.outfitTypeId
+                              ? 'No measurements available for this outfit type.'
+                              : 'Select an outfit type to see measurements.'
+                          )
+                        }
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Add Ons Tab */}
             {activeTab === 'addons' && availableAddons.length > 0 && (

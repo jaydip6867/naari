@@ -3797,7 +3797,7 @@ textarea.input-field {
 
 .measurements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
 }
 
@@ -3812,6 +3812,10 @@ textarea.input-field {
 .measurement-item strong {
   color: var(--text-primary);
   font-weight: 500;
+}
+
+.measurement-item .input-field{
+  padding: 12px;
 }
 
 /* Addons Section */
