@@ -264,11 +264,6 @@ const TaskDetail = ({ onLogout }) => {
     };
 
     const handleEndTask = async () => {
-        if (refImages.length === 0) {
-            setError('Please upload at least one reference image to end the task.');
-            return;
-        }
-
         try {
             setIsEndingTask(true);
             setError('');

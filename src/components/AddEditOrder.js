@@ -1248,7 +1248,14 @@ const AddEditOrder = ({ onLogout }) => {
                           <select
                             className="input-field"
                             value={formData.outfitTypeId}
-                            onChange={(e) => handleInputChange('outfitTypeId', e.target.value)}
+                            onChange={(e) => {
+                              const outfitId = e.target.value;
+                              setFormData(prev => ({
+                                ...prev,
+                                outfitTypeId: outfitId,
+                                subCategoryName: [],   // old subcategory clear
+                              }));
+                            }}
                             required={formData.orderType === 'customized'}
                           >
                             <option value="">Select Outfit Type</option>

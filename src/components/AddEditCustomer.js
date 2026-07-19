@@ -90,6 +90,15 @@ const AddEditCustomer = ({ onLogout }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'mobile') {
+      // Only allow numbers
+      const onlyNumbers = value.replace(/[^0-9]/g, '');
+      setFormData(prev => ({
+        ...prev,
+        [name]: onlyNumbers
+      }));
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -157,10 +166,6 @@ const AddEditCustomer = ({ onLogout }) => {
     }
     if (!formData.mobile.trim()) {
       setError('Mobile number is required');
-      return false;
-    }
-    if (!/^[0-9]{10}$/.test(formData.mobile)) {
-      setError('Please enter a valid 10-digit mobile number');
       return false;
     }
     return true;
@@ -305,6 +310,7 @@ const AddEditCustomer = ({ onLogout }) => {
                   value={formData.mobile}
                   onChange={handleInputChange}
                   placeholder="Enter mobile number"
+                  inputMode="numeric"
                   required
                 />
               </div>
