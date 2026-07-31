@@ -103,6 +103,9 @@ const AddEditOrder = ({ onLogout }) => {
   const [showWorkerDropdowns, setShowWorkerDropdowns] = useState({});
   const [filteredStaffLists, setFilteredStaffLists] = useState({});
 
+  // customer measurements state
+  const [customerMeasurements, setCustomerMeasurements] = useState({});
+
   // Tab configuration - show only 3 tabs for create mode, all tabs for edit mode
   const tabs = isEditMode ? [
     { id: 'basic', label: 'Basic' },
@@ -461,17 +464,19 @@ const AddEditOrder = ({ onLogout }) => {
             // OLD VALUE FIND
             const oldMeasurement =
               prev.measurement?.find(
-                m =>
-                  m.fieldLable === f.label
+                m => m.fieldLable === f.label
               );
+
+            const apiValue = customerMeasurements[f.label];
+
             return {
               fieldLable: f.label,
               unit: f.unit || 'inch',
               fieldValue:
-                oldMeasurement?.fieldValue || '',
-              // UI grouping mate only
-              subCategoryName:
-                f.subCategoryName || ''
+                oldMeasurement?.fieldValue ||
+                apiValue ||
+                '',
+              subCategoryName: f.subCategoryName || ''
             };
           });
           return {
@@ -496,6 +501,24 @@ const AddEditOrder = ({ onLogout }) => {
       }));
     }
   };
+
+  useEffect(() => {
+    if (
+      Object.keys(customerMeasurements).length === 0 ||
+      formData.measurement.length === 0
+    ) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      measurement: prev.measurement.map(item => ({
+        ...item,
+        fieldValue:
+          customerMeasurements[item.fieldLable] || item.fieldValue || ''
+      }))
+    }));
+  }, [customerMeasurements]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -895,11 +918,28 @@ const AddEditOrder = ({ onLogout }) => {
     setShowCustomerDropdown(true);
   };
 
-  const handleCustomerSelect = (customer) => {
+  const handleCustomerSelect = async (customer) => {
     setCustomerSearchInput(customer.fullName);
     handleInputChange('customerId', customer._id);
     setShowCustomerDropdown(false);
     setFilteredCustomers([]);
+
+    try {
+      const response = await customerAPI.getCustomerOrder(customer._id);
+
+      console.log("Customer Order Response:", response);
+      const measurementMap = {};
+
+      response.forEach(order => {
+        (order.measurement || []).forEach(item => {
+          measurementMap[item.fieldLable] = item.fieldValue;
+        });
+      });
+
+      setCustomerMeasurements(measurementMap);
+    } catch (error) {
+      console.error("Customer Order Error:", error);
+    }
   };
 
   const handleCustomerInputBlur = () => {

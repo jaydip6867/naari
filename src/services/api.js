@@ -332,6 +332,21 @@ export const customerAPI = {
     } else {
       throw new Error(response.data.Message || 'Failed to fetch customer');
     }
+  },
+
+  getCustomerOrder: async (customerId) => {
+    const response = await api.post('/user/customers/order', {
+      customerId,
+      // outfitTypeId: "",
+      // subCategoryName: "",
+      // productId: ""
+    });
+
+    if (response.data.IsSuccess && response.data.Status === 200) {
+      return response.data.Data;
+    } else {
+      throw new Error(response.data.Message || 'Failed to fetch customer order');
+    }
   }
 };
 
