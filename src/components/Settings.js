@@ -953,29 +953,37 @@ const Settings = ({ onLogout }) => {
       if (selectedSubcategory) {
         const currentOutfit = getCurrentOutfit();
         if (currentOutfit && currentOutfit.hasSubCategories && currentOutfit.subCategories) {
-          const newField = {
-            label: newFieldName.trim(),
-            unit: newFieldUnit,
-            isRequired: newFieldRequired
-          };
+          const fieldNames = newFieldName
+            .split(",")
+            .map(name => name.trim())
+            .filter(Boolean);
 
-          // Prepare API payload
-          const fieldData = {
-            outfitTypeId: currentOutfit._id,
-            hasSubCategories: true,
-            subCategories: currentOutfit.subCategories.map(sub => {
-              if (sub.name === selectedSubcategory) {
-                return {
-                  name: sub.name,
-                  fields: [...(sub.fields || []), newField]
-                };
-              }
-              return sub;
-            })
-          };
+          for (const fieldName of fieldNames) {
+            const newField = {
+              label: fieldName,
+              unit: newFieldUnit,
+              isRequired: newFieldRequired
+            };
 
-          // Call API to save field
-          await measurementsAPI.saveOutfitTypeField(fieldData);
+            const fieldData = {
+              outfitTypeId: currentOutfit._id,
+              hasSubCategories: true,
+              subCategories: currentOutfit.subCategories.map(sub => {
+                if (sub.name === selectedSubcategory) {
+                  return {
+                    ...sub,
+                    fields: [...(sub.fields || []), newField]
+                  };
+                }
+                return sub;
+              })
+            };
+
+            await measurementsAPI.saveOutfitTypeField(fieldData);
+
+            // Local data update જેથી બીજી API call માં પહેલું field પણ રહે
+            currentOutfit.subCategories = fieldData.subCategories;
+          }
 
           // Refresh data from API
           await fetchOutfitTypes();
@@ -984,21 +992,29 @@ const Settings = ({ onLogout }) => {
         // For outfits without subcategories, add field directly
         const currentOutfit = getCurrentOutfit();
         if (currentOutfit && !currentOutfit.hasSubCategories) {
-          const newField = {
-            label: newFieldName.trim(),
-            unit: newFieldUnit,
-            isRequired: newFieldRequired
-          };
+          const fieldNames = newFieldName
+            .split(",")
+            .map(name => name.trim())
+            .filter(Boolean);
 
-          // Prepare API payload
-          const fieldData = {
-            outfitTypeId: currentOutfit._id,
-            hasSubCategories: false,
-            fields: [...(currentOutfit.fields || []), newField]
-          };
+          for (const fieldName of fieldNames) {
+            const newField = {
+              label: fieldName,
+              unit: newFieldUnit,
+              isRequired: newFieldRequired
+            };
 
-          // Call API to save field
-          await measurementsAPI.saveOutfitTypeField(fieldData);
+            const fieldData = {
+              outfitTypeId: currentOutfit._id,
+              hasSubCategories: false,
+              fields: [...(currentOutfit.fields || []), newField]
+            };
+
+            await measurementsAPI.saveOutfitTypeField(fieldData);
+
+            // Local update
+            currentOutfit.fields = fieldData.fields;
+          }
 
           // Refresh data from API
           await fetchOutfitTypes();
