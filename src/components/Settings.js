@@ -1664,8 +1664,8 @@ const Settings = ({ onLogout }) => {
                     onChange={(e) => setNewFieldUnit(e.target.value)}
                   >
                     <option value="inch">In</option>
-                    <option value="cm">Cm</option>
-                    <option value="feet">Feet</option>
+                    {/*<option value="cm">Cm</option>
+                    <option value="feet">Feet</option>*/}
                   </select>
                   <div className="checkbox-container">
                     <input
@@ -1697,8 +1697,8 @@ const Settings = ({ onLogout }) => {
                       <div className="field-name">{field.name}</div>
                       <select className="dropdown" value={field.unit} onChange={(e) => handleFieldUnitChange(field.id, e.target.value)}>
                         <option value="inch">In</option>
-                        <option value="cm">Cm</option>
-                        <option value="feet">Feet</option>
+                        {/* <option value="cm">Cm</option>
+                        <option value="feet">Feet</option> */}
                       </select>
                       <div className="required-checkbox">
                         <input
