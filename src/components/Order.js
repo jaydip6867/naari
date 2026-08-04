@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.js';
 import '../styles.css';
 import { storage } from '../utils/storage';
 import { orderAPI, bankDetailsAPI, legalAPI } from "../services/api";
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiPackage, FiDownload, FiPrinter } from 'react-icons/fi';
 import Pagination from './Pagination.js';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useReactToPrint } from "react-to-print";
+import OrderPrint from "./OrderPrint";
 
 
 const Order = ({ onLogout }) => {
@@ -25,9 +27,15 @@ const Order = ({ onLogout }) => {
     direction: "asc",
   });
 
-
   const [bankList, setBankList] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const printRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: selectedOrder?.orderId || "Order",
+  });
 
   const fetchBanks = async () => {
     try {
@@ -603,6 +611,19 @@ const Order = ({ onLogout }) => {
                             >
                               <FiEye />
                             </button>
+                            <button
+                              className="edit-btn"
+                              title="Print"
+                              onClick={() => {
+                                setSelectedOrder(order);
+
+                                setTimeout(() => {
+                                  handlePrint();
+                                }, 100);
+                              }}
+                            >
+                              <FiPrinter />
+                            </button>
 
                             {canAddEdit && order.status !== 'cancelled' && (<button
                               className="edit-btn"
@@ -637,6 +658,7 @@ const Order = ({ onLogout }) => {
                                   <FiDownload />
                                 </button>
                               )}
+
                           </div>
                         </td>
                       </tr>
@@ -762,6 +784,12 @@ const Order = ({ onLogout }) => {
           </div>
         </div>
       )}
+      <div style={{ display: "none" }}>
+        <OrderPrint
+          ref={printRef}
+          order={selectedOrder}
+        />
+      </div>
     </div>
   );
 };
