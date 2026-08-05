@@ -6,7 +6,8 @@ const sectionStyle = {
 };
 
 const titleStyle = {
-  background: "#222",
+  // background: "#222",
+  background: "#D68A6F",
   color: "#fff",
   padding: "8px 12px",
   fontSize: 16,
@@ -89,7 +90,8 @@ const OrderPrint = forwardRef(({ order }, ref) => {
         minHeight: "297mm",
         padding: 25,
         margin: "0 auto",
-        background: "#fff",
+        // background: "#fff",
+        background: "#fff7f4",
         color: "#000",
         fontFamily: "Arial",
       }}
@@ -156,7 +158,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
       {/* ================= CUSTOMER ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>
           Customer Information
         </div>
@@ -196,7 +198,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
           </tbody>
         </table>
-      </div>
+      </div> */}
 
       {/* ================= ORDER ================= */}
 
@@ -271,7 +273,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
           </tbody>
         </table>
       </div>
-            {/* ================= MEASUREMENTS ================= */}
+      {/* ================= MEASUREMENTS ================= */}
 
       <div style={sectionStyle}>
         <div style={titleStyle}>Measurements</div>
@@ -508,9 +510,9 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
         {renderImages(order.otherWorkRefImg)}
       </div>
-            {/* ================= ASSIGNED WORKERS ================= */}
+      {/* ================= ASSIGNED WORKERS ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>Assigned Workers</div>
 
         {order.assignWorker && order.assignWorker.length > 0 ? (
@@ -547,11 +549,11 @@ const OrderPrint = forwardRef(({ order }, ref) => {
         ) : (
           <p>No Worker Assigned</p>
         )}
-      </div>
+      </div> */}
 
       {/* ================= COST SUMMARY ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>Cost Summary</div>
 
         <table style={tableStyle}>
@@ -621,11 +623,11 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
           </tbody>
         </table>
-      </div>
+      </div> */}
 
       {/* ================= PAYMENT SUMMARY ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>Payment Summary</div>
 
         <table style={tableStyle}>
@@ -696,11 +698,11 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
           </tbody>
         </table>
-      </div>
+      </div> */}
 
       {/* ================= DELIVERY ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>Delivery Information</div>
 
         <table style={tableStyle}>
@@ -728,7 +730,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
           </tbody>
         </table>
-      </div>
+      </div> */}
 
       {/* ================= SPECIAL INSTRUCTIONS ================= */}
 
@@ -749,7 +751,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
       {/* ================= CREATED INFO ================= */}
 
-      <div style={sectionStyle}>
+      {/* <div style={sectionStyle}>
         <div style={titleStyle}>Created Information</div>
 
         <table style={tableStyle}>
@@ -793,8 +795,9 @@ const OrderPrint = forwardRef(({ order }, ref) => {
 
           </tbody>
         </table>
-      </div>
-            {/* ================= ALL IMAGE GALLERY ================= */}
+      </div> */}
+
+      {/* ================= ALL IMAGE GALLERY ================= */}
 
       <div style={sectionStyle}>
         <div style={titleStyle}>All Reference Images</div>
@@ -864,7 +867,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
           </div>
         </div>
 
-        <div
+        {/* <div
           style={{
             textAlign: "right",
           }}
@@ -878,7 +881,7 @@ const OrderPrint = forwardRef(({ order }, ref) => {
           </div>
 
           Authorized Signature
-        </div>
+        </div> */}
       </div>
 
       {/* ================= PRINT CSS ================= */}
@@ -888,12 +891,14 @@ const OrderPrint = forwardRef(({ order }, ref) => {
             @page{
                 size:A4;
                 margin:12mm;
+                background:#fff7f4;
             }
 
             @media print{
 
                 body{
-                    background:#fff;
+                    // background:#fff;
+                    background:#fff7f4;
                 }
 
                 img{
