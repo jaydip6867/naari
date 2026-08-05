@@ -77,8 +77,8 @@ const Dashboard = ({ onLogout }) => {
     });
   }, [orders]);
 
-  // Upcoming Appointments (Next 7 Days Deliveries)
-  const upcomingAppointments = useMemo(() => {
+  // Upcoming Orders (Next 7 Days Deliveries)
+  const upcomingOrders = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -111,7 +111,7 @@ const Dashboard = ({ onLogout }) => {
         return overdue;
 
       case "upcoming":
-        return upcomingAppointments;
+        return upcomingOrders;
 
       default:
         return [];
@@ -177,8 +177,8 @@ const Dashboard = ({ onLogout }) => {
               onClick={() => setActiveWidget("upcoming")}
             >
               <div>
-                <h4>Upcoming Appointment</h4>
-                <h2>{upcomingAppointments.length}</h2>
+                <h4>Upcoming Orders</h4>
+                <h2>{upcomingOrders.length}</h2>
               </div>
               <FaCalendarAlt className="card-icon" />
             </div>
@@ -189,7 +189,7 @@ const Dashboard = ({ onLogout }) => {
               {activeWidget === "todayOrders" && "Today's Orders"}
               {activeWidget === "deliveries" && "Delivery List"}
               {activeWidget === "overdue" && "Overdue List"}
-              {activeWidget === "upcoming" && "Upcoming Appointments"}
+              {activeWidget === "upcoming" && "Upcoming Orders"}
             </h3>
             <table className="dashboard-table">
               <thead>
