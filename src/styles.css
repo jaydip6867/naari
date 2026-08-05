@@ -5819,7 +5819,7 @@ textarea.input-field {
 
 .dashboard-card {
   flex: 1;
-  min-width: 260px;
+  min-width: 160px;
   height: 140px;
   border-radius: 18px;
   padding: 25px;
@@ -5829,6 +5829,7 @@ textarea.input-field {
   align-items: center;
   cursor: pointer;
   transition: .35s;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   box-shadow: 0 10px 25px rgba(0, 0, 0, .15);
 }
 
@@ -5852,18 +5853,6 @@ textarea.input-field {
 .card-icon {
   font-size: 55px;
   opacity: .25;
-}
-
-.orders {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-}
-
-.delivery {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-}
-
-.overdue {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
 }
 
 .active-card {
