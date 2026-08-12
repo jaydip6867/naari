@@ -1589,7 +1589,7 @@ const AddEditOrder = ({ onLogout }) => {
                                               : ''
                                               }`}
                                             value={
-                                              measure.fieldValue || ''
+                                              measure.fieldValue === '0' ? '' : measure.fieldValue || ''
                                             }
                                             onChange={(e) =>
                                               handleMeasurementChange(

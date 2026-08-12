@@ -263,7 +263,7 @@ const ViewOrder = ({ onLogout }) => {
                     <p style={{ fontWeight: '500', marginTop: '4px' }}>
                       {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
                         year: 'numeric',
-                        month: 'long',
+                        month: 'numeric',
                         day: 'numeric'
                       }) : '-'}
                     </p>
@@ -304,7 +304,13 @@ const ViewOrder = ({ onLogout }) => {
                   )}
                   <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Delivery Date</label>
-                    <p style={{ fontWeight: '500', marginTop: '4px' }}>{order.deliveryDate || '-'}</p>
+                    <p style={{ fontWeight: '500', marginTop: '4px' }}>
+                      {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric'
+                      }) : '-'}
+                    </p>
                   </div>
                   {/* <div className="view-item">
                     <label style={{ fontSize: '12px', color: 'var(--gray-color)', textTransform: 'uppercase' }}>Total Price</label>
