@@ -219,7 +219,7 @@ const ViewOrder = ({ onLogout }) => {
             >
               <FiArrowLeft />
             </button>
-            <h1 className="page-title">Order Details</h1>
+            <h1 className="page-title">Order Details - {order.orderId}</h1>
           </div>
           <button
             className="btn btn-primary"

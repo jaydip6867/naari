@@ -299,7 +299,9 @@ const ViewCustomer = ({ onLogout }) => {
                               <td>
                                 <div className="order-delivery-date">
                                   <FiCalendarIcon className="order-delivery-date-icon" />
-                                  {order.deliveryDate || '-'}
+                                  {order.deliveryDate
+                                    ? new Date(order.deliveryDate).toLocaleDateString('en-GB')
+                                    : '-'}
                                 </div>
                               </td>
                               <td>
@@ -365,8 +367,8 @@ const ViewCustomer = ({ onLogout }) => {
                                           <input
                                             type="text"
                                             className="input-field"
-                                            value={measurement.fieldValue}
-                                            placeholder={`Enter value in ${measurement.unit}`}
+                                            value={measurement.fieldValue === '0' ? '' : measurement.fieldValue}
+                                            placeholder={measurement.fieldValue === '0' ? '' : null}
                                             disabled
                                           />
                                         </div>

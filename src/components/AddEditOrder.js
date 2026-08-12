@@ -7,6 +7,7 @@ import { storage } from '../utils/storage';
 import { orderAPI, productAPI, measurementsAPI, addonsAPI, customerAPI, uploadAPI, staffAPI } from '../services/api';
 import { FiPlus, FiTrash2, FiUpload, FiX, FiArrowLeft } from 'react-icons/fi';
 import { useLoading } from '../contexts/LoadingContext.js';
+import SearchableSelect from './SearchableSelect.jsx';
 
 const AddEditOrder = ({ onLogout }) => {
   const user = JSON.parse(localStorage.getItem("naari_user"));
@@ -1347,7 +1348,7 @@ const AddEditOrder = ({ onLogout }) => {
                       <>
                         <div className="form-group">
                           <label className="form-label">Outfit Type <span className="required">*</span></label>
-                          <select
+                          {/* <select
                             className="input-field"
                             value={formData.outfitTypeId}
                             onChange={(e) => {
@@ -1366,7 +1367,24 @@ const AddEditOrder = ({ onLogout }) => {
                             {outfitTypes.map(outfit => (
                               <option key={outfit._id} value={outfit._id}>{outfit.name}</option>
                             ))}
-                          </select>
+                          </select> */}
+                          <SearchableSelect
+                            options={outfitTypes.map((outfit) => ({
+                              value: outfit._id,
+                              label: outfit.name,
+                            }))}
+                            value={formData.outfitTypeId}
+                            placeholder="Select Outfit Type"
+                            onChange={(outfitId) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                outfitTypeId: outfitId,
+                                subCategoryName: [],
+                                measurement: [],
+                                addons: [],
+                              }));
+                            }}
+                          />
                         </div>
 
                         {selectedOutfit?.hasSubCategories && (
@@ -1804,7 +1822,7 @@ const AddEditOrder = ({ onLogout }) => {
                           <span>Fusing Required</span>
                         </label>
                       </div>
-                      {formData.fusingRequired && (
+                      {/* {formData.fusingRequired && (
                         <div className="form-grid">
                           <div className="form-group">
                             <label className="form-label">Fusing Color</label>
@@ -1818,7 +1836,62 @@ const AddEditOrder = ({ onLogout }) => {
                               <option value="">Select Color</option>
                               <option value="Black">Black</option>
                               <option value="White">White</option>
+                              <option value="Other">Other</option>
                             </select>
+                          </div>
+                        </div>
+                      )} */}
+                      {formData.fusingRequired && (
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label className="form-label">Fusing Color</label>
+
+                            <div
+                              className={`fusing-color-options ${formData.orderType === "product" ? "input-disabled" : ""
+                                }`}
+                            >
+                              <label className="radio-option">
+                                <input
+                                  type="radio"
+                                  name="fusingColor"
+                                  value="Black"
+                                  checked={formData.fusingColor === "Black"}
+                                  onChange={(e) =>
+                                    handleInputChange("fusingColor", e.target.value)
+                                  }
+                                  disabled={formData.orderType === "product"}
+                                />
+                                <span>Black</span>
+                              </label>
+
+                              <label className="radio-option">
+                                <input
+                                  type="radio"
+                                  name="fusingColor"
+                                  value="White"
+                                  checked={formData.fusingColor === "White"}
+                                  onChange={(e) =>
+                                    handleInputChange("fusingColor", e.target.value)
+                                  }
+                                  disabled={formData.orderType === "product"}
+                                />
+                                <span>White</span>
+                              </label>
+
+                              <label className="radio-option">
+                                <input
+                                  type="radio"
+                                  name="fusingColor"
+                                  value="Other"
+                                  checked={formData.fusingColor === "Other"}
+                                  onChange={(e) =>
+                                    handleInputChange("fusingColor", e.target.value)
+                                  }
+                                  disabled={formData.orderType === "product"}
+                                />
+                                <span>Other</span>
+                              </label>
+                            </div>
                           </div>
                         </div>
                       )}

@@ -692,10 +692,10 @@ const Reports = ({ onLogout }) => {
                                                             {selectedRecord.customerName}
                                                         </p>
 
-                                                        <p>
+                                                        {/* <p>
                                                             <strong>Customer ID:</strong>{' '}
                                                             {selectedRecord.customerId}
-                                                        </p>
+                                                        </p> */}
 
                                                         <p>
                                                             <strong>No Of Orders:</strong>{' '}

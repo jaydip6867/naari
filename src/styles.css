@@ -553,7 +553,7 @@ body {
   overflow: auto;
 }
 
-.content-section .outfit-list{
+.content-section .outfit-list {
   max-height: 600px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -2048,7 +2048,7 @@ body {
 }
 
 .form-grid {
-    align-items: start;
+  align-items: start;
 }
 
 .customer-form .form-grid {
@@ -3814,7 +3814,7 @@ textarea.input-field {
   font-weight: 500;
 }
 
-.measurement-item .input-field{
+.measurement-item .input-field {
   padding: 12px;
 }
 
@@ -5882,4 +5882,98 @@ textarea.input-field {
 .invoice-container {
   width: 800px;
   background: white;
+}
+
+
+/* search outfit type  */
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select-control {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.select-arrow {
+  font-size: 12px;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.searchable-select-search {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0;
+  outline: none;
+}
+
+.searchable-select-options {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.searchable-select-option {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.searchable-select-option:hover {
+  background: #f5f5f5;
+}
+
+.no-options {
+  padding: 12px;
+  color: #888;
+}
+
+/* fusing color design */
+.fusing-color-options {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 40px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.radio-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.radio-option input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+.fusing-color-options.input-disabled {
+  opacity: 0.6;
+}
+
+.fusing-color-options.input-disabled .radio-option {
+  cursor: not-allowed;
 }
