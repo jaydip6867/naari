@@ -1259,6 +1259,10 @@ const AddEditOrder = ({ onLogout }) => {
     {}
   );
 
+  const displayedAddons = Array.isArray(formData.addons) && formData.addons.length > 0
+    ? formData.addons
+    : availableAddons;
+
   return (
     <div className="settings-container">
       <Sidebar onLogout={handleLogout} />
@@ -1383,6 +1387,11 @@ const AddEditOrder = ({ onLogout }) => {
                                 measurement: [],
                                 addons: [],
                               }));
+                              if (outfitId) {
+                                fetchAddons(outfitId);
+                              } else {
+                                setAvailableAddons([]);
+                              }
                             }}
                           />
                         </div>
@@ -1645,80 +1654,244 @@ const AddEditOrder = ({ onLogout }) => {
               )}
 
             {/* Add Ons Tab */}
-            {activeTab === 'addons' && availableAddons.length > 0 && (
+            {activeTab === 'addons' && (
               <div className="tab-content">
                 <div className="form-section">
                   <h3 className="section-title form-section-title">Addons</h3>
-                  <div className="addons-grid">
-                    {formData.addons.map((addon, index) => (
-                      <div key={index} className={`addon-card ${addon.isSelected ? 'selected' : ''}`}>
-                        <div className="addon-header">
-                          <input
-                            type="checkbox"
-                            id={`addon-${index}`}
-                            className="addon-checkbox"
-                            checked={addon.isSelected}
-                            onChange={(e) => handleAddonChange(index, 'isSelected', e.target.checked)}
-                            disabled={formData.orderType === 'product'}
-                          />
-                          <label htmlFor={`addon-${index}`} className="addon-title">{addon.title}</label>
-                          <span className="addon-type">({addon.fieldType})</span>
-                        </div>
 
-                        {addon.isSelected && (
-                          <div className="addon-content">
-                            {addon.fieldType === 'text' && (
+                  {/* No Outfit Type Selected */}
+                  {!formData.outfitTypeId ? (
+                    <p
+                      style={{
+                        color: 'var(--gray-color)',
+                        fontStyle: 'italic',
+                        padding: '20px 0',
+                      }}
+                    >
+                      Select an outfit type to load available AddOns.
+                    </p>
+                  ) : displayedAddons.length === 0 ? (
+                    /* No AddOns Found */
+                    <p
+                      style={{
+                        color: 'var(--gray-color)',
+                        fontStyle: 'italic',
+                        padding: '20px 0',
+                      }}
+                    >
+                      No AddOns found for the selected outfit type.
+                    </p>
+                  ) : (
+                    /* AddOns List */
+                    <div className="addons-grid">
+                      {displayedAddons.map((addon, index) => {
+                        const addonId = addon.id ?? addon.addonId ?? index;
+                        const fieldType = addon.fieldType?.toLowerCase() || '';
+                        const options = Array.isArray(addon.options)
+                          ? addon.options
+                          : [];
+
+                        const isSelected = Boolean(addon.isSelected);
+
+                        // Convert selected values into an array safely
+                        const selectedValues =
+                          typeof addon.value === 'string' && addon.value.length > 0
+                            ? addon.value
+                              .split(',')
+                              .map((value) => value.trim())
+                              .filter(Boolean)
+                            : Array.isArray(addon.value)
+                              ? addon.value
+                              : [];
+
+                        return (
+                          <div
+                            key={addonId}
+                            className={`addon-card ${isSelected ? 'selected' : ''}`}
+                          >
+                            {/* AddOn Header */}
+                            <div className="addon-header">
                               <input
-                                type="text"
-                                className={`input-field ${formData.orderType === 'product' ? 'input-disabled' : ''}`}
-                                placeholder="Enter value"
-                                value={addon.value}
-                                onChange={(e) => handleAddonChange(index, 'value', e.target.value)}
+                                type="checkbox"
+                                id={`addon-${addonId}`}
+                                className="addon-checkbox"
+                                checked={isSelected}
+                                onChange={(e) =>
+                                  handleAddonChange(
+                                    addonId,
+                                    'isSelected',
+                                    e.target.checked
+                                  )
+                                }
                                 disabled={formData.orderType === 'product'}
                               />
-                            )}
-                            {addon.fieldType === 'radio' && (
-                              <div className="radio-group">
-                                {addon.options.map((option, optIndex) => (
-                                  <label key={optIndex} className={`radio-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                                    <input
-                                      type="radio"
-                                      name={`addon-${index}-option`}
-                                      checked={addon.value === option}
-                                      onChange={() => handleAddonChange(index, 'value', option)}
-                                      disabled={formData.orderType === 'product'}
-                                    />
-                                    <span>{option}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            )}
-                            {addon.fieldType === 'checkbox' && (
-                              <div className="checkbox-group">
-                                {addon.options.map((option, optIndex) => (
-                                  <label key={optIndex} className={`checkbox-label ${formData.orderType === 'product' ? 'disabled' : ''}`}>
-                                    <input
-                                      type="checkbox"
-                                      checked={addon.value?.includes(option)}
-                                      onChange={(e) => {
-                                        const currentValues = addon.value ? addon.value.split(',') : [];
-                                        const newValues = e.target.checked
-                                          ? [...currentValues, option]
-                                          : currentValues.filter(v => v !== option);
-                                        handleAddonChange(index, 'value', newValues.join(','));
+
+                              <label
+                                htmlFor={`addon-${addonId}`}
+                                className="addon-title"
+                              >
+                                {addon.title || addon.name || 'Untitled AddOn'}
+                              </label>
+
+                              {addon.fieldType && (
+                                <span className="addon-type">
+                                  ({addon.fieldType})
+                                </span>
+                              )}
+                            </div>
+
+                            {/* AddOn Content */}
+                            {isSelected && (
+                              <div className="addon-content">
+                                {/* TEXT FIELD */}
+                                {fieldType === 'text' && (
+                                  <input
+                                    type="text"
+                                    className={`input-field ${formData.orderType === 'product'
+                                        ? 'input-disabled'
+                                        : ''
+                                      }`}
+                                    placeholder="Enter value"
+                                    value={addon.value ?? ''}
+                                    onChange={(e) =>
+                                      handleAddonChange(
+                                        addonId,
+                                        'value',
+                                        e.target.value
+                                      )
+                                    }
+                                    disabled={formData.orderType === 'product'}
+                                  />
+                                )}
+
+                                {/* RADIO FIELD */}
+                                {fieldType === 'radio' && (
+                                  <div className="radio-group">
+                                    {options.length > 0 ? (
+                                      options.map((option, optIndex) => (
+                                        <label
+                                          key={`${addonId}-radio-${optIndex}`}
+                                          className={`radio-label ${formData.orderType === 'product'
+                                              ? 'disabled'
+                                              : ''
+                                            }`}
+                                        >
+                                          <input
+                                            type="radio"
+                                            name={`addon-${addonId}-option`}
+                                            value={option}
+                                            checked={addon.value === option}
+                                            onChange={() =>
+                                              handleAddonChange(
+                                                addonId,
+                                                'value',
+                                                option
+                                              )
+                                            }
+                                            disabled={
+                                              formData.orderType === 'product'
+                                            }
+                                          />
+
+                                          <span>{option}</span>
+                                        </label>
+                                      ))
+                                    ) : (
+                                      <p
+                                        style={{
+                                          color: 'var(--gray-color)',
+                                          fontStyle: 'italic',
+                                        }}
+                                      >
+                                        No options available.
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* CHECKBOX FIELD */}
+                                {fieldType === 'checkbox' && (
+                                  <div className="checkbox-group">
+                                    {options.length > 0 ? (
+                                      options.map((option, optIndex) => {
+                                        const isOptionSelected =
+                                          selectedValues.includes(option);
+
+                                        return (
+                                          <label
+                                            key={`${addonId}-checkbox-${optIndex}`}
+                                            className={`checkbox-label ${formData.orderType === 'product'
+                                                ? 'disabled'
+                                                : ''
+                                              }`}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              value={option}
+                                              checked={isOptionSelected}
+                                              onChange={(e) => {
+                                                let newValues = [...selectedValues];
+
+                                                if (e.target.checked) {
+                                                  if (
+                                                    !newValues.includes(option)
+                                                  ) {
+                                                    newValues.push(option);
+                                                  }
+                                                } else {
+                                                  newValues = newValues.filter(
+                                                    (value) => value !== option
+                                                  );
+                                                }
+
+                                                handleAddonChange(
+                                                  addonId,
+                                                  'value',
+                                                  newValues.join(',')
+                                                );
+                                              }}
+                                              disabled={
+                                                formData.orderType === 'product'
+                                              }
+                                            />
+
+                                            <span>{option}</span>
+                                          </label>
+                                        );
+                                      })
+                                    ) : (
+                                      <p
+                                        style={{
+                                          color: 'var(--gray-color)',
+                                          fontStyle: 'italic',
+                                        }}
+                                      >
+                                        No options available.
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* UNKNOWN FIELD TYPE */}
+                                {!['text', 'radio', 'checkbox'].includes(
+                                  fieldType
+                                ) && (
+                                    <p
+                                      style={{
+                                        color: 'var(--gray-color)',
+                                        fontStyle: 'italic',
                                       }}
-                                      disabled={formData.orderType === 'product'}
-                                    />
-                                    <span>{option}</span>
-                                  </label>
-                                ))}
+                                    >
+                                      Unsupported AddOn field type.
+                                    </p>
+                                  )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
