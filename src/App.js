@@ -23,6 +23,11 @@ import { storage } from './utils/storage';
 import { LoadingProvider } from './contexts/LoadingContext.js';
 import Invoice from './components/Invoice.js';
 import CalendarPage from './components/CalendarPage.js';
+import Home from './components/Home.js';
+import About from './components/About.js';
+import PublicProduct from './components/PublicProduct.js';
+import ProductDetail from './components/ProductDetail.js';
+import Contact from './components/Contact.js';
 
 
 // Error Boundary Component
@@ -63,6 +68,10 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+const ProtectedRoute = ({ isLoggedIn, children }) => (
+  isLoggedIn ? children : <Navigate to="/login" replace />
+);
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -128,190 +137,36 @@ function App() {
         <Router>
           <div className="App">
           <Routes>
-            <Route 
-              path="/" 
-              element={
-                isLoggedIn ? 
-                  <Navigate to="/dashboard" replace /> : 
-                  <Login onLogin={handleLogin} />
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                isLoggedIn ? 
-                  <Dashboard onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                isLoggedIn ? 
-                  <Settings onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/customers" 
-              element={
-                isLoggedIn ? 
-                  <Customer onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/customers/add" 
-              element={
-                isLoggedIn ? 
-                  <AddEditCustomer onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/customers/edit/:customerId" 
-              element={
-                isLoggedIn ? 
-                  <AddEditCustomer onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/customers/view/:customerId" 
-              element={
-                isLoggedIn ? 
-                  <ViewCustomer onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/orders" 
-              element={
-                isLoggedIn ? 
-                  <Order onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/team" 
-              element={
-                isLoggedIn ? 
-                  <Team onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/tasks" 
-              element={
-                isLoggedIn ? 
-                  <Tasks onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/tasks/:orderId" 
-              element={
-                isLoggedIn ? 
-                  <TaskDetail onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/products" 
-              element={
-                isLoggedIn ? 
-                  <Product onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/products/add" 
-              element={
-                isLoggedIn ? 
-                  <AddEditProduct onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/products/edit/:productId" 
-              element={
-                isLoggedIn ? 
-                  <AddEditProduct onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/products/view/:productId" 
-              element={
-                isLoggedIn ? 
-                  <ViewProduct onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/orders/add" 
-              element={
-                isLoggedIn ? 
-                  <AddEditOrder onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route 
-              path="/orders/edit/:orderId" 
-              element={
-                isLoggedIn ? 
-                  <AddEditOrder onLogout={handleLogout} /> : 
-                  <Navigate to="/" replace />
-              } 
-            />
-            <Route
-              path="/orders/view/:orderId"
-              element={
-                isLoggedIn ?
-                  <ViewOrder onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/chat"
-              element={
-                isLoggedIn ?
-                  <Chat onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/alert"
-              element={
-                isLoggedIn ?
-                  <ExpenseAlert onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                isLoggedIn ?
-                  <Reports onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/invoice"
-              element={
-                isLoggedIn ?
-                  <Invoice onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                isLoggedIn ?
-                  <CalendarPage onLogout={handleLogout} /> :
-                  <Navigate to="/" replace />
-              }
-            />
+            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/product" element={<PublicProduct />} />
+            <Route path="/product/:productId" element={<ProductDetail />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+
+            <Route path="/dashboard" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Dashboard onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Customer onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/customers/add" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditCustomer onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/customers/edit/:customerId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditCustomer onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/customers/view/:customerId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ViewCustomer onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Order onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/orders/add" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditOrder onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/orders/edit/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditOrder onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/orders/view/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ViewOrder onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/team" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Team onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Tasks onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/tasks/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><TaskDetail onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Product onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/products/add" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditProduct onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/products/edit/:productId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditProduct onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/products/view/:productId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ViewProduct onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Chat onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/alert" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ExpenseAlert onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Reports onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/invoice" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Invoice onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute isLoggedIn={isLoggedIn}><CalendarPage onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </div>

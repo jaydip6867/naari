@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
 import { authAPI } from '../services/api';
 import { storage } from '../utils/storage';
@@ -123,6 +123,9 @@ const Login = ({ onLogin }) => {
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
+        <p style={{textAlign: 'center'}}>
+          <Link to="/" style={{color: 'var(--primary-color)', textDecoration: 'none'}}>Back To Main</Link>
+        </p>
         </form>
       </div>
     </div>
