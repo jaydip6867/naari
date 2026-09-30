@@ -61,6 +61,20 @@ export const storage = {
     return user && user.roleid && user.roleid.ismaster === true;
   },
 
+  isAdmin: () => {
+    const user = storage.getUser();
+    const roleName = typeof user?.roleid === 'object'
+      ? user.roleid?.name
+      : user?.roleName || user?.role;
+
+    return Boolean(
+      user?.type?.toLowerCase() === 'admin' ||
+      user?.roleid?.ismaster === true ||
+      roleName?.toLowerCase().includes('admin') ||
+      user?.fullName === 'Admin'
+    );
+  },
+
   // Get user role name
   getUserRole: () => {
     const user = storage.getUser();

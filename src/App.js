@@ -28,6 +28,7 @@ import About from './components/About.js';
 import PublicProduct from './components/PublicProduct.js';
 import ProductDetail from './components/ProductDetail.js';
 import Contact from './components/Contact.js';
+import Leads from './components/Leads.js';
 
 
 // Error Boundary Component
@@ -72,6 +73,11 @@ class ErrorBoundary extends React.Component {
 const ProtectedRoute = ({ isLoggedIn, children }) => (
   isLoggedIn ? children : <Navigate to="/login" replace />
 );
+
+const AdminRoute = ({ isLoggedIn, children }) => {
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  return storage.isAdmin() ? children : <Navigate to="/dashboard" replace />;
+};
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -156,6 +162,7 @@ function App() {
             <Route path="/orders/edit/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><AddEditOrder onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="/orders/view/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ViewOrder onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Team onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/leads" element={<AdminRoute isLoggedIn={isLoggedIn}><Leads onLogout={handleLogout} /></AdminRoute>} />
             <Route path="/tasks" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Tasks onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="/tasks/:orderId" element={<ProtectedRoute isLoggedIn={isLoggedIn}><TaskDetail onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="/products" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Product onLogout={handleLogout} /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import PublicLayout from './PublicLayout';
-import initialInquiries from '../database/inquiry.json';
+import { inquiryAPI } from '../services/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,17 +15,6 @@ const Contact = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    const existingData = localStorage.getItem('inquiries');
-
-    if (!existingData) {
-      localStorage.setItem(
-        'inquiries',
-        JSON.stringify(initialInquiries)
-      );
-    }
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -38,7 +27,7 @@ const Contact = () => {
     setErrorMessage('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setLoading(true);
@@ -46,6 +35,10 @@ const Contact = () => {
     setErrorMessage('');
 
     try {
+      /*
+       * Validation
+       */
+
       if (
         !formData.name.trim() ||
         !formData.contact.trim() ||
@@ -58,59 +51,23 @@ const Contact = () => {
         return;
       }
 
-      const existingData = localStorage.getItem('inquiries');
+      /*
+       * Send data to PHP
+       */
 
-      let inquiries = [];
-
-      if (existingData) {
-        inquiries = JSON.parse(existingData);
-      }
-
-      const nextId =
-        inquiries.length > 0
-          ? Math.max(
-              ...inquiries.map(
-                (item) => Number(item.id) || 0
-              )
-            ) + 1
-          : 1;
-
-      const newInquiry = {
-        id: nextId,
-
+      await inquiryAPI.addInquiry({
         leadName: formData.name.trim(),
-
-        company: '',
-
         phone: formData.contact.trim(),
-
-        email: '',
-
         state: formData.state.trim(),
-
         city: formData.city.trim(),
-
-        source: 'Website',
-
-        pipelineStage: 'New',
-
-        owner: '',
-
-        lastFollowUp: null,
-
-        nextFollowUp: null,
-
         leadResponseMessage: formData.message.trim(),
+        source: 'Website',
+        pipelineStage: 'New',
+      });
 
-        createdAt: new Date().toISOString(),
-      };
-
-      inquiries.push(newInquiry);
-
-      localStorage.setItem(
-        'inquiries',
-        JSON.stringify(inquiries)
-      );
+      /*
+       * Reset form
+       */
 
       setFormData({
         name: '',
@@ -124,10 +81,14 @@ const Contact = () => {
         'Thank you! Your enquiry has been submitted successfully.'
       );
     } catch (error) {
-      console.error('Error saving inquiry:', error);
+      console.error(
+        'Error submitting inquiry:',
+        error
+      );
 
       setErrorMessage(
-        'Something went wrong. Please try again.'
+        error.message ||
+          'Something went wrong. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -139,6 +100,7 @@ const Contact = () => {
       <section className="public-copy-page contact-page">
 
         <div className="contact-hero">
+
           <p className="public-eyebrow">
             Come say hello
           </p>
@@ -152,11 +114,14 @@ const Contact = () => {
             about the collection, our team would love to hear
             from you.
           </p>
+
         </div>
+
 
         <div className="contact-details">
 
           <div className="contact-detail-item">
+
             <span>Visit</span>
 
             <p>
@@ -166,12 +131,16 @@ const Contact = () => {
               <br />
               Surat - 394101
             </p>
+
           </div>
 
+
           <div className="contact-detail-item">
+
             <span>Reach us</span>
 
             <p>
+
               <a href="tel:+919825000000">
                 +91 98250 00000
               </a>
@@ -181,15 +150,20 @@ const Contact = () => {
               <a href="mailto:hello@naariart.com">
                 hello@naariart.com
               </a>
+
             </p>
+
           </div>
 
         </div>
 
+
         {/* Contact Form */}
+
         <div className="contact-form-wrapper">
 
           <div className="contact-form-header">
+
             <p className="public-eyebrow">
               Send an enquiry
             </p>
@@ -202,7 +176,9 @@ const Contact = () => {
               Fill in your details below and our team
               will get back to you shortly.
             </p>
+
           </div>
+
 
           <form
             className="contact-form"
@@ -211,8 +187,11 @@ const Contact = () => {
 
             <div className="contact-form-grid">
 
+
               {/* Name */}
+
               <div className="form-group">
+
                 <label htmlFor="name">
                   Name <span>*</span>
                 </label>
@@ -227,10 +206,14 @@ const Contact = () => {
                   autoComplete="name"
                   required
                 />
+
               </div>
 
+
               {/* Contact */}
+
               <div className="form-group">
+
                 <label htmlFor="contact">
                   Contact <span>*</span>
                 </label>
@@ -245,10 +228,14 @@ const Contact = () => {
                   autoComplete="tel"
                   required
                 />
+
               </div>
 
+
               {/* State */}
+
               <div className="form-group">
+
                 <label htmlFor="state">
                   State <span>*</span>
                 </label>
@@ -262,10 +249,14 @@ const Contact = () => {
                   placeholder="Enter your state"
                   required
                 />
+
               </div>
 
+
               {/* City */}
+
               <div className="form-group">
+
                 <label htmlFor="city">
                   City <span>*</span>
                 </label>
@@ -279,12 +270,16 @@ const Contact = () => {
                   placeholder="Enter your city"
                   required
                 />
+
               </div>
 
             </div>
 
+
             {/* Message */}
+
             <div className="form-group message-group">
+
               <label htmlFor="message">
                 Message <span>*</span>
               </label>
@@ -298,7 +293,9 @@ const Contact = () => {
                 rows="6"
                 required
               />
+
             </div>
+
 
             <div className="contact-form-footer">
 
@@ -311,31 +308,45 @@ const Contact = () => {
                 className="contact-submit-btn"
                 disabled={loading}
               >
+
                 {loading
                   ? 'Submitting...'
                   : 'Submit Enquiry'}
+
               </button>
 
             </div>
 
+
             {successMessage && (
+
               <div
                 className="form-status success"
                 role="alert"
               >
+
                 <span>✓</span>
+
                 {successMessage}
+
               </div>
+
             )}
 
+
             {errorMessage && (
+
               <div
                 className="form-status error"
                 role="alert"
               >
+
                 <span>!</span>
+
                 {errorMessage}
+
               </div>
+
             )}
 
           </form>
@@ -344,7 +355,11 @@ const Contact = () => {
 
       </section>
 
+
+      {/* Existing CSS */}
+
       <style>{`
+
         .contact-page {
           padding-bottom: 80px;
         }
@@ -565,6 +580,7 @@ const Contact = () => {
         }
 
         @media (max-width: 700px) {
+
           .contact-details {
             grid-template-columns: 1fr;
             gap: 25px;
@@ -592,7 +608,9 @@ const Contact = () => {
           .contact-submit-btn {
             width: 100%;
           }
+
         }
+
       `}</style>
     </PublicLayout>
   );

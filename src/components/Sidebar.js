@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles.css';
-import { FiAlertCircle, FiCalendar, FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUsers, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiCalendar, FiFileText, FiLayout, FiLogOut, FiMenu, FiMessageSquare, FiPackage, FiSettings, FiShoppingBag, FiUser, FiUserCheck, FiUsers, FiX } from 'react-icons/fi';
+import { storage } from '../utils/storage';
 
 const Sidebar = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Sidebar = ({ onLogout }) => {
     if (path === '/products' || path.startsWith('/products/')) return 'products';
     if (path === '/orders' || path.startsWith('/orders/')) return 'orders';
     if (path === '/team' || path.startsWith('/team/')) return 'team';
+    if (path === '/leads' || path.startsWith('/leads/')) return 'leads';
     if (path === '/tasks' || path.startsWith('/tasks/')) return 'tasks';
     if (path === '/chat' || path.startsWith('/chat/')) return 'chat';
     if (path === '/alert' || path.startsWith('/alert/')) return 'alert';
@@ -38,6 +40,7 @@ const Sidebar = ({ onLogout }) => {
   };
 
   const activeItem = getActiveItem();
+  const isAdmin = storage.isAdmin();
 
   // Permission condition start
   const permissions = JSON.parse(
@@ -94,6 +97,12 @@ const Sidebar = ({ onLogout }) => {
       permission: "staff",
     },
     {
+      id: "leads",
+      label: "Leads",
+      icon: <FiUserCheck />,
+      visible: isAdmin,
+    },
+    {
       id: "tasks",
       label: "Tasks",
       icon: <FiFileText />,
@@ -133,7 +142,7 @@ const Sidebar = ({ onLogout }) => {
   ];
 
   const visibleNavItems = navItems.filter(
-    (item) => !item.permission || hasPermission(item.permission)
+    (item) => item.visible !== false && (!item.permission || hasPermission(item.permission))
   );
 
   //  permission condition end

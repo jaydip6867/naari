@@ -8,6 +8,53 @@ const api = axios.create({
   },
 });
 
+const inquiryApiBase = (
+  process.env.REACT_APP_INQUIRY_API_BASE ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://127.0.0.1:8000/api'
+    : '/api')
+).replace(/\/+$/, '');
+
+const requestInquiryApi = async (endpoint, options = {}) => {
+  const response = await fetch(`${inquiryApiBase}/${endpoint}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...options.headers,
+    },
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('The inquiry API returned an invalid response.');
+  }
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || 'Inquiry API request failed.');
+  }
+
+  return data;
+};
+
+export const inquiryAPI = {
+  addInquiry: (inquiry) => requestInquiryApi('add-inquiry.php', {
+    method: 'POST',
+    body: JSON.stringify(inquiry),
+  }),
+
+  getInquiries: async () => {
+    const data = await requestInquiryApi('get-inquiries.php');
+    return Array.isArray(data.inquiries) ? data.inquiries : [];
+  },
+
+  updateInquiry: (inquiry) => requestInquiryApi('update-inquiry.php', {
+    method: 'POST',
+    body: JSON.stringify(inquiry),
+  }),
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {

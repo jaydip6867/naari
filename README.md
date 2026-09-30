@@ -29,6 +29,16 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+### Contact inquiry API deployment
+
+For local development, start PHP with `C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public` and run `npm start` in another terminal. The form then posts directly to the local PHP API. The PHP endpoints in `public/api` must be deployed to a PHP host with persistent writable storage; Vercel's static build does not execute these files, and Vercel Function filesystem writes are temporary rather than durable.
+
+For a Vercel frontend, set `REACT_APP_INQUIRY_API_BASE` to the PHP API origin (for example, `https://api.example.com/api`) in the Vercel project environment, then rebuild. The PHP host must allow requests from the frontend origin and run PHP with permission to write the inquiry file.
+
+Set `INQUIRY_FILE_PATH` on the PHP host to an absolute path for `inquiry.json` outside the public web root, and initialize it with `[]`. If unset, the API uses `database/inquiry.json` relative to the project layout. The file and its parent directory must be writable by the PHP process.
+
+The `get-inquiries.php` and `update-inquiry.php` endpoints currently have no authentication. Do not expose them publicly until they are protected by the application's admin authentication.
+
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can't go back!**
