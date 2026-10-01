@@ -30,5 +30,21 @@
         "nextFollowUp": null,
         "leadResponseMessage": "ssssssss",
         "createdAt": "2026-09-30T12:24:41+02:00"
+    },
+    {
+        "id": 3,
+        "leadName": "isha",
+        "company": "",
+        "phone": "7897897890",
+        "email": "",
+        "state": "Gujarat",
+        "city": "Surat",
+        "source": "Website",
+        "pipelineStage": "New",
+        "owner": "",
+        "lastFollowUp": null,
+        "nextFollowUp": null,
+        "leadResponseMessage": "testing message",
+        "createdAt": "2026-10-01T12:39:31+02:00"
     }
 ]

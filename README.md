@@ -33,7 +33,7 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 For local development, start PHP with `C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public` and run `npm start` in another terminal. The form then posts directly to the local PHP API. The PHP endpoints in `public/api` must be deployed to a PHP host with persistent writable storage; Vercel's static build does not execute these files, and Vercel Function filesystem writes are temporary rather than durable.
 
-For a Vercel frontend, set `REACT_APP_INQUIRY_API_BASE` to the PHP API origin (for example, `https://api.example.com/api`) in the Vercel project environment, then rebuild. The PHP host must allow requests from the frontend origin and run PHP with permission to write the inquiry file.
+For a Vercel frontend, set `REACT_APP_INQUIRY_API_BASE` to the deployed PHP API base URL (for example, `https://api.example.com/api`) in the Vercel project's Environment Variables for Production and Preview, then redeploy. This must be the PHP API host, not `/api` on the Vercel frontend: Vercel serves this project as a static build and does not execute the PHP files in `public/api`. If the variable is missing in a production build, Leads now reports a configuration error instead of requesting the frontend's static `/api` path. The PHP host must allow requests from the frontend origin and run PHP with permission to write the inquiry file.
 
 Set `INQUIRY_FILE_PATH` on the PHP host to an absolute path for `inquiry.json` outside the public web root, and initialize it with `[]`. If unset, the API uses `database/inquiry.json` relative to the project layout. The file and its parent directory must be writable by the PHP process.
 
